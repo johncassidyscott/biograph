@@ -18,3 +18,15 @@ create table if not exists alias (
  created_at  timestamptz not null default now()
 );
 create index if not exists alias_alias_idx on alias(lower(alias));
+create table if not exists edge (
+ id           bigserial primary key,
+ src_id       bigint not null references entity(id) on delete cascade,
+ predicate    text not null,          -- e.g., targets, treats, in_trial, sponsored_by
+ dst_id       bigint not null references entity(id) on delete cascade,
+ source       text,                   -- mesh, chembl, ctgov, manual
+ created_at   timestamptz not null default now(),
+ unique (src_id, predicate, dst_id)
+);
+create index if not exists edge_src_idx on edge(src_id);
+create index if not exists edge_dst_idx on edge(dst_id);
+create index if not exists edge_pred_idx on edge(predicate);
