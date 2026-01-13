@@ -8,6 +8,7 @@ from .db import get_conn, init_db
 
 app = FastAPI(title="BioGraph API", version="0.1.0")
 
+
 @app.on_event("startup")
 
 def startup() -> None:
@@ -18,49 +19,20 @@ def startup() -> None:
 
     init_db(schema_path)
 
+
+@app.get("/")
+
+def root():
+
+    return {"service": "biograph-api", "try": ["/health", "/docs", "/entities"]}
+
+
 @app.get("/health")
 
 def health():
 
     return {"ok": True, "service": "biograph-api"}
 
-@app.get("/entities")
-
-def list_entities(
-
-    kind: str = Query(default="drug"),
-
-    q: str | None = Query(default=None, description="Optional name search substring"),
-
-    limit: int = Query(default=50, ge=1, le=200),
-
-):
-
-    sql = """
-
-        select id, kind, canonical_id, name, created_at, updated_at
-
-        from entity
-
-        where kind = %s
-
-          and (%s is null or name ilike ('%%' || %s || '%%'))
-
-        order by updated_at desc
-
-        limit %s
-
-    """
-
-    with get_conn() as conn:
-
-        with conn.cursor() as cur:
-
-            cur.execute(sql, (kind, q, q, limit))
-
-            rows = cur.fetchall()
-
-    return {"count": len(rows), "items": rows}
 
 @app.post("/seed")
 
@@ -114,5 +86,61 @@ def seed():
 
         conn.commit()
 
-    return JSONResponse({"seeded": len(seed_rows)})
- 
+    return JSONResponse(content={"seeded": len(seed_rows)})
+
+
+@app.get("/entities")
+
+def list_entities(
+
+    kind: str = Query(default="drug"),
+
+    q: str | None = Query(default=None, description="Optional name search substring"),
+
+    limit: int = Query(default=50, ge=1, le=200),
+
+):
+
+    sql = """
+
+        select id, kind, canonical_id, name, created_at, updated_at
+
+        from entity
+
+        where kind = %s
+
+          and (%s is null or name ilike ('%%' || %s || '%%'))
+
+        order by updated_at desc
+
+        limit %s
+
+    """
+
+    with get_conn() as conn:
+
+        with conn.cursor() as cur:
+
+            cur.execute(sql, (kind, q, q, limit))
+
+            rows = cur.fetchall()
+
+    items = []
+
+    for r in rows:
+
+        d = dict(r)  # psycopg row -> plain dict
+
+        # JSON-safe datetime strings
+
+        if d.get("created_at") is not None:
+
+            d["created_at"] = d["created_at"].isoformat()
+
+        if d.get("updated_at") is not None:
+
+            d["updated_at"] = d["updated_at"].isoformat()
+
+        items.append(d)
+
+    return JSONResponse(content={"count": len(items), "items": items})
