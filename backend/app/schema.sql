@@ -30,3 +30,21 @@ create table if not exists edge (
 create index if not exists edge_src_idx on edge(src_id);
 create index if not exists edge_dst_idx on edge(dst_id);
 create index if not exists edge_pred_idx on edge(predicate);
+
+-- MeSH foundation tables
+create table if not exists mesh_descriptor (
+ ui   text primary key,
+ name text not null
+);
+create table if not exists mesh_tree (
+ ui          text not null references mesh_descriptor(ui) on delete cascade,
+ tree_number text not null,
+ primary key (ui, tree_number)
+);
+create table if not exists mesh_alias (
+ ui    text not null references mesh_descriptor(ui) on delete cascade,
+ alias text not null,
+ primary key (ui, alias)
+);
+create index if not exists mesh_alias_lower_idx on mesh_alias(lower(alias));
+create index if not exists mesh_tree_prefix_idx on mesh_tree(tree_number);
