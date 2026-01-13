@@ -48,3 +48,21 @@ create table if not exists mesh_alias (
 );
 create index if not exists mesh_alias_lower_idx on mesh_alias(lower(alias));
 create index if not exists mesh_tree_prefix_idx on mesh_tree(tree_number);
+
+-- ClinicalTrials.gov trial facts (queryable filters live here)
+create table if not exists trial (
+ nct_id                 text primary key,
+ title                  text,
+ overall_status         text,
+ phase_raw              text,
+ phase_min              int,
+ study_type             text,
+ start_date             date,
+ primary_completion_date date,
+ completion_date        date,
+ last_update_posted     date,
+ sponsor_name           text
+);
+create index if not exists trial_phase_min_idx on trial(phase_min);
+create index if not exists trial_status_idx on trial(overall_status);
+create index if not exists trial_last_update_idx on trial(last_update_posted);
