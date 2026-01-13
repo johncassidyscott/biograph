@@ -239,18 +239,25 @@ def build_disease_lookup() -> Dict[str, int]:
 
 
 def upsert_entity(cur, kind: str, canonical_id: str, name: str) -> int:
-    cur.execute(
-        """
-        insert into entity (kind, canonical_id, name)
-        values (%s, %s, %s)
-        on conflict (kind, canonical_id) do update
-          set name = excluded.name,
-              updated_at = now()
-        returning id
-        """,
-        (kind, canonical_id, name),
-    )
-    return int(cur.fetchone()[0])
+   cur.execute(
+       """
+       insert into entity (kind, canonical_id, name)
+       values (%s, %s, %s)
+       on conflict (kind, canonical_id) do update
+         set name = excluded.name,
+             updated_at = now()
+       returning id as id
+       """,
+       (kind, canonical_id, name),
+   )
+   row = cur.fetchone()
+   if row is None:
+       raise RuntimeError("Expected RETURNING id, got no row")
+   # works for dict_row (and still works if it ever becomes tuple)
+   try:
+       return int(row["id"])
+   except Exception:
+       return int(row[0])
 
 
 def insert_edge(cur, src_id: int, predicate: str, dst_id: int, source: str) -> None:
