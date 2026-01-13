@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """
-ClinicalTrials.gov v2 loader:
-- pulls studies for a small set of condition queries
-- upserts:
-  - entity(kind='trial', canonical_id='NCT:<id>')
-  - trial table (phase/status/dates)
-  - companies (from sponsor)
-  - drugs (from interventions where type is DRUG/BIOLOGICAL)
-  - edges linking trial to disease/company/drug
+ClinicalTrials.gov v2 loader (simple + robust)
 
-API docs: https://clinicaltrials.gov/data-api/api
+What it does:
+- Queries CT.gov v2 studies for a few condition queries
+- Creates/updates:
+  - entity(kind='trial', canonical_id='NCT:<id>')
+  - trial table row (phase/status/dates)
+  - company entity for lead sponsor (CTG_SPONSOR:<slug>)
+  - drug entities for DRUG/BIOLOGICAL interventions (CTG_INT:<slug>)
+  - edges: trial->company (sponsored_by), trial->disease (for_condition), trial->drug (studies)
+
+Run:
+  cd /workspaces/biograph
+  python -m backend.loaders.load_ctgov
 """
 from __future__ import annotations
 
@@ -21,14 +25,17 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from backend.app.db import get_conn
+from psycopg.rows import dict_row
 
+from backend.app.db import get_conn
 
 BASE = "https://clinicaltrials.gov/api/v2/studies"
 
 
-# ---- helpers ----
-def _get(d: Dict[str, Any], path: List[str], default=None):
+# -------------------------
+# small helpers
+# -------------------------
+def get_path(d: Dict[str, Any], path: List[str], default=None):
     cur: Any = d
     for k in path:
         if not isinstance(cur, dict) or k not in cur:
@@ -37,29 +44,39 @@ def _get(d: Dict[str, Any], path: List[str], default=None):
     return cur
 
 
+def slug(s: str) -> str:
+    return (
+        s.strip()
+        .lower()
+        .replace("&", " and ")
+        .replace("/", " ")
+        .replace(",", " ")
+        .replace("(", " ")
+        .replace(")", " ")
+        .replace(".", " ")
+        .replace("'", "")
+    ).split()
+    # join after split to normalize whitespace
+    # (done this way to keep it dependency-free)
+
+
+def slug_join(words: List[str]) -> str:
+    return "_".join(words[:12])  # cap length a bit
+
+
 def parse_date(s: Optional[str]) -> Optional[dt.date]:
-    # CT.gov uses various date formats; handle common ones.
     if not s:
         return None
     s = s.strip()
     for fmt in ("%Y-%m-%d", "%Y-%m", "%Y"):
         try:
-            parsed = dt.datetime.strptime(s, fmt).date()
-            # normalize partial dates: if only year-month, day becomes 1; if year-only, Jan 1
-            return parsed
+            return dt.datetime.strptime(s, fmt).date()
         except ValueError:
-            continue
+            pass
     return None
 
 
 def phase_to_min(phase_raw: Optional[str]) -> Optional[int]:
-    """
-    Map CT.gov phases like:
-      ["PHASE1"] / "PHASE2" / "PHASE3" / "PHASE4"
-      "EARLY_PHASE1" -> 1
-      "PHASE1_PHASE2" -> 1
-      "PHASE2_PHASE3" -> 2
-    """
     if not phase_raw:
         return None
     s = phase_raw.upper()
@@ -74,6 +91,9 @@ def phase_to_min(phase_raw: Optional[str]) -> Optional[int]:
     return None
 
 
+# -------------------------
+# extraction
+# -------------------------
 @dataclass
 class StudyExtract:
     nct_id: str
@@ -93,74 +113,81 @@ class StudyExtract:
 
 def extract(study: Dict[str, Any]) -> Optional[StudyExtract]:
     ps = study.get("protocolSection", {})
-    nct_id = _get(ps, ["identificationModule", "nctId"])
+
+    nct_id = get_path(ps, ["identificationModule", "nctId"])
     if not nct_id:
         return None
 
     title = (
-        _get(ps, ["identificationModule", "officialTitle"])
-        or _get(ps, ["identificationModule", "briefTitle"])
+        get_path(ps, ["identificationModule", "officialTitle"])
+        or get_path(ps, ["identificationModule", "briefTitle"])
     )
 
-    overall_status = _get(ps, ["statusModule", "overallStatus"])
-    study_type = _get(ps, ["designModule", "studyType"])
+    overall_status = get_path(ps, ["statusModule", "overallStatus"])
+    study_type = get_path(ps, ["designModule", "studyType"])
 
-    # phases is usually a list; keep raw joined
-    phases = _get(ps, ["designModule", "phases"])
+    phases = get_path(ps, ["designModule", "phases"])
     if isinstance(phases, list):
-        phase_raw = ",".join(phases)
+        phase_raw = ",".join([str(x) for x in phases])
+    elif isinstance(phases, str):
+        phase_raw = phases
     else:
-        phase_raw = phases if isinstance(phases, str) else None
+        phase_raw = None
     phase_min = phase_to_min(phase_raw)
 
-    start_date = parse_date(_get(ps, ["statusModule", "startDateStruct", "date"]))
-    primary_completion_date = parse_date(_get(ps, ["statusModule", "primaryCompletionDateStruct", "date"]))
-    completion_date = parse_date(_get(ps, ["statusModule", "completionDateStruct", "date"]))
-    last_update_posted = parse_date(_get(study, ["derivedSection", "miscInfoModule", "lastUpdatePostDateStruct", "date"]))
+    start_date = parse_date(get_path(ps, ["statusModule", "startDateStruct", "date"]))
+    primary_completion_date = parse_date(
+        get_path(ps, ["statusModule", "primaryCompletionDateStruct", "date"])
+    )
+    completion_date = parse_date(get_path(ps, ["statusModule", "completionDateStruct", "date"]))
+    last_update_posted = parse_date(
+        get_path(study, ["derivedSection", "miscInfoModule", "lastUpdatePostDateStruct", "date"])
+    )
 
-    sponsor_name = _get(ps, ["sponsorsCollaboratorsModule", "leadSponsor", "name"])
+    sponsor_name = get_path(ps, ["sponsorsCollaboratorsModule", "leadSponsor", "name"])
 
-    conditions = _get(ps, ["conditionsModule", "conditions"], default=[])
+    conditions = get_path(ps, ["conditionsModule", "conditions"], default=[])
     if not isinstance(conditions, list):
         conditions = []
+    conditions = [str(c).strip() for c in conditions if c]
 
-    interventions = []
-    raw_ints = _get(ps, ["armsInterventionsModule", "interventions"], default=[])
+    interventions: List[Tuple[str, str]] = []
+    raw_ints = get_path(ps, ["armsInterventionsModule", "interventions"], default=[])
     if isinstance(raw_ints, list):
         for it in raw_ints:
             itype = it.get("type")
             name = it.get("name")
             if itype and name:
-                interventions.append((str(itype), str(name)))
+                interventions.append((str(itype), str(name).strip()))
 
     return StudyExtract(
-        nct_id=nct_id,
-        title=title,
-        overall_status=overall_status,
-        phase_raw=phase_raw,
+        nct_id=str(nct_id),
+        title=str(title).strip() if title else None,
+        overall_status=str(overall_status).strip() if overall_status else None,
+        phase_raw=str(phase_raw).strip() if phase_raw else None,
         phase_min=phase_min,
-        study_type=study_type,
+        study_type=str(study_type).strip() if study_type else None,
         start_date=start_date,
         primary_completion_date=primary_completion_date,
         completion_date=completion_date,
         last_update_posted=last_update_posted,
-        sponsor_name=sponsor_name,
-        conditions=[str(c) for c in conditions if c],
+        sponsor_name=str(sponsor_name).strip() if sponsor_name else None,
+        conditions=conditions,
         interventions=interventions,
     )
 
 
-def fetch_pages(query_cond: str, page_size: int = 200, count_total: bool = False) -> Iterable[Dict[str, Any]]:
-    """
-    Generator over studies for a query. CT.gov v2 uses nextPageToken for pagination.
-    """
+# -------------------------
+# CT.gov API pagination
+# -------------------------
+def fetch_studies(query_cond: str, page_size: int = 200) -> Iterable[Dict[str, Any]]:
     params = {
         "query.cond": query_cond,
         "pageSize": str(page_size),
-        "countTotal": "true" if count_total else "false",
         "format": "json",
     }
-    page_token = None
+    page_token: Optional[str] = None
+
     while True:
         if page_token:
             params["pageToken"] = page_token
@@ -171,77 +198,108 @@ def fetch_pages(query_cond: str, page_size: int = 200, count_total: bool = False
         with urllib.request.urlopen(url) as r:
             payload = json.loads(r.read().decode("utf-8"))
 
-        studies = payload.get("studies", []) or []
-        for s in studies:
+        for s in (payload.get("studies") or []):
             yield s
 
         page_token = payload.get("nextPageToken")
         if not page_token:
             break
 
-        time.sleep(0.2)  # be polite
+        time.sleep(0.2)
 
 
+# -------------------------
+# DB linking helpers
+# -------------------------
+def build_disease_lookup() -> Dict[str, int]:
+    """
+    Returns map: lowercase disease name/alias -> entity.id
+    Uses dict_row to avoid tuple/dict confusion.
+    """
+    lookup: Dict[str, int] = {}
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                select e.id as id, e.name as name, a.alias as alias
+                from entity e
+                left join alias a on a.entity_id = e.id
+                where e.kind = 'disease'
+                """
+            )
+            for r in cur.fetchall():
+                eid = int(r["id"])
+                name = r.get("name")
+                alias = r.get("alias")
+                if name:
+                    lookup[str(name).lower()] = eid
+                if alias:
+                    lookup[str(alias).lower()] = eid
+    return lookup
+
+
+def upsert_entity(cur, kind: str, canonical_id: str, name: str) -> int:
+    cur.execute(
+        """
+        insert into entity (kind, canonical_id, name)
+        values (%s, %s, %s)
+        on conflict (kind, canonical_id) do update
+          set name = excluded.name,
+              updated_at = now()
+        returning id
+        """,
+        (kind, canonical_id, name),
+    )
+    return int(cur.fetchone()[0])
+
+
+def insert_edge(cur, src_id: int, predicate: str, dst_id: int, source: str) -> None:
+    cur.execute(
+        """
+        insert into edge (src_id, predicate, dst_id, source)
+        values (%s, %s, %s, %s)
+        on conflict (src_id, predicate, dst_id) do nothing
+        """,
+        (src_id, predicate, dst_id, source),
+    )
+
+
+# -------------------------
+# main loader
+# -------------------------
 def load_ctgov(
     condition_queries: List[str],
     min_last_update: Optional[dt.date] = None,
     max_last_update: Optional[dt.date] = None,
 ) -> None:
-    """
-    Load studies matching condition queries; optionally filter by last update posted date.
-    """
-    # Build a disease alias map from promoted disease entities + aliases for fast condition linking.
-    # Assumes you have alias table populated for diseases (from MeSH promotion).
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                select e.id, e.canonical_id, e.name, a.alias
-                from entity e
-                left join alias a on a.entity_id = e.id
-                where e.kind = 'disease'
-            """)
-            disease_alias_to_entity: Dict[str, int] = {}
-            for eid, cid, name, alias in cur.fetchall():
-                if name:
-                    disease_alias_to_entity[str(name).lower()] = int(eid)
-                if alias:
-                    disease_alias_to_entity[str(alias).lower()] = int(eid)
+    disease_lookup = build_disease_lookup()
 
-    inserted_trials = 0
-    inserted_edges = 0
+    trials_upserted = 0
+    edges_attempted = 0
 
     with get_conn() as conn:
         with conn.cursor() as cur:
             for q in condition_queries:
                 print(f"Query: {q}")
-                for raw in fetch_pages(q, page_size=200, count_total=False):
+
+                for raw in fetch_studies(q, page_size=200):
                     ex = extract(raw)
                     if not ex:
                         continue
 
-                    # Date filter (optional)
-                    if min_last_update and ex.last_update_posted and ex.last_update_posted < min_last_update:
-                        continue
-                    if max_last_update and ex.last_update_posted and ex.last_update_posted > max_last_update:
-                        continue
+                    # Optional date filter on last_update_posted
+                    if ex.last_update_posted:
+                        if min_last_update and ex.last_update_posted < min_last_update:
+                            continue
+                        if max_last_update and ex.last_update_posted > max_last_update:
+                            continue
 
                     trial_cid = f"NCT:{ex.nct_id}"
+                    trial_name = ex.title or ex.nct_id
 
-                    # Upsert trial entity node
-                    cur.execute(
-                        """
-                        insert into entity (kind, canonical_id, name)
-                        values (%s, %s, %s)
-                        on conflict (kind, canonical_id) do update
-                          set name = excluded.name,
-                              updated_at = now()
-                        returning id
-                        """,
-                        ("trial", trial_cid, ex.title or ex.nct_id),
-                    )
-                    trial_entity_id = cur.fetchone()[0]
+                    trial_entity_id = upsert_entity(cur, "trial", trial_cid, trial_name)
 
-                    # Upsert trial facts
+                    # trial facts
                     cur.execute(
                         """
                         insert into trial (
@@ -276,92 +334,47 @@ def load_ctgov(
                             ex.sponsor_name,
                         ),
                     )
-                    inserted_trials += 1
+                    trials_upserted += 1
 
-                    # Sponsor -> company entity + edge
+                    # sponsor -> company + edge
                     if ex.sponsor_name:
-                        company_cid = f"CTG_SPONSOR:{ex.sponsor_name.strip().lower().replace(' ', '_')}"
-                        cur.execute(
-                            """
-                            insert into entity (kind, canonical_id, name)
-                            values ('company', %s, %s)
-                            on conflict (kind, canonical_id) do update set
-                              name = excluded.name,
-                              updated_at = now()
-                            returning id
-                            """,
-                            (company_cid, ex.sponsor_name),
-                        )
-                        company_id = cur.fetchone()[0]
-                        cur.execute(
-                            """
-                            insert into edge (src_id, predicate, dst_id, source)
-                            values (%s, 'sponsored_by', %s, 'ctgov')
-                            on conflict (src_id, predicate, dst_id) do nothing
-                            """,
-                            (trial_entity_id, company_id),
-                        )
-                        inserted_edges += cur.rowcount
+                        company_slug = slug_join(slug(ex.sponsor_name))
+                        company_cid = f"CTG_SPONSOR:{company_slug}"
+                        company_id = upsert_entity(cur, "company", company_cid, ex.sponsor_name)
+                        insert_edge(cur, trial_entity_id, "sponsored_by", company_id, "ctgov")
+                        edges_attempted += 1
 
-                    # Conditions -> disease edges (best-effort string match against disease names/aliases)
+                    # conditions -> diseases (exact match to promoted name/alias, best-effort)
                     for cond in ex.conditions:
-                        eid = disease_alias_to_entity.get(cond.lower())
-                        if not eid:
-                            continue
-                        cur.execute(
-                            """
-                            insert into edge (src_id, predicate, dst_id, source)
-                            values (%s, 'for_condition', %s, 'ctgov')
-                            on conflict (src_id, predicate, dst_id) do nothing
-                            """,
-                            (trial_entity_id, eid),
-                        )
-                        inserted_edges += cur.rowcount
+                        did = disease_lookup.get(cond.lower())
+                        if did:
+                            insert_edge(cur, trial_entity_id, "for_condition", did, "ctgov")
+                            edges_attempted += 1
 
-                    # Interventions -> drug entities + edges (DRUG/BIOLOGICAL only)
+                    # interventions -> drugs + edges (DRUG/BIOLOGICAL only)
                     for itype, name in ex.interventions:
-                        itype_u = itype.upper()
-                        if itype_u not in ("DRUG", "BIOLOGICAL"):
+                        if itype.upper() not in ("DRUG", "BIOLOGICAL"):
                             continue
-                        drug_cid = f"CTG_INT:{name.strip().lower().replace(' ', '_')}"
-                        cur.execute(
-                            """
-                            insert into entity (kind, canonical_id, name)
-                            values ('drug', %s, %s)
-                            on conflict (kind, canonical_id) do update set
-                              name = excluded.name,
-                              updated_at = now()
-                            returning id
-                            """,
-                            (drug_cid, name),
-                        )
-                        drug_id = cur.fetchone()[0]
-                        cur.execute(
-                            """
-                            insert into edge (src_id, predicate, dst_id, source)
-                            values (%s, 'studies', %s, 'ctgov')
-                            on conflict (src_id, predicate, dst_id) do nothing
-                            """,
-                            (trial_entity_id, drug_id),
-                        )
-                        inserted_edges += cur.rowcount
+                        drug_slug = slug_join(slug(name))
+                        drug_cid = f"CTG_INT:{drug_slug}"
+                        drug_id = upsert_entity(cur, "drug", drug_cid, name)
+                        insert_edge(cur, trial_entity_id, "studies", drug_id, "ctgov")
+                        edges_attempted += 1
 
                 conn.commit()
 
-    print(f"Trials upserted: {inserted_trials}")
-    print(f"Edges inserted: {inserted_edges}")
+    print(f"Trials upserted: {trials_upserted}")
+    print(f"Edges attempted: {edges_attempted}")
 
 
 if __name__ == "__main__":
-    # POC condition queries (tight on purpose)
-    # You can broaden later once you have company lists & better linking.
     queries = [
         "obesity",
         "alzheimer disease",
         "KRAS AND non-small cell lung cancer",
     ]
 
-    # Optional time window (example: 2024-01-01 to 2025-01-31)
+    # Keep it tight for POC (adjust anytime)
     min_d = dt.date(2024, 1, 1)
     max_d = dt.date(2025, 1, 31)
 
