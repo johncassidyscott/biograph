@@ -55,7 +55,9 @@ def get_text(elem, path: str) -> str | None:
 def load_mesh(year: int, promote_diseases: bool = True, batch_size: int = 1000) -> None:
    desc_gz = f"desc{year}.gz"
    url = f"{MESH_BASE}/{desc_gz}"
-   raw_path = f"/workspaces/biograph/data/raw/mesh/{desc_gz}"
+   # Find repo root (go up from loaders/ to backend/ to repo/)
+   repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+   raw_path = os.path.join(repo_root, "data", "raw", "mesh", desc_gz)
    download(url, raw_path)
    # Accumulators
    desc_rows = []   # (ui, name)
