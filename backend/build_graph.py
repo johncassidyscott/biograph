@@ -101,6 +101,83 @@ def load_ctgov_data():
             count = cur.fetchone()[0]
             print(f"✓ Trials loaded: {count:,}")
 
+def load_companies_data():
+    """Step 4: Load pharmaceutical companies"""
+    print("\n" + "="*60)
+    print("STEP 4: Loading Pharmaceutical Companies")
+    print("="*60)
+    from loaders.load_companies import load_companies
+
+    poc_companies = [
+        {"name": "Eli Lilly and Company", "cik": "0000059478", "develops": ["CHEMBL4297448"], "aliases": ["Eli Lilly", "Lilly"]},
+        {"name": "Novo Nordisk A/S", "cik": "0000353278", "develops": ["CHEMBL2109743", "CHEMBL1201580", "CHEMBL2107834"], "aliases": ["Novo Nordisk", "Novo"]},
+        {"name": "Eisai Co., Ltd.", "cik": "0001062822", "develops": ["CHEMBL2366541"], "aliases": ["Eisai"]},
+        {"name": "Biogen Inc.", "cik": "0000875045", "develops": ["CHEMBL4297072"], "aliases": ["Biogen", "Biogen Idec"]},
+        {"name": "Amgen Inc.", "cik": "0000318154", "develops": ["CHEMBL4297299"], "aliases": ["Amgen"]},
+        {"name": "Mirati Therapeutics, Inc.", "cik": "0001440718", "develops": ["CHEMBL4594668"], "aliases": ["Mirati", "Mirati Therapeutics"]},
+    ]
+
+    load_companies(poc_companies)
+
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'company' AND canonical_id LIKE 'CIK:%'")
+            count = cur.fetchone()[0]
+            print(f"✓ Companies with CIK: {count:,}")
+
+def load_opentargets_data():
+    """Step 5: Load OpenTargets drug-target-disease associations"""
+    print("\n" + "="*60)
+    print("STEP 5: Loading Drug-Target-Disease Associations")
+    print("="*60)
+    from loaders.load_opentargets import load_opentargets_associations
+
+    # POC disease mappings (MESH ID -> EFO ID)
+    poc_diseases = [
+        {"mesh_id": "D009765", "efo_id": "EFO_0001360", "name": "Obesity"},
+        {"mesh_id": "D000544", "efo_id": "EFO_0000249", "name": "Alzheimer's Disease"},
+        {"mesh_id": "D002289", "efo_id": "EFO_0003060", "name": "Non-small cell lung cancer"},
+    ]
+
+    load_opentargets_associations(poc_diseases, min_score=0.3)
+
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM edge WHERE source = 'opentargets'")
+            count = cur.fetchone()[0]
+            print(f"✓ OpenTargets associations: {count:,}")
+
+def infer_drug_disease_data():
+    """Step 6: Infer drug-disease relationships from trials"""
+    print("\n" + "="*60)
+    print("STEP 6: Inferring Drug-Disease Relationships")
+    print("="*60)
+    from loaders.infer_drug_disease import infer_drug_disease_relationships
+
+    infer_drug_disease_relationships(min_phase=2)
+
+def load_pubmed_data():
+    """Step 7: Load recent PubMed publications"""
+    print("\n" + "="*60)
+    print("STEP 7: Loading Recent Publications")
+    print("="*60)
+    from loaders.load_pubmed import load_pubmed_for_drugs
+
+    poc_queries = [
+        {"name": "Semaglutide", "chembl_id": "CHEMBL2109743", "query": "Semaglutide AND (obesity OR weight loss)"},
+        {"name": "Tirzepatide", "chembl_id": "CHEMBL4297448", "query": "Tirzepatide AND (obesity OR diabetes)"},
+        {"name": "Lecanemab", "chembl_id": "CHEMBL2366541", "query": "Lecanemab AND Alzheimer"},
+        {"name": "Sotorasib", "chembl_id": "CHEMBL4297299", "query": "Sotorasib AND (KRAS OR lung cancer)"},
+    ]
+
+    load_pubmed_for_drugs(poc_queries, max_per_drug=10)
+
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'publication'")
+            count = cur.fetchone()[0]
+            print(f"✓ Publications: {count:,}")
+
 def show_summary():
     """Show final graph statistics"""
     print("\n" + "="*60)
@@ -168,10 +245,17 @@ def main():
     # Step 3: Clinical trials
     load_ctgov_data()
 
-    # TODO: Add more loaders here as we build them:
-    # - OpenTargets drug-target-disease associations
-    # - Company data (SEC EDGAR)
-    # - PubMed publications
+    # Step 4: Companies with CIK identifiers
+    load_companies_data()
+
+    # Step 5: OpenTargets drug-target-disease associations
+    load_opentargets_data()
+
+    # Step 6: Infer drug-disease relationships from trials
+    infer_drug_disease_data()
+
+    # Step 7: Recent PubMed publications
+    load_pubmed_data()
 
     # Summary
     show_summary()

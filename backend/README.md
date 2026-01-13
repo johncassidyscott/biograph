@@ -32,9 +32,12 @@ This will:
 1. Load ~30,000 MeSH disease entities
 2. Load 12 key drugs + targets from ChEMBL
 3. Load clinical trials for obesity, Alzheimer's, and KRAS oncology
-4. Create drug-target-disease relationships from OpenTargets
+4. Load pharmaceutical companies with SEC CIK identifiers
+5. Create drug-target-disease relationships from OpenTargets
+6. Infer drug-disease relationships from trial data
+7. Load ~40 recent PubMed publications
 
-**Expected result:** ~50K entities, ~100K edges
+**Expected result:** ~50K+ entities, ~150K+ edges
 
 ### 4. Start the API
 
@@ -75,6 +78,24 @@ Loads trials updated Jan 2024 - Jan 2025 for POC diseases.
 python3 -m loaders.load_opentargets
 ```
 Links drugs, targets, and diseases via evidence.
+
+### Load Companies
+```bash
+python3 -m loaders.load_companies
+```
+Adds major pharma companies with SEC CIK identifiers.
+
+### Infer Drug-Disease Relationships
+```bash
+python3 -m loaders.infer_drug_disease
+```
+Creates drug-disease edges based on Phase 2+ trials.
+
+### Load PubMed Publications
+```bash
+python3 -m loaders.load_pubmed
+```
+Fetches recent papers (2024-2025) mentioning key drugs.
 
 ---
 

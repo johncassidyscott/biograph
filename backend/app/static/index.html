@@ -231,6 +231,10 @@ pre {
             <div class="label">Trials</div>
         </div>
         <div class="stat-card">
+            <div class="number" id="stat-publications">-</div>
+            <div class="label">Publications</div>
+        </div>
+        <div class="stat-card">
             <div class="number" id="stat-edges">-</div>
             <div class="label">Relationships</div>
         </div>
@@ -251,6 +255,7 @@ pre {
                 <button class="example-btn" onclick="quickLoad('target', 20)">Targets</button>
                 <button class="example-btn" onclick="quickLoad('trial', 20)">Clinical Trials</button>
                 <button class="example-btn" onclick="quickLoad('company', 20)">Companies</button>
+                <button class="example-btn" onclick="quickLoad('publication', 20)">Publications</button>
             </div>
             <div class="controls">
                 <select id="kind">
@@ -259,6 +264,7 @@ pre {
                     <option value="target">Targets</option>
                     <option value="trial">Clinical Trials</option>
                     <option value="company">Companies</option>
+                    <option value="publication">Publications</option>
                 </select>
                 <input id="limit" type="number" value="20" min="1" max="100" placeholder="Limit" />
                 <button id="loadEntities">Load</button>
@@ -272,7 +278,8 @@ pre {
                 <button class="example-btn" onclick="loadEdges('targets')">Drug → Target</button>
                 <button class="example-btn" onclick="loadEdges('treats')">Drug → Disease</button>
                 <button class="example-btn" onclick="loadEdges('for_condition')">Trial → Disease</button>
-                <button class="example-btn" onclick="loadEdges('sponsored_by')">Trial → Sponsor</button>
+                <button class="example-btn" onclick="loadEdges('develops')">Company → Drug</button>
+                <button class="example-btn" onclick="loadEdges('mentions')">Publication → Drug</button>
                 <button class="example-btn" onclick="loadEdges('associated_with')">Target → Disease</button>
             </div>
             <div class="controls">
@@ -325,16 +332,18 @@ async function getJSON(path) {
 
 async function loadStats() {
     try {
-        const [diseases, drugs, trials, edges] = await Promise.all([
+        const [diseases, drugs, trials, publications, edges] = await Promise.all([
             getJSON('/entities?kind=disease&limit=1'),
             getJSON('/entities?kind=drug&limit=1'),
             getJSON('/entities?kind=trial&limit=1'),
+            getJSON('/entities?kind=publication&limit=1'),
             getJSON('/edges?limit=1')
         ]);
 
         document.getElementById('stat-diseases').textContent = diseases.count || 0;
         document.getElementById('stat-drugs').textContent = drugs.count || 0;
         document.getElementById('stat-trials').textContent = trials.count || 0;
+        document.getElementById('stat-publications').textContent = publications.count || 0;
         document.getElementById('stat-edges').textContent = edges.count || 0;
     } catch (e) {
         console.error('Failed to load stats:', e);
