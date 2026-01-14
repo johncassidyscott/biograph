@@ -253,7 +253,7 @@ class EntityResolver:
                     """,
                     (canonical_id, name)
                 )
-                entity_id = cur.fetchone()[0]
+                entity_id = cur.fetchone()['id']
             conn.commit()
 
         # Add to lookup table
@@ -355,7 +355,7 @@ class EntityResolver:
                     """,
                     (canonical_id, name)
                 )
-                entity_id = cur.fetchone()[0]
+                entity_id = cur.fetchone()['id']
             conn.commit()
 
         self.diseases[name.lower()] = (entity_id, canonical_id, name)
@@ -454,7 +454,7 @@ class EntityResolver:
                     """,
                     (canonical_id, name)
                 )
-                entity_id = cur.fetchone()[0]
+                entity_id = cur.fetchone()['id']
             conn.commit()
 
         self.companies[name.lower()] = (entity_id, canonical_id, name)
