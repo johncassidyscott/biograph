@@ -245,6 +245,30 @@ def load_supplementary_publications():
             count = cur.fetchone()[0]
             print(f"✓ Total publications: {count:,}")
 
+def load_news_feeds():
+    """Step 11 (Optional): Load recent news from RSS feeds with MeSH indexing"""
+    print("\n" + "="*60)
+    print("STEP 11: Loading Recent News (RSS Feeds with MeSH Indexing)")
+    print("="*60)
+
+    try:
+        from loaders.load_news import load_all_news
+
+        # Load news from last 30 days
+        load_all_news(days_back=30, max_items_per_source=50)
+
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'news'")
+                news_count = cur.fetchone()[0]
+                cur.execute("SELECT COUNT(*) FROM news_mesh")
+                mesh_count = cur.fetchone()[0]
+                print(f"✓ News articles: {news_count:,}")
+                print(f"✓ MeSH terms assigned: {mesh_count:,}")
+    except ImportError as e:
+        print(f"⚠️  News loading skipped: {e}")
+        print("⚠️  Run: pip install feedparser python-dateutil")
+
 def show_summary():
     """Show final graph statistics"""
     print("\n" + "="*60)
@@ -333,6 +357,10 @@ def main():
     # Step 10 (Optional): Supplementary publications
     # Adds preprints and additional journal articles
     load_supplementary_publications()
+
+    # Step 11 (Optional): Recent news with MeSH indexing
+    # Loads FDA, Fierce Pharma, and other RSS feeds
+    load_news_feeds()
 
     # Summary
     show_summary()

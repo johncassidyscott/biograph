@@ -1,7 +1,7 @@
 -- BioGraph minimal schema v0
 create table if not exists entity (
  id            bigserial primary key,
- kind          text not null,                 -- drug, company, target, disease, trial, publication, patent, person, grant
+ kind          text not null,                 -- drug, company, target, disease, trial, publication, patent, person, grant, news
  canonical_id  text not null,                 -- e.g., CHEMBL:CHEMBL25, NCT:NCT01234567, MESH:D012345
  name          text not null,
  created_at    timestamptz not null default now(),
@@ -67,3 +67,30 @@ create table if not exists trial (
 create index if not exists trial_phase_min_idx on trial(phase_min);
 create index if not exists trial_status_idx on trial(overall_status);
 create index if not exists trial_last_update_idx on trial(last_update_posted);
+
+-- News/press release articles
+create table if not exists news_item (
+ entity_id       bigint primary key references entity(id) on delete cascade,
+ url             text not null unique,
+ published_date  timestamptz,
+ source          text,                   -- 'fda_rss', 'fierce_pharma', 'globenewswire', etc.
+ summary         text,
+ created_at      timestamptz not null default now()
+);
+create index if not exists news_item_published_idx on news_item(published_date desc);
+create index if not exists news_item_source_idx on news_item(source);
+
+-- MeSH indexing for news articles (like PubMed)
+create table if not exists news_mesh (
+ news_entity_id  bigint not null references entity(id) on delete cascade,
+ mesh_ui         text not null,          -- e.g., 'D009765'
+ mesh_name       text not null,          -- e.g., 'Obesity'
+ confidence      real default 1.0,       -- 0.0-1.0: indexing confidence
+ is_major_topic  boolean default false,  -- Main focus of article
+ source          text,                   -- 'resolver', 'mti', 'deepmesh'
+ indexed_at      timestamptz not null default now(),
+ primary key (news_entity_id, mesh_ui)
+);
+create index if not exists news_mesh_ui_idx on news_mesh(mesh_ui);
+create index if not exists news_mesh_major_idx on news_mesh(mesh_ui) where is_major_topic = true;
+create index if not exists news_mesh_confidence_idx on news_mesh(confidence) where confidence > 0.8;
