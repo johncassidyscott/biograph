@@ -189,7 +189,7 @@ def insert_discovered_researchers(researchers: Dict[str, Dict]) -> None:
 
                     trial_result = cur.fetchone()
                     if trial_result:
-                        trial_entity_id = trial_result[0]
+                        trial_entity_id = trial_result['id']
 
                         # Create edge: person --investigates--> trial
                         cur.execute("""

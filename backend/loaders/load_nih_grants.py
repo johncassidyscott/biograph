@@ -90,7 +90,7 @@ def load_nih_grants_for_diseases(disease_queries: List[Dict[str, str]]) -> None:
                     print(f"  Warning: Disease {mesh_id} not found")
                     continue
 
-                disease_entity_id = disease_result[0]
+                disease_entity_id = disease_result['id']
 
                 # Search grants
                 grants = search_nih_grants(query, fiscal_years, limit=25)
@@ -146,7 +146,7 @@ def load_nih_grants_for_diseases(disease_queries: List[Dict[str, str]]) -> None:
 
                         org_result = cur.fetchone()
                         if org_result:
-                            org_entity_id = org_result[0]
+                            org_entity_id = org_result['id']
 
                             cur.execute("""
                                 INSERT INTO edge (src_id, predicate, dst_id, source)
@@ -172,7 +172,7 @@ def load_nih_grants_for_diseases(disease_queries: List[Dict[str, str]]) -> None:
 
                         pi_result = cur.fetchone()
                         if pi_result:
-                            pi_entity_id = pi_result[0]
+                            pi_entity_id = pi_result['id']
 
                             cur.execute("""
                                 INSERT INTO edge (src_id, predicate, dst_id, source)

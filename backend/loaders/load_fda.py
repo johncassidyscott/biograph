@@ -110,7 +110,7 @@ def load_fda_approvals(drug_list: List[Dict[str, str]]) -> None:
                     print(f"  Warning: Drug {chembl_id} not found")
                     continue
 
-                drug_entity_id = result[0]
+                drug_entity_id = result['id']
 
                 # Search OpenFDA
                 approvals = search_fda_approvals(name)

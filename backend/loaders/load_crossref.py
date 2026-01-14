@@ -83,7 +83,7 @@ def load_crossref_publications(drug_queries: List[Dict[str, str]], max_per_query
                     print(f"  Warning: Drug {chembl_id} not found")
                     continue
 
-                drug_entity_id = result[0]
+                drug_entity_id = result['id']
 
                 # Search Crossref
                 publications = search_crossref(query, rows=max_per_query)

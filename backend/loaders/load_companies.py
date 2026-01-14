@@ -84,7 +84,7 @@ def load_companies(company_list: List[Dict[str, str]]) -> None:
                         print(f"  Warning: Drug {chembl_id} not found")
                         continue
 
-                    drug_entity_id = result[0]
+                    drug_entity_id = result['id']
 
                     # Create edge: company --develops--> drug
                     cur.execute(

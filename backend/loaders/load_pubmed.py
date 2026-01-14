@@ -207,7 +207,7 @@ def load_pubmed_for_drugs(drug_queries: List[Dict[str, str]], max_per_drug: int 
                     print(f"  Warning: Drug {chembl_id} not found")
                     continue
 
-                drug_entity_id = result[0]
+                drug_entity_id = result['id']
 
                 # Insert publications and link to drug
                 for article in articles:

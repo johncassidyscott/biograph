@@ -76,7 +76,7 @@ def load_preprints_for_drugs(drug_keywords: List[str], days_back: int = 365) -> 
                 )
                 result = cur.fetchone()
                 if result:
-                    drug_map[keyword.lower()] = result[0]
+                    drug_map[keyword.lower()] = result['id']
 
             # Search both bioRxiv and medRxiv
             for server in ["biorxiv", "medrxiv"]:

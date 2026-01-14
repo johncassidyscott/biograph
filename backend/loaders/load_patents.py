@@ -96,7 +96,7 @@ def load_patents(drug_list: List[Dict[str, str]]) -> None:
                     print(f"  Warning: Drug {chembl_id} not found")
                     continue
 
-                drug_entity_id = result[0]
+                drug_entity_id = result['id']
 
                 # Search patents
                 patents = search_patents(name, max_results=5)
@@ -160,7 +160,7 @@ def load_patents(drug_list: List[Dict[str, str]]) -> None:
                         )
                         company_result = cur.fetchone()
                         if company_result:
-                            company_id = company_result[0]
+                            company_id = company_result['id']
                             # Create edge: company --filed--> patent
                             cur.execute(
                                 """

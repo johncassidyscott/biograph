@@ -157,7 +157,7 @@ def load_opentargets_associations(disease_mappings: List[Dict[str, str]], min_sc
                     print(f"  Warning: Disease {mesh_id} not found in database")
                     continue
 
-                disease_entity_id = result[0]
+                disease_entity_id = result['id']
 
                 # Get targets associated with this disease
                 associations = get_disease_associations(efo_id, min_score=min_score)

@@ -192,7 +192,7 @@ def insert_discovered_companies(companies: Dict[str, Dict]) -> None:
 
                         trial_result = cur.fetchone()
                         if trial_result:
-                            trial_entity_id = trial_result[0]
+                            trial_entity_id = trial_result['id']
 
                             # Create edge: trial --sponsored_by--> company
                             cur.execute("""
