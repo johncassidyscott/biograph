@@ -123,19 +123,37 @@ def extract_entity_mentions(text: str) -> Set[str]:
 
 def index_news_with_mesh(news_entity_id: int, title: str, summary: str) -> Dict:
     """
-    Index news article with MeSH terms using entity resolution.
+    Index news article with ALL MeSH terms (not just diseases) - PubMed style.
+
+    Indexes with comprehensive MeSH vocabulary:
+    - Diseases (C-tree)
+    - Chemicals & Drugs (D-tree)
+    - Procedures (E-tree)
+    - Anatomy (A-tree)
+    - Organisms (B-tree)
+    - Phenomena & Processes (G-tree)
+    - Disciplines (H-tree)
+
+    Also creates edges to entities in the graph (drugs, diseases, companies).
 
     Returns dict with:
-    - mesh_terms: List of MeSH terms assigned
-    - mentioned_entities: Dict of entities mentioned (drug, disease, company)
+    - mesh_terms: Dict categorized by type (diseases, chemicals_drugs, procedures, etc.)
+    - mentioned_entities: Dict of graph entities mentioned (drug, disease, company)
     """
+    from loaders.comprehensive_mesh_indexer import extract_candidate_terms, match_mesh_descriptors, categorize_mesh_terms
+
     resolver = get_resolver()
-
-    # Extract candidate entity mentions
     text = f"{title}. {summary or ''}"
-    candidates = extract_entity_mentions(text)
 
-    mesh_terms = []
+    # Extract candidate terms for MeSH matching
+    candidates = extract_candidate_terms(text, min_length=3)
+
+    # Match against ALL MeSH descriptors (not just diseases)
+    mesh_matches = match_mesh_descriptors(candidates, min_confidence=0.70)
+
+    # Categorize by MeSH tree
+    categorized_mesh = categorize_mesh_terms(mesh_matches)
+
     mentioned_entities = {
         'drugs': [],
         'diseases': [],
@@ -143,40 +161,32 @@ def index_news_with_mesh(news_entity_id: int, title: str, summary: str) -> Dict:
         'trials': []
     }
 
-    seen_mesh = set()
-
     with get_conn() as conn:
         with conn.cursor() as cur:
-            for candidate in candidates:
-                # Try to resolve as disease (MeSH indexing)
+            # Store all MeSH terms (comprehensive indexing)
+            for match in mesh_matches:
+                is_major = match['confidence'] >= 0.90
+
+                cur.execute("""
+                    INSERT INTO news_mesh (
+                        news_entity_id, mesh_ui, mesh_name,
+                        confidence, is_major_topic, source
+                    )
+                    VALUES (%s, %s, %s, %s, %s, 'comprehensive')
+                    ON CONFLICT (news_entity_id, mesh_ui) DO UPDATE
+                      SET confidence = GREATEST(news_mesh.confidence, EXCLUDED.confidence),
+                          is_major_topic = EXCLUDED.is_major_topic OR news_mesh.is_major_topic
+                """, (news_entity_id, match['mesh_ui'], match['mesh_name'],
+                      match['confidence'], is_major))
+
+            # Also create edges to entities in the graph (for entity-based queries)
+            # Extract entity mentions (simpler than candidates)
+            entity_candidates = extract_entity_mentions(text)
+
+            for candidate in entity_candidates:
+                # Try to resolve as disease entity
                 disease = resolver.resolve_disease(candidate)
                 if disease.confidence > 0.70:
-                    # Extract MeSH UI from canonical_id
-                    if disease.canonical_id.startswith('MESH:'):
-                        mesh_ui = disease.canonical_id.replace('MESH:', '')
-
-                        if mesh_ui not in seen_mesh:
-                            # Store MeSH indexing
-                            is_major = disease.confidence > 0.90
-                            cur.execute("""
-                                INSERT INTO news_mesh (
-                                    news_entity_id, mesh_ui, mesh_name,
-                                    confidence, is_major_topic, source
-                                )
-                                VALUES (%s, %s, %s, %s, %s, 'resolver')
-                                ON CONFLICT (news_entity_id, mesh_ui) DO UPDATE
-                                  SET confidence = GREATEST(news_mesh.confidence, EXCLUDED.confidence)
-                            """, (news_entity_id, mesh_ui, disease.name, disease.confidence, is_major))
-
-                            mesh_terms.append({
-                                'mesh_ui': mesh_ui,
-                                'name': disease.name,
-                                'confidence': disease.confidence,
-                                'is_major': is_major
-                            })
-                            seen_mesh.add(mesh_ui)
-                            mentioned_entities['diseases'].append(disease.name)
-
                     # Create edge: news -> mentions -> disease
                     cur.execute("""
                         INSERT INTO edge (src_id, predicate, dst_id, source, confidence)
@@ -184,11 +194,11 @@ def index_news_with_mesh(news_entity_id: int, title: str, summary: str) -> Dict:
                         ON CONFLICT (src_id, predicate, dst_id) DO UPDATE
                           SET confidence = GREATEST(edge.confidence, EXCLUDED.confidence)
                     """, (news_entity_id, disease.entity_id, disease.confidence))
+                    mentioned_entities['diseases'].append(disease.name)
 
-                # Try to resolve as drug
+                # Try to resolve as drug entity
                 drug = resolver.resolve_drug(candidate)
                 if drug.confidence > 0.80:
-                    # Create edge: news -> mentions -> drug
                     cur.execute("""
                         INSERT INTO edge (src_id, predicate, dst_id, source, confidence)
                         VALUES (%s, 'mentions', %s, 'news', %s)
@@ -197,10 +207,9 @@ def index_news_with_mesh(news_entity_id: int, title: str, summary: str) -> Dict:
                     """, (news_entity_id, drug.entity_id, drug.confidence))
                     mentioned_entities['drugs'].append(drug.name)
 
-                # Try to resolve as company
+                # Try to resolve as company entity
                 company = resolver.resolve_company(candidate)
                 if company.confidence > 0.75:
-                    # Create edge: news -> mentions -> company
                     cur.execute("""
                         INSERT INTO edge (src_id, predicate, dst_id, source, confidence)
                         VALUES (%s, 'mentions', %s, 'news', %s)
@@ -212,7 +221,11 @@ def index_news_with_mesh(news_entity_id: int, title: str, summary: str) -> Dict:
         conn.commit()
 
     return {
-        'mesh_terms': mesh_terms,
+        'mesh_terms': categorized_mesh,  # Now categorized by type!
+        'mesh_stats': {
+            'total': len(mesh_matches),
+            'by_category': {k: len(v) for k, v in categorized_mesh.items() if v}
+        },
         'mentioned_entities': mentioned_entities
     }
 

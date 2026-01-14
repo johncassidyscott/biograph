@@ -58,7 +58,7 @@ def fetch_pubmed_details(pmids: List[str]) -> List[Dict]:
     """
     Fetch article details for given PMIDs.
 
-    Returns list of article dicts with: pmid, title, authors, abstract
+    Returns list of article dicts with: pmid, title, authors, abstract, mesh_terms, publication_types
     """
     if not pmids:
         return []
@@ -104,11 +104,50 @@ def fetch_pubmed_details(pmids: List[str]) -> List[Dict]:
                         name = f"{forename.text} {name}"
                     authors.append(name)
 
+            # Extract MeSH terms (official indexing from NLM!)
+            mesh_terms = []
+            mesh_headings = article.findall(".//MeshHeading")
+            for heading in mesh_headings:
+                descriptor = heading.find("DescriptorName")
+                if descriptor is not None:
+                    mesh_ui = descriptor.get("UI", "")  # MeSH Unique ID (e.g., D009765)
+                    mesh_name = descriptor.text or ""
+                    is_major = descriptor.get("MajorTopicYN", "N") == "Y"
+
+                    # Get qualifiers (subheadings like "diagnosis", "therapy")
+                    qualifiers = []
+                    for qualifier in heading.findall("QualifierName"):
+                        qual_ui = qualifier.get("UI", "")
+                        qual_name = qualifier.text or ""
+                        qual_major = qualifier.get("MajorTopicYN", "N") == "Y"
+                        if qual_name:
+                            qualifiers.append({
+                                "ui": qual_ui,
+                                "name": qual_name,
+                                "is_major": qual_major
+                            })
+
+                    if mesh_ui and mesh_name:
+                        mesh_terms.append({
+                            "ui": mesh_ui,
+                            "name": mesh_name,
+                            "is_major": is_major,
+                            "qualifiers": qualifiers
+                        })
+
+            # Extract publication types (e.g., Clinical Trial, Review, Meta-Analysis)
+            publication_types = []
+            for pub_type in article.findall(".//PublicationType"):
+                if pub_type.text:
+                    publication_types.append(pub_type.text)
+
             articles.append({
                 "pmid": pmid,
                 "title": title,
                 "abstract": abstract,
                 "authors": authors,
+                "mesh_terms": mesh_terms,  # Official NLM MeSH indexing!
+                "publication_types": publication_types,
             })
 
         return articles
@@ -191,6 +230,45 @@ def load_pubmed_for_drugs(drug_queries: List[Dict[str, str]], max_per_drug: int 
                     )
                     pub_entity_id = cur.fetchone()['id']
                     inserted_pubs += 1
+
+                    # Store official NLM MeSH indexing
+                    mesh_terms = article.get("mesh_terms", [])
+                    for mesh_term in mesh_terms:
+                        mesh_ui = mesh_term["ui"]
+                        mesh_name = mesh_term["name"]
+                        is_major = mesh_term["is_major"]
+
+                        # Store MeSH descriptor
+                        cur.execute("""
+                            INSERT INTO article_mesh (
+                                article_entity_id, mesh_ui, mesh_name,
+                                is_major_topic, confidence, source
+                            )
+                            VALUES (%s, %s, %s, %s, 1.0, 'pubmed_nlm')
+                            ON CONFLICT (article_entity_id, mesh_ui) DO UPDATE
+                              SET is_major_topic = EXCLUDED.is_major_topic OR article_mesh.is_major_topic
+                        """, (pub_entity_id, mesh_ui, mesh_name, is_major))
+
+                        # Store MeSH qualifiers (subheadings)
+                        for qualifier in mesh_term.get("qualifiers", []):
+                            cur.execute("""
+                                INSERT INTO article_mesh_qualifier (
+                                    article_entity_id, mesh_ui,
+                                    qualifier_ui, qualifier_name, is_major
+                                )
+                                VALUES (%s, %s, %s, %s, %s)
+                                ON CONFLICT (article_entity_id, mesh_ui, qualifier_ui) DO NOTHING
+                            """, (pub_entity_id, mesh_ui,
+                                  qualifier["ui"], qualifier["name"], qualifier["is_major"]))
+
+                    # Store publication types
+                    pub_types = article.get("publication_types", [])
+                    for pub_type in pub_types:
+                        cur.execute("""
+                            INSERT INTO publication_type (article_entity_id, pub_type)
+                            VALUES (%s, %s)
+                            ON CONFLICT (article_entity_id, pub_type) DO NOTHING
+                        """, (pub_entity_id, pub_type))
 
                     # Create edge: publication --mentions--> drug
                     cur.execute(

@@ -94,3 +94,40 @@ create table if not exists news_mesh (
 create index if not exists news_mesh_ui_idx on news_mesh(mesh_ui);
 create index if not exists news_mesh_major_idx on news_mesh(mesh_ui) where is_major_topic = true;
 create index if not exists news_mesh_confidence_idx on news_mesh(confidence) where confidence > 0.8;
+
+-- article_mesh: MeSH indexing for publications, preprints, and other articles
+-- This table stores MeSH terms for any article-type entity (publications, news, preprints)
+create table if not exists article_mesh (
+ article_entity_id bigint not null references entity(id) on delete cascade,
+ mesh_ui           text not null,          -- MeSH Unique ID (e.g., 'D009765')
+ mesh_name         text not null,          -- MeSH descriptor name (e.g., 'Obesity')
+ is_major_topic    boolean default false,  -- Y/N from PubMed or confidence-based
+ confidence        real default 1.0,       -- 1.0 for NLM indexing, <1.0 for automated
+ source            text,                   -- 'pubmed_nlm', 'comprehensive', 'mti'
+ indexed_at        timestamptz not null default now(),
+ primary key (article_entity_id, mesh_ui)
+);
+create index if not exists article_mesh_ui_idx on article_mesh(mesh_ui);
+create index if not exists article_mesh_major_idx on article_mesh(mesh_ui) where is_major_topic = true;
+create index if not exists article_mesh_entity_idx on article_mesh(article_entity_id);
+
+-- article_mesh_qualifier: MeSH qualifiers/subheadings (e.g., "diagnosis", "therapy")
+-- Enables precise filtering like PubMed (e.g., "Obesity/diagnosis", "Obesity/drug therapy")
+create table if not exists article_mesh_qualifier (
+ article_entity_id bigint not null,
+ mesh_ui           text not null,
+ qualifier_ui      text not null,          -- Qualifier ID (e.g., 'Q000175' for diagnosis)
+ qualifier_name    text not null,          -- Qualifier name (e.g., 'diagnosis')
+ is_major          boolean default false,  -- Major focus
+ foreign key (article_entity_id, mesh_ui) references article_mesh(article_entity_id, mesh_ui) on delete cascade,
+ primary key (article_entity_id, mesh_ui, qualifier_ui)
+);
+create index if not exists article_mesh_qualifier_ui_idx on article_mesh_qualifier(qualifier_ui);
+
+-- publication_type: Store publication types (Clinical Trial, Review, Meta-Analysis, etc.)
+create table if not exists publication_type (
+ article_entity_id bigint not null references entity(id) on delete cascade,
+ pub_type          text not null,          -- e.g., 'Clinical Trial', 'Review'
+ primary key (article_entity_id, pub_type)
+);
+create index if not exists publication_type_idx on publication_type(pub_type);
