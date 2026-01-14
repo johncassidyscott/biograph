@@ -390,6 +390,20 @@ button:active {
 .edge-card .entity-label {
     font-weight: 600;
     color: #333;
+    transition: all 0.3s;
+}
+
+.edge-card .entity-label[onclick]:hover {
+    color: #667eea;
+    text-decoration-color: #667eea !important;
+}
+
+.entity-card[onclick] {
+    cursor: pointer;
+}
+
+.entity-card[onclick]:hover {
+    transform: translateY(-8px) scale(1.02);
 }
 
 pre {
@@ -721,7 +735,7 @@ function renderEntityCards(items) {
     }
 
     return '<div class="entity-grid">' + items.map(item => `
-        <div class="entity-card">
+        <div class="entity-card" onclick="showEntityDetail(${item.id}, '${escapeHtml(item.name)}', '${item.kind}')" style="cursor: pointer;">
             <div class="entity-name">${escapeHtml(item.name || 'Unnamed')}</div>
             <div class="entity-id">${escapeHtml(item.canonical_id || item.id)}</div>
             <span class="entity-kind kind-${item.kind}">${item.kind}</span>
@@ -737,12 +751,16 @@ function renderEdgeCards(items) {
     return items.map(item => `
         <div class="edge-card">
             <div>
-                <span class="entity-label">${escapeHtml(item.src_name)}</span>
+                <span class="entity-label" onclick="showEntityDetail(${item.src_id}, '${escapeHtml(item.src_name)}', '${item.src_kind}')" style="cursor: pointer; text-decoration: underline; text-decoration-color: rgba(102, 126, 234, 0.3); text-underline-offset: 3px;">
+                    ${escapeHtml(item.src_name)}
+                </span>
                 <span style="color: #999; font-size: 0.9em;"> (${item.src_kind})</span>
             </div>
             <div class="edge-predicate">${escapeHtml(item.predicate)}</div>
             <div>
-                <span class="entity-label">${escapeHtml(item.dst_name)}</span>
+                <span class="entity-label" onclick="showEntityDetail(${item.dst_id}, '${escapeHtml(item.dst_name)}', '${item.dst_kind}')" style="cursor: pointer; text-decoration: underline; text-decoration-color: rgba(118, 75, 162, 0.3); text-underline-offset: 3px;">
+                    ${escapeHtml(item.dst_name)}
+                </span>
                 <span style="color: #999; font-size: 0.9em;"> (${item.dst_kind})</span>
             </div>
             <div style="margin-top: 10px; font-size: 0.85em; color: #999;">
@@ -803,6 +821,82 @@ async function performSearch() {
     // Simple search across all entity types
     // You can enhance this with a proper search endpoint
     alert(`Search functionality coming soon! Searching for: "${query}"`);
+}
+
+async function showEntityDetail(entityId, entityName, entityKind) {
+    const out = document.getElementById('entitiesOut');
+
+    out.innerHTML = '<div class="loading">Loading entity details and relationships</div>';
+
+    try {
+        // Fetch relationships where this entity is the source
+        const outgoingPromise = fetch(`/edges?src_id=${entityId}&limit=200`)
+            .then(r => r.json())
+            .catch(() => ({items: []}));
+
+        // Fetch relationships where this entity is the destination
+        const incomingPromise = fetch(`/edges?dst_id=${entityId}&limit=200`)
+            .then(r => r.json())
+            .catch(() => ({items: []}));
+
+        const [outgoing, incoming] = await Promise.all([outgoingPromise, incomingPromise]);
+
+        const outgoingEdges = outgoing.items || [];
+        const incomingEdges = incoming.items || [];
+        const totalRels = outgoingEdges.length + incomingEdges.length;
+
+        // Render detail view
+        let html = `
+            <div style="margin-bottom: 30px;">
+                <button onclick="loadEntitiesHandler()" style="margin-bottom: 20px; background: #f0f0f0; color: #667eea; border: 2px solid #667eea;">
+                    ← Back to List
+                </button>
+
+                <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); padding: 30px; border-radius: 20px; border: 2px solid rgba(102, 126, 234, 0.2); margin-bottom: 30px;">
+                    <h2 style="margin: 0 0 15px 0; font-size: 2.5em;">${escapeHtml(entityName)}</h2>
+                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <span class="entity-kind kind-${entityKind}" style="font-size: 1em; padding: 8px 16px;">${entityKind}</span>
+                        <span style="color: #667eea; font-weight: 600;">ID: ${entityId}</span>
+                        <span style="color: #764ba2; font-weight: 600;">${totalRels} Relationship${totalRels !== 1 ? 's' : ''}</span>
+                    </div>
+                </div>
+        `;
+
+        if (outgoingEdges.length > 0) {
+            html += `
+                <h3 style="color: #667eea; margin: 30px 0 15px 0; font-size: 1.5em;">
+                    Outgoing Relationships (${outgoingEdges.length})
+                </h3>
+                ${renderEdgeCards(outgoingEdges)}
+            `;
+        }
+
+        if (incomingEdges.length > 0) {
+            html += `
+                <h3 style="color: #764ba2; margin: 30px 0 15px 0; font-size: 1.5em;">
+                    Incoming Relationships (${incomingEdges.length})
+                </h3>
+                ${renderEdgeCards(incomingEdges)}
+            `;
+        }
+
+        if (totalRels === 0) {
+            html += '<p style="text-align: center; color: #999; padding: 60px 20px; font-size: 1.2em;">No relationships found for this entity</p>';
+        }
+
+        html += '</div>';
+
+        out.innerHTML = html;
+
+        // Scroll to top of results
+        out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (e) {
+        out.innerHTML = `
+            <button onclick="loadEntitiesHandler()" style="margin-bottom: 20px;">← Back to List</button>
+            <div style="color: #d32f2f; padding: 20px; text-align: center;">Error loading entity details: ${escapeHtml(String(e))}</div>
+        `;
+    }
 }
 
 document.getElementById('loadEntities').onclick = loadEntitiesHandler;
