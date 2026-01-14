@@ -3,6 +3,10 @@ from contextlib import contextmanager
 from typing import Iterator
 from psycopg import Connection
 from psycopg.rows import dict_row
+from dotenv import load_dotenv
+
+# Load .env file from backend directory
+load_dotenv()
 
 def get_database_url() -> str:
    url = os.getenv("DATABASE_URL")
