@@ -225,6 +225,34 @@ def load_patents_data():
             count = cur.fetchone()[0]
             print(f"✓ Patents: {count:,}")
 
+def load_supplementary_publications():
+    """Step 10 (Optional): Load supplementary publications"""
+    print("\n" + "="*60)
+    print("STEP 10: Loading Supplementary Publications (Crossref, bioRxiv)")
+    print("="*60)
+
+    # bioRxiv/medRxiv preprints
+    print("\nLoading preprints...")
+    from loaders.load_biorxiv import load_preprints_for_drugs
+    preprint_keywords = ["Semaglutide", "Tirzepatide", "Lecanemab", "Sotorasib", "Adagrasib", "KRAS", "GLP-1"]
+    load_preprints_for_drugs(preprint_keywords, days_back=365)
+
+    # Crossref publications
+    print("\nLoading Crossref publications...")
+    from loaders.load_crossref import load_crossref_publications
+    crossref_queries = [
+        {"name": "Semaglutide", "chembl_id": "CHEMBL2109743", "query": "semaglutide obesity weight loss"},
+        {"name": "Lecanemab", "chembl_id": "CHEMBL2366541", "query": "lecanemab alzheimer"},
+        {"name": "Sotorasib", "chembl_id": "CHEMBL4297299", "query": "sotorasib KRAS"},
+    ]
+    load_crossref_publications(crossref_queries, max_per_query=10)
+
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'publication'")
+            count = cur.fetchone()[0]
+            print(f"✓ Total publications: {count:,}")
+
 def show_summary():
     """Show final graph statistics"""
     print("\n" + "="*60)
@@ -309,6 +337,10 @@ def main():
 
     # Step 9: USPTO patents
     load_patents_data()
+
+    # Step 10 (Optional): Supplementary publications
+    # Adds preprints and additional journal articles
+    load_supplementary_publications()
 
     # Summary
     show_summary()
