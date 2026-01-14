@@ -24,6 +24,7 @@ create table if not exists edge (
  predicate    text not null,          -- e.g., targets, treats, in_trial, sponsored_by
  dst_id       bigint not null references entity(id) on delete cascade,
  source       text,                   -- mesh, chembl, ctgov, manual
+ confidence   real default 1.0,       -- 0.0-1.0: relationship confidence score
  created_at   timestamptz not null default now(),
  unique (src_id, predicate, dst_id)
 );
