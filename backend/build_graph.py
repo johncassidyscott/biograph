@@ -178,6 +178,53 @@ def load_pubmed_data():
             count = cur.fetchone()[0]
             print(f"✓ Publications: {count:,}")
 
+def load_fda_data():
+    """Step 8: Load FDA drug approvals"""
+    print("\n" + "="*60)
+    print("STEP 8: Loading FDA Drug Approvals")
+    print("="*60)
+    from loaders.load_fda import load_fda_approvals
+
+    poc_drugs = [
+        {"name": "Semaglutide", "chembl_id": "CHEMBL2109743"},
+        {"name": "Tirzepatide", "chembl_id": "CHEMBL4297448"},
+        {"name": "Liraglutide", "chembl_id": "CHEMBL1201580"},
+        {"name": "Donepezil", "chembl_id": "CHEMBL502"},
+        {"name": "Lecanemab", "chembl_id": "CHEMBL2366541"},
+        {"name": "Sotorasib", "chembl_id": "CHEMBL4297299"},
+    ]
+
+    load_fda_approvals(poc_drugs)
+
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM drug_approval")
+            count = cur.fetchone()[0]
+            print(f"✓ FDA approvals: {count:,}")
+
+def load_patents_data():
+    """Step 9: Load USPTO patents"""
+    print("\n" + "="*60)
+    print("STEP 9: Loading USPTO Patents")
+    print("="*60)
+    from loaders.load_patents import load_patents
+
+    poc_drugs = [
+        {"name": "Semaglutide", "chembl_id": "CHEMBL2109743"},
+        {"name": "Tirzepatide", "chembl_id": "CHEMBL4297448"},
+        {"name": "Lecanemab", "chembl_id": "CHEMBL2366541"},
+        {"name": "Sotorasib", "chembl_id": "CHEMBL4297299"},
+        {"name": "Adagrasib", "chembl_id": "CHEMBL4594668"},
+    ]
+
+    load_patents(poc_drugs)
+
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'patent'")
+            count = cur.fetchone()[0]
+            print(f"✓ Patents: {count:,}")
+
 def show_summary():
     """Show final graph statistics"""
     print("\n" + "="*60)
@@ -256,6 +303,12 @@ def main():
 
     # Step 7: Recent PubMed publications
     load_pubmed_data()
+
+    # Step 8: FDA drug approvals
+    load_fda_data()
+
+    # Step 9: USPTO patents
+    load_patents_data()
 
     # Summary
     show_summary()

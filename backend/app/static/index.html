@@ -213,7 +213,19 @@ pre {
 <body>
 <div class="container">
     <header>
-        <h1>🧬 BioGraph</h1>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px;">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="12" r="4" fill="white" opacity="0.9"/>
+                <circle cx="12" cy="24" r="4" fill="white" opacity="0.9"/>
+                <circle cx="36" cy="24" r="4" fill="white" opacity="0.9"/>
+                <circle cx="24" cy="36" r="4" fill="white" opacity="0.9"/>
+                <line x1="24" y1="12" x2="12" y2="24" stroke="white" stroke-width="2" opacity="0.6"/>
+                <line x1="24" y1="12" x2="36" y2="24" stroke="white" stroke-width="2" opacity="0.6"/>
+                <line x1="12" y1="24" x2="24" y2="36" stroke="white" stroke-width="2" opacity="0.6"/>
+                <line x1="36" y1="24" x2="24" y2="36" stroke="white" stroke-width="2" opacity="0.6"/>
+            </svg>
+            <h1>BioGraph</h1>
+        </div>
         <p>Life Sciences Intelligence Platform</p>
     </header>
 
@@ -256,6 +268,7 @@ pre {
                 <button class="example-btn" onclick="quickLoad('trial', 20)">Clinical Trials</button>
                 <button class="example-btn" onclick="quickLoad('company', 20)">Companies</button>
                 <button class="example-btn" onclick="quickLoad('publication', 20)">Publications</button>
+                <button class="example-btn" onclick="quickLoad('patent', 20)">Patents</button>
             </div>
             <div class="controls">
                 <select id="kind">
@@ -265,6 +278,7 @@ pre {
                     <option value="trial">Clinical Trials</option>
                     <option value="company">Companies</option>
                     <option value="publication">Publications</option>
+                    <option value="patent">Patents</option>
                 </select>
                 <input id="limit" type="number" value="20" min="1" max="100" placeholder="Limit" />
                 <button id="loadEntities">Load</button>
@@ -281,6 +295,8 @@ pre {
                 <button class="example-btn" onclick="loadEdges('develops')">Company → Drug</button>
                 <button class="example-btn" onclick="loadEdges('mentions')">Publication → Drug</button>
                 <button class="example-btn" onclick="loadEdges('associated_with')">Target → Disease</button>
+                <button class="example-btn" onclick="loadEdges('covers')">Patent → Drug</button>
+                <button class="example-btn" onclick="loadEdges('filed')">Company → Patent</button>
             </div>
             <div class="controls">
                 <input id="pred" placeholder="Predicate (optional)" />
