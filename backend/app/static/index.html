@@ -829,6 +829,9 @@ async function showEntityDetail(entityId, entityName, entityKind) {
     out.innerHTML = '<div class="loading">Loading entity details and relationships</div>';
 
     try {
+        // Fetch full entity details
+        const entityPromise = fetch(`/entity/${entityId}`).then(r => r.json());
+
         // Fetch relationships where this entity is the source
         const outgoingPromise = fetch(`/edges?src_id=${entityId}&limit=200`)
             .then(r => r.json())
@@ -839,11 +842,10 @@ async function showEntityDetail(entityId, entityName, entityKind) {
             .then(r => r.json())
             .catch(() => ({items: []}));
 
-        const [outgoing, incoming] = await Promise.all([outgoingPromise, incomingPromise]);
+        const [entityData, outgoing, incoming] = await Promise.all([entityPromise, outgoingPromise, incomingPromise]);
 
         const outgoingEdges = outgoing.items || [];
         const incomingEdges = incoming.items || [];
-        const totalRels = outgoingEdges.length + incomingEdges.length;
 
         // Render detail view
         let html = `
@@ -853,13 +855,18 @@ async function showEntityDetail(entityId, entityName, entityKind) {
                 </button>
 
                 <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); padding: 30px; border-radius: 20px; border: 2px solid rgba(102, 126, 234, 0.2); margin-bottom: 30px;">
-                    <h2 style="margin: 0 0 15px 0; font-size: 2.5em;">${escapeHtml(entityName)}</h2>
-                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                        <span class="entity-kind kind-${entityKind}" style="font-size: 1em; padding: 8px 16px;">${entityKind}</span>
-                        <span style="color: #667eea; font-weight: 600;">ID: ${entityId}</span>
-                        <span style="color: #764ba2; font-weight: 600;">${totalRels} Relationship${totalRels !== 1 ? 's' : ''}</span>
+                    <h2 style="margin: 0 0 15px 0; font-size: 2.5em;">${escapeHtml(entityData.name)}</h2>
+                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                        <span class="entity-kind kind-${entityData.kind}" style="font-size: 1em; padding: 8px 16px;">${entityData.kind}</span>
+                        <span style="color: #667eea; font-weight: 600;">ID: ${entityData.id}</span>
+                        <span style="color: #764ba2; font-weight: 600;">${entityData.total_relationships} Relationship${entityData.total_relationships !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div style="font-family: monospace; font-size: 0.9em; color: #666; padding: 10px; background: rgba(255,255,255,0.7); border-radius: 8px;">
+                        ${escapeHtml(entityData.canonical_id)}
                     </div>
                 </div>
+
+                ${renderEntityMetadata(entityData)}
         `;
 
         if (outgoingEdges.length > 0) {
@@ -880,7 +887,7 @@ async function showEntityDetail(entityId, entityName, entityKind) {
             `;
         }
 
-        if (totalRels === 0) {
+        if (entityData.total_relationships === 0) {
             html += '<p style="text-align: center; color: #999; padding: 60px 20px; font-size: 1.2em;">No relationships found for this entity</p>';
         }
 
@@ -897,6 +904,110 @@ async function showEntityDetail(entityId, entityName, entityKind) {
             <div style="color: #d32f2f; padding: 20px; text-align: center;">Error loading entity details: ${escapeHtml(String(e))}</div>
         `;
     }
+}
+
+function renderEntityMetadata(entity) {
+    let html = '';
+
+    // Aliases
+    if (entity.aliases && entity.aliases.length > 0) {
+        html += `
+            <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+                <h4 style="margin: 0 0 12px 0; color: #667eea;">Alternative Names (${entity.aliases.length})</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    ${entity.aliases.map(a => `
+                        <span style="background: #f0f0f0; padding: 6px 12px; border-radius: 6px; font-size: 0.9em;">
+                            ${escapeHtml(a.alias)}
+                            <span style="color: #999; font-size: 0.85em;">·${a.source}</span>
+                        </span>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Trial details
+    if (entity.trial_details) {
+        const t = entity.trial_details;
+        html += `
+            <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #7b1fa2;">
+                <h4 style="margin: 0 0 12px 0; color: #7b1fa2;">Clinical Trial Details</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    ${t.nct_id ? `<div><strong>NCT ID:</strong> ${escapeHtml(t.nct_id)}</div>` : ''}
+                    ${t.phase ? `<div><strong>Phase:</strong> ${escapeHtml(t.phase)}</div>` : ''}
+                    ${t.status ? `<div><strong>Status:</strong> ${escapeHtml(t.status)}</div>` : ''}
+                    ${t.enrollment ? `<div><strong>Enrollment:</strong> ${t.enrollment}</div>` : ''}
+                    ${t.start_date ? `<div><strong>Start:</strong> ${t.start_date}</div>` : ''}
+                    ${t.completion_date ? `<div><strong>Completion:</strong> ${t.completion_date}</div>` : ''}
+                </div>
+                ${t.brief_title ? `<p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f0f0;">${escapeHtml(t.brief_title)}</p>` : ''}
+            </div>
+        `;
+    }
+
+    // News details
+    if (entity.news_details) {
+        const n = entity.news_details;
+        html += `
+            <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #00796b;">
+                <h4 style="margin: 0 0 12px 0; color: #00796b;">News Article</h4>
+                ${n.published_date ? `<div style="color: #666; font-size: 0.9em; margin-bottom: 10px;">📅 ${new Date(n.published_date).toLocaleDateString()}</div>` : ''}
+                ${n.summary ? `<p style="margin-bottom: 15px;">${escapeHtml(n.summary)}</p>` : ''}
+                ${n.url ? `<a href="${escapeHtml(n.url)}" target="_blank" style="color: #667eea; font-weight: 600;">Read Full Article →</a>` : ''}
+                ${n.source ? `<div style="margin-top: 10px; color: #999; font-size: 0.85em;">Source: ${escapeHtml(n.source)}</div>` : ''}
+            </div>
+        `;
+    }
+
+    // MeSH trees for diseases
+    if (entity.mesh_trees && entity.mesh_trees.length > 0) {
+        html += `
+            <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #d32f2f;">
+                <h4 style="margin: 0 0 12px 0; color: #d32f2f;">MeSH Hierarchy</h4>
+                <div style="font-family: monospace; font-size: 0.9em; line-height: 1.8;">
+                    ${entity.mesh_trees.map(tree => `<div>${escapeHtml(tree)}</div>`).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // MeSH terms (for news or publications)
+    if (entity.mesh_terms && entity.mesh_terms.length > 0) {
+        html += `
+            <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #1976d2;">
+                <h4 style="margin: 0 0 12px 0; color: #1976d2;">MeSH Indexing (${entity.mesh_terms.length} terms)</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    ${entity.mesh_terms.slice(0, 20).map(m => `
+                        <span style="background: ${m.is_major_topic ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#f0f0f0'};
+                                     color: ${m.is_major_topic ? 'white' : '#333'};
+                                     padding: 6px 12px; border-radius: 6px; font-size: 0.9em;">
+                            ${escapeHtml(m.mesh_name)}
+                            ${m.is_major_topic ? ' ⭐' : ''}
+                        </span>
+                    `).join('')}
+                    ${entity.mesh_terms.length > 20 ? `<span style="color: #999; padding: 6px;">+${entity.mesh_terms.length - 20} more</span>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    // Publication types
+    if (entity.publication_types && entity.publication_types.length > 0) {
+        html += `
+            <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #c2185b;">
+                <h4 style="margin: 0 0 12px 0; color: #c2185b;">Publication Types</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    ${entity.publication_types.map(pt => `
+                        <span style="background: #fce4ec; color: #c2185b; padding: 6px 12px; border-radius: 6px; font-size: 0.9em;">
+                            ${escapeHtml(pt)}
+                        </span>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    return html;
 }
 
 document.getElementById('loadEntities').onclick = loadEntitiesHandler;

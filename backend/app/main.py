@@ -86,6 +86,118 @@ def entities(
     return JSONResponse(content={"count": len(items), "items": items})
 
 
+@app.get("/entity/{entity_id}")
+def get_entity_detail(entity_id: int):
+    """Get full details for a single entity including aliases and type-specific data"""
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            # Get basic entity info
+            cur.execute("""
+                SELECT id, kind, canonical_id, name, created_at, updated_at
+                FROM entity
+                WHERE id = %s
+            """, (entity_id,))
+            entity = cur.fetchone()
+
+            if not entity:
+                return JSONResponse(content={"error": "Entity not found"}, status_code=404)
+
+            result = dict(entity)
+            if result.get("created_at"):
+                result["created_at"] = result["created_at"].isoformat()
+            if result.get("updated_at"):
+                result["updated_at"] = result["updated_at"].isoformat()
+
+            # Get aliases
+            cur.execute("""
+                SELECT alias, source
+                FROM alias
+                WHERE entity_id = %s
+                ORDER BY alias
+            """, (entity_id,))
+            result["aliases"] = cur.fetchall()
+
+            # Get type-specific data based on kind
+            kind = result["kind"]
+
+            if kind == "trial":
+                cur.execute("""
+                    SELECT nct_id, phase, status, enrollment, start_date, completion_date, brief_title
+                    FROM trial
+                    WHERE entity_id = %s
+                """, (entity_id,))
+                trial_data = cur.fetchone()
+                if trial_data:
+                    result["trial_details"] = dict(trial_data)
+
+            elif kind == "news":
+                cur.execute("""
+                    SELECT url, published_date, source, summary
+                    FROM news_item
+                    WHERE entity_id = %s
+                """, (entity_id,))
+                news_data = cur.fetchone()
+                if news_data:
+                    result["news_details"] = dict(news_data)
+                    if result["news_details"].get("published_date"):
+                        result["news_details"]["published_date"] = result["news_details"]["published_date"].isoformat()
+
+                # Get MeSH terms for news
+                cur.execute("""
+                    SELECT mesh_ui, mesh_name, confidence, is_major_topic, source
+                    FROM news_mesh
+                    WHERE news_entity_id = %s
+                    ORDER BY confidence DESC, mesh_name
+                """, (entity_id,))
+                result["mesh_terms"] = cur.fetchall()
+
+            elif kind == "disease":
+                # Get MeSH tree numbers
+                mesh_ui = result.get("canonical_id", "").replace("MESH:", "")
+                if mesh_ui:
+                    cur.execute("""
+                        SELECT tree_number
+                        FROM mesh_tree
+                        WHERE ui = %s
+                        ORDER BY tree_number
+                    """, (mesh_ui,))
+                    result["mesh_trees"] = [r["tree_number"] for r in cur.fetchall()]
+
+            elif kind == "publication":
+                # Get MeSH indexing for publication
+                cur.execute("""
+                    SELECT mesh_ui, mesh_name, is_major_topic, confidence, source
+                    FROM article_mesh
+                    WHERE article_entity_id = %s
+                    ORDER BY is_major_topic DESC, confidence DESC
+                """, (entity_id,))
+                result["mesh_terms"] = cur.fetchall()
+
+                # Get publication types
+                cur.execute("""
+                    SELECT pub_type
+                    FROM publication_type
+                    WHERE article_entity_id = %s
+                    ORDER BY pub_type
+                """, (entity_id,))
+                result["publication_types"] = [r["pub_type"] for r in cur.fetchall()]
+
+            # Get relationship counts
+            cur.execute("""
+                SELECT COUNT(*) as count FROM edge WHERE src_id = %s
+            """, (entity_id,))
+            result["outgoing_count"] = cur.fetchone()["count"]
+
+            cur.execute("""
+                SELECT COUNT(*) as count FROM edge WHERE dst_id = %s
+            """, (entity_id,))
+            result["incoming_count"] = cur.fetchone()["count"]
+
+            result["total_relationships"] = result["outgoing_count"] + result["incoming_count"]
+
+    return JSONResponse(content=result)
+
+
 @app.post("/seed_edges")
 def seed_edges():
     """
@@ -158,6 +270,7 @@ def list_edges(
              d.kind as dst_kind,
              d.name as dst_name,
              e.source,
+             e.confidence,
              e.created_at
       from edge e
       join entity s on s.id = e.src_id
