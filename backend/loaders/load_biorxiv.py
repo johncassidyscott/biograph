@@ -115,7 +115,7 @@ def load_preprints_for_drugs(drug_keywords: List[str], days_back: int = 365) -> 
                         """,
                         (canonical_id, title[:500]),
                     )
-                    pub_entity_id = cur.fetchone()[0]
+                    pub_entity_id = cur.fetchone()['id']
                     inserted += 1
 
                     # Link to matching drugs

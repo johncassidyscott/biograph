@@ -168,7 +168,7 @@ def insert_discovered_researchers(researchers: Dict[str, Dict]) -> None:
                     RETURNING id
                 """, (canonical_id, canonical_name))
 
-                person_entity_id = cur.fetchone()[0]
+                person_entity_id = cur.fetchone()['id']
                 inserted += 1
 
                 # Add affiliations as aliases

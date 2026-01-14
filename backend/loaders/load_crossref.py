@@ -117,7 +117,7 @@ def load_crossref_publications(drug_queries: List[Dict[str, str]], max_per_query
                         """,
                         (canonical_id, title[:500]),
                     )
-                    pub_entity_id = cur.fetchone()[0]
+                    pub_entity_id = cur.fetchone()['id']
                     inserted += 1
 
                     # Create edge: publication --mentions--> drug

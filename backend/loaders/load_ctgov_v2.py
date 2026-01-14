@@ -72,7 +72,7 @@ def load_ctgov_v2(
                         """,
                         ("trial", trial_cid, ex.title or ex.nct_id),
                     )
-                    trial_entity_id = cur.fetchone()[0]
+                    trial_entity_id = cur.fetchone()['id']
 
                     # Upsert trial facts
                     cur.execute(

@@ -189,7 +189,7 @@ def load_pubmed_for_drugs(drug_queries: List[Dict[str, str]], max_per_drug: int 
                         """,
                         (canonical_id, title[:500]),  # Limit title length
                     )
-                    pub_entity_id = cur.fetchone()[0]
+                    pub_entity_id = cur.fetchone()['id']
                     inserted_pubs += 1
 
                     # Create edge: publication --mentions--> drug

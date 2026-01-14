@@ -106,7 +106,7 @@ def load_chembl_drugs(drug_list: List[Dict[str, str]]) -> None:
                     """,
                     (canonical_id, pref_name),
                 )
-                drug_entity_id = cur.fetchone()[0]
+                drug_entity_id = cur.fetchone()['id']
                 inserted_drugs += 1
 
                 # Add synonyms as aliases
@@ -167,7 +167,7 @@ def load_chembl_drugs(drug_list: List[Dict[str, str]]) -> None:
                         """,
                         (target_canonical_id, target_name),
                     )
-                    target_entity_id = cur.fetchone()[0]
+                    target_entity_id = cur.fetchone()['id']
                     inserted_targets += 1
 
                     # Create edge: drug --targets--> target (confidence 1.0 - canonical source)

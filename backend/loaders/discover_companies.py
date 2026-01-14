@@ -176,7 +176,7 @@ def insert_discovered_companies(companies: Dict[str, Dict]) -> None:
                     RETURNING id
                 """, (canonical_id, canonical_name))
 
-                company_entity_id = cur.fetchone()[0]
+                company_entity_id = cur.fetchone()['id']
                 inserted_companies += 1
 
                 # Link company to trials it sponsors

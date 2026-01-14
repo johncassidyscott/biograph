@@ -55,7 +55,7 @@ def load_companies(company_list: List[Dict[str, str]]) -> None:
                     """,
                     (canonical_id, name),
                 )
-                company_entity_id = cur.fetchone()[0]
+                company_entity_id = cur.fetchone()['id']
                 inserted_companies += 1
 
                 # Add aliases (common variations of company name)

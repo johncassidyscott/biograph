@@ -300,7 +300,7 @@ def load_rss_feed(
                         VALUES ('news', %s, %s)
                         RETURNING id
                     """, (canonical_id, title))
-                    news_entity_id = cur.fetchone()[0]
+                    news_entity_id = cur.fetchone()['id']
 
                     # Insert news metadata
                     cur.execute("""
@@ -383,17 +383,17 @@ def load_all_news(
     # Summary statistics
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'news'")
-            total_news = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) as count FROM entity WHERE kind = 'news'")
+            total_news = cur.fetchone()['count']
 
-            cur.execute("SELECT COUNT(*) FROM news_mesh")
-            total_mesh_tags = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) as count FROM news_mesh")
+            total_mesh_tags = cur.fetchone()['count']
 
             cur.execute("""
-                SELECT COUNT(*) FROM edge
+                SELECT COUNT(*) as count FROM edge
                 WHERE source = 'news' AND predicate = 'mentions'
             """)
-            total_mentions = cur.fetchone()[0]
+            total_mentions = cur.fetchone()['count']
 
             print(f"✓ Total news in database: {total_news}")
             print(f"✓ Total MeSH tags: {total_mesh_tags}")

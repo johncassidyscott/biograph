@@ -127,7 +127,7 @@ def load_patents(drug_list: List[Dict[str, str]]) -> None:
                         """,
                         (canonical_id, title[:500] if title else patent_num),
                     )
-                    patent_entity_id = cur.fetchone()[0]
+                    patent_entity_id = cur.fetchone()['id']
                     inserted_patents += 1
 
                     # Create edge: patent --covers--> drug

@@ -195,7 +195,7 @@ def load_opentargets_associations(disease_mappings: List[Dict[str, str]], min_sc
                         """,
                         (target_canonical_id, target_symbol),
                     )
-                    target_entity_id = cur.fetchone()[0]
+                    target_entity_id = cur.fetchone()['id']
 
                     # Create edge: target --associated_with--> disease
                     cur.execute(
@@ -234,7 +234,7 @@ def load_opentargets_associations(disease_mappings: List[Dict[str, str]], min_sc
                             """,
                             (drug_canonical_id, drug_name),
                         )
-                        drug_entity_id = cur.fetchone()[0]
+                        drug_entity_id = cur.fetchone()['id']
 
                         # Create edge: drug --treats--> disease (if phase >= 3)
                         if phase >= 3:

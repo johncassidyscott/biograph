@@ -118,7 +118,7 @@ def load_nih_grants_for_diseases(disease_queries: List[Dict[str, str]]) -> None:
                         RETURNING id
                     """, (canonical_id, title[:500]))
 
-                    grant_entity_id = cur.fetchone()[0]
+                    grant_entity_id = cur.fetchone()['id']
                     inserted_grants += 1
 
                     # Link grant to disease
