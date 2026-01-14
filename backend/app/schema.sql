@@ -1,7 +1,7 @@
 -- BioGraph minimal schema v0
 create table if not exists entity (
  id            bigserial primary key,
- kind          text not null,                 -- drug, company, target, disease, trial, publication, filing, patent
+ kind          text not null,                 -- drug, company, target, disease, trial, publication, patent, person, grant
  canonical_id  text not null,                 -- e.g., CHEMBL:CHEMBL25, NCT:NCT01234567, MESH:D012345
  name          text not null,
  created_at    timestamptz not null default now(),
