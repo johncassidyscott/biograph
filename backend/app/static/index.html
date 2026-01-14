@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="BioGraph" />
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" type="image/svg+xml" href="/static/icon.svg" />
+<script src="https://d3js.org/d3.v7.min.js"></script>
 <title>BioGraph - Life Sciences Knowledge Graph</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -564,6 +565,7 @@ pre {
         <div class="tabs">
             <button class="tab active" onclick="switchTab('entities')">🔍 Explore Entities</button>
             <button class="tab" onclick="switchTab('relationships')">🔗 Relationships</button>
+            <button class="tab" onclick="switchTab('graph')">📊 Graph View</button>
             <button class="tab" onclick="switchTab('about')">ℹ️ About</button>
         </div>
 
@@ -616,6 +618,34 @@ pre {
             </div>
             <div class="results-container">
                 <div id="edgesOut"></div>
+            </div>
+        </div>
+
+        <div id="tab-graph" class="tab-content">
+            <h2>Interactive Knowledge Graph</h2>
+            <div class="controls">
+                <select id="graphEntityType">
+                    <option value="drug">💊 Drugs</option>
+                    <option value="disease">🦠 Diseases</option>
+                    <option value="target">🎯 Targets</option>
+                    <option value="trial">🔬 Clinical Trials</option>
+                    <option value="company">🏢 Companies</option>
+                </select>
+                <input id="graphLimit" type="number" value="20" min="5" max="50" placeholder="Node limit" />
+                <button onclick="loadGraphData()">Load Graph</button>
+                <button onclick="resetGraphZoom()" style="background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);">Reset View</button>
+            </div>
+            <div style="margin: 20px 0; padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 12px; font-size: 0.9em;">
+                <strong>💡 Tip:</strong> Click nodes to see details • Drag nodes to rearrange • Scroll to zoom • Drag background to pan
+            </div>
+            <div id="graphContainer" style="width: 100%; height: 600px; background: white; border-radius: 15px; border: 2px solid rgba(102, 126, 234, 0.2); position: relative; overflow: hidden;">
+                <div id="graphCanvas"></div>
+                <div id="graphLoading" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #667eea; font-size: 1.2em;">
+                    Loading graph...
+                </div>
+            </div>
+            <div id="graphStats" style="margin-top: 15px; padding: 15px; background: rgba(118, 75, 162, 0.1); border-radius: 12px; font-size: 0.9em; text-align: center;">
+                Select options and click "Load Graph" to visualize the knowledge network
             </div>
         </div>
 
@@ -725,7 +755,14 @@ function switchTab(tab) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-    event.target.classList.add('active');
+    // Find and activate the clicked tab
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(t => {
+        if (t.onclick && t.onclick.toString().includes(`'${tab}'`)) {
+            t.classList.add('active');
+        }
+    });
+
     document.getElementById('tab-' + tab).classList.add('active');
 }
 
@@ -822,12 +859,63 @@ async function loadEdgesHandler() {
 }
 
 async function performSearch() {
-    const query = document.getElementById('heroSearch').value.trim();
+    const query = document.getElementById('heroSearch').value.trim().toLowerCase();
     if (!query) return;
 
-    // Simple search across all entity types
-    // You can enhance this with a proper search endpoint
-    alert(`Search functionality coming soon! Searching for: "${query}"`);
+    // Switch to entities tab and show loading
+    switchTab('entities');
+    const out = document.getElementById('entitiesOut');
+    out.innerHTML = '<div class="loading">Searching across all entity types</div>';
+
+    try {
+        // Search across all entity types
+        const entityTypes = ['drug', 'disease', 'target', 'trial', 'company', 'publication', 'patent', 'news'];
+        const promises = entityTypes.map(kind =>
+            fetch(`/entities?kind=${kind}&limit=100`)
+                .then(r => r.json())
+                .then(data => data.items || [])
+                .catch(() => [])
+        );
+
+        const results = await Promise.all(promises);
+        const allEntities = results.flat();
+
+        // Fuzzy search: match query against name or canonical_id
+        const matches = allEntities.filter(entity => {
+            const name = (entity.name || '').toLowerCase();
+            const id = (entity.canonical_id || '').toLowerCase();
+            return name.includes(query) || id.includes(query);
+        });
+
+        if (matches.length === 0) {
+            out.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px;">
+                    <div style="font-size: 3em; margin-bottom: 20px;">🔍</div>
+                    <h3 style="color: #667eea; margin-bottom: 10px;">No results found for "${escapeHtml(query)}"</h3>
+                    <p style="color: #999;">Try searching for drugs like "semaglutide", diseases like "obesity", or browse by category below.</p>
+                </div>
+            `;
+        } else {
+            // Sort by relevance (exact matches first, then contains)
+            matches.sort((a, b) => {
+                const aName = (a.name || '').toLowerCase();
+                const bName = (b.name || '').toLowerCase();
+                const aExact = aName === query ? 0 : 1;
+                const bExact = bName === query ? 0 : 1;
+                if (aExact !== bExact) return aExact - bExact;
+                return aName.localeCompare(bName);
+            });
+
+            out.innerHTML = `
+                <div style="margin-bottom: 20px; padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 12px;">
+                    <strong>Found ${matches.length} result${matches.length !== 1 ? 's' : ''}</strong> for "<em>${escapeHtml(query)}</em>"
+                </div>
+                ${renderEntityCards(matches)}
+            `;
+        }
+    } catch (e) {
+        out.innerHTML = `<div style="color: #d32f2f; padding: 20px; text-align: center;">Search error: ${escapeHtml(String(e))}</div>`;
+    }
 }
 
 async function showEntityDetail(entityId, entityName, entityKind) {
@@ -1015,6 +1103,214 @@ function renderEntityMetadata(entity) {
     }
 
     return html;
+}
+
+// ===== GRAPH VISUALIZATION =====
+let graphSimulation = null;
+let graphSvg = null;
+let graphG = null;
+let graphZoom = null;
+
+async function loadGraphData() {
+    const kind = document.getElementById('graphEntityType').value;
+    const limit = parseInt(document.getElementById('graphLimit').value);
+    const loading = document.getElementById('graphLoading');
+    const stats = document.getElementById('graphStats');
+
+    loading.style.display = 'block';
+    stats.textContent = 'Loading data...';
+
+    try {
+        // Fetch entities and their relationships
+        const entitiesData = await fetch(`/entities?kind=${kind}&limit=${limit}`).then(r => r.json());
+        const entities = entitiesData.items || [];
+
+        if (entities.length === 0) {
+            loading.style.display = 'none';
+            stats.innerHTML = '<span style="color: #d32f2f;">No entities found. Try loading data first or select a different type.</span>';
+            return;
+        }
+
+        // Fetch edges for these entities
+        const entityIds = entities.map(e => e.id);
+        const edgePromises = entityIds.map(id =>
+            fetch(`/edges?src_id=${id}&limit=100`).then(r => r.json()).then(d => d.items || []).catch(() => [])
+        );
+        const edgeResults = await Promise.all(edgePromises);
+        const edges = edgeResults.flat();
+
+        // Build node map (include connected entities)
+        const nodeMap = new Map();
+        entities.forEach(e => {
+            nodeMap.set(e.id, { id: e.id, name: e.name, kind: e.kind, canonical_id: e.canonical_id });
+        });
+
+        // Add destination entities from edges
+        edges.forEach(e => {
+            if (!nodeMap.has(e.dst_id)) {
+                nodeMap.set(e.dst_id, { id: e.dst_id, name: e.dst_name, kind: e.dst_kind, canonical_id: `${e.dst_kind}:${e.dst_id}` });
+            }
+        });
+
+        const nodes = Array.from(nodeMap.values());
+        const links = edges.map(e => ({
+            source: e.src_id,
+            target: e.dst_id,
+            predicate: e.predicate,
+            confidence: e.confidence || 1.0
+        }));
+
+        loading.style.display = 'none';
+        stats.innerHTML = `<strong>📊 Graph:</strong> ${nodes.length} nodes, ${links.length} relationships`;
+
+        renderGraph(nodes, links);
+    } catch (e) {
+        loading.style.display = 'none';
+        stats.innerHTML = `<span style="color: #d32f2f;">Error loading graph: ${escapeHtml(String(e))}</span>`;
+    }
+}
+
+function renderGraph(nodes, links) {
+    // Clear existing graph
+    const container = document.getElementById('graphCanvas');
+    container.innerHTML = '';
+
+    const width = document.getElementById('graphContainer').clientWidth;
+    const height = 600;
+
+    // Color scale for entity types
+    const colorScale = {
+        'drug': '#1976d2',
+        'disease': '#d32f2f',
+        'target': '#f57c00',
+        'trial': '#7b1fa2',
+        'company': '#00796b',
+        'publication': '#c2185b',
+        'patent': '#455a64',
+        'news': '#0097a7'
+    };
+
+    // Create SVG
+    graphSvg = d3.select(container)
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .style('background', '#fafafa');
+
+    // Add zoom behavior
+    graphZoom = d3.zoom()
+        .scaleExtent([0.1, 4])
+        .on('zoom', (event) => {
+            graphG.attr('transform', event.transform);
+        });
+
+    graphSvg.call(graphZoom);
+
+    // Container for zoom/pan
+    graphG = graphSvg.append('g');
+
+    // Create force simulation
+    graphSimulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+        .force('charge', d3.forceManyBody().strength(-300))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(30));
+
+    // Draw links
+    const link = graphG.append('g')
+        .selectAll('line')
+        .data(links)
+        .join('line')
+        .attr('stroke', '#999')
+        .attr('stroke-opacity', d => 0.3 + (d.confidence * 0.5))
+        .attr('stroke-width', 2);
+
+    // Draw link labels
+    const linkLabel = graphG.append('g')
+        .selectAll('text')
+        .data(links)
+        .join('text')
+        .attr('font-size', '10px')
+        .attr('fill', '#666')
+        .attr('text-anchor', 'middle')
+        .text(d => d.predicate);
+
+    // Draw nodes
+    const node = graphG.append('g')
+        .selectAll('g')
+        .data(nodes)
+        .join('g')
+        .call(d3.drag()
+            .on('start', dragStarted)
+            .on('drag', dragged)
+            .on('end', dragEnded))
+        .on('click', (event, d) => {
+            event.stopPropagation();
+            showEntityDetail(d.id, d.name, d.kind);
+            switchTab('entities');
+        });
+
+    // Node circles
+    node.append('circle')
+        .attr('r', 12)
+        .attr('fill', d => colorScale[d.kind] || '#999')
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 2)
+        .style('cursor', 'pointer')
+        .append('title')
+        .text(d => `${d.name}\n(${d.kind})\nClick for details`);
+
+    // Node labels
+    node.append('text')
+        .attr('dy', 25)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '11px')
+        .attr('fill', '#333')
+        .attr('pointer-events', 'none')
+        .text(d => {
+            const maxLen = 20;
+            return d.name.length > maxLen ? d.name.substring(0, maxLen) + '...' : d.name;
+        });
+
+    // Update positions on tick
+    graphSimulation.on('tick', () => {
+        link
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+
+        linkLabel
+            .attr('x', d => (d.source.x + d.target.x) / 2)
+            .attr('y', d => (d.source.y + d.target.y) / 2);
+
+        node.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    function dragStarted(event, d) {
+        if (!event.active) graphSimulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+    }
+
+    function dragEnded(event, d) {
+        if (!event.active) graphSimulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+}
+
+function resetGraphZoom() {
+    if (graphSvg && graphZoom) {
+        graphSvg.transition()
+            .duration(750)
+            .call(graphZoom.transform, d3.zoomIdentity);
+    }
 }
 
 document.getElementById('loadEntities').onclick = loadEntitiesHandler;
