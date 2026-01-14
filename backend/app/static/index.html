@@ -15,6 +15,40 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+:root {
+    --bg-gradient-1: #667eea;
+    --bg-gradient-2: #764ba2;
+    --bg-gradient-3: #f093fb;
+    --bg-gradient-4: #4facfe;
+    --text-primary: #333;
+    --text-secondary: #666;
+    --text-white: white;
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --card-bg: rgba(255, 255, 255, 0.95);
+    --input-bg: white;
+    --shadow: rgba(0, 0, 0, 0.1);
+    --shadow-hover: rgba(0, 0, 0, 0.15);
+    --accent-primary: #667eea;
+    --accent-secondary: #764ba2;
+}
+
+body.dark-mode {
+    --bg-gradient-1: #1a1a2e;
+    --bg-gradient-2: #16213e;
+    --bg-gradient-3: #0f3460;
+    --bg-gradient-4: #533483;
+    --text-primary: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --text-white: #f5f5f5;
+    --glass-bg: rgba(30, 30, 45, 0.95);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --card-bg: rgba(30, 30, 45, 0.95);
+    --input-bg: #2a2a3e;
+    --shadow: rgba(0, 0, 0, 0.3);
+    --shadow-hover: rgba(0, 0, 0, 0.5);
+}
+
 @keyframes gradient {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
@@ -31,14 +65,30 @@
     50% { transform: scale(1.05); }
 }
 
+@keyframes slideInRight {
+    from { transform: translateX(400px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+
+@keyframes glow {
+    0%, 100% { filter: drop-shadow(0 0 5px var(--accent-primary)); }
+    50% { filter: drop-shadow(0 0 20px var(--accent-primary)); }
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+    background: linear-gradient(-45deg, var(--bg-gradient-1), var(--bg-gradient-2), var(--bg-gradient-3), var(--bg-gradient-4));
     background-size: 400% 400%;
     animation: gradient 15s ease infinite;
     min-height: 100vh;
     padding: 20px;
-    color: #333;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
 }
 
 .container {
@@ -48,19 +98,97 @@ body {
 
 /* Glassmorphism */
 .glass {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--glass-bg);
     backdrop-filter: blur(10px);
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px var(--shadow);
+    transition: all 0.3s ease;
+}
+
+/* Dark mode toggle */
+.dark-mode-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: var(--glass-bg);
+    border: 2px solid var(--glass-border);
+    border-radius: 50px;
+    padding: 12px 24px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px var(--shadow);
+    transition: all 0.3s ease;
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.dark-mode-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px var(--shadow-hover);
+}
+
+.dark-mode-toggle .icon {
+    font-size: 1.3em;
+    animation: glow 2s ease-in-out infinite;
+}
+
+/* Toast notifications */
+.toast-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 16px 24px;
+    box-shadow: 0 8px 32px var(--shadow-hover);
+    border-left: 4px solid var(--accent-primary);
+    animation: slideInRight 0.3s ease;
+    min-width: 300px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.toast.success { border-left-color: #10b981; }
+.toast.error { border-left-color: #ef4444; }
+.toast.info { border-left-color: #3b82f6; }
+.toast .icon { font-size: 1.5em; }
+
+/* Keyboard shortcut hint */
+.kbd {
+    display: inline-block;
+    padding: 3px 8px;
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.85em;
+    box-shadow: 0 2px 4px var(--shadow);
 }
 
 header {
     text-align: center;
-    color: white;
+    color: var(--text-white);
     margin-bottom: 40px;
     padding: 60px 20px;
     animation: fadeIn 0.8s ease;
+    position: relative;
 }
 
 .header-icon {
@@ -100,15 +228,20 @@ header p {
     font-size: 18px;
     border: none;
     border-radius: 50px;
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    box-shadow: 0 10px 40px var(--shadow);
     transition: all 0.3s;
 }
 
 .search-input:focus {
     outline: none;
-    box-shadow: 0 10px 60px rgba(0,0,0,0.25);
+    box-shadow: 0 10px 60px var(--shadow-hover);
     transform: translateY(-2px);
+}
+
+.search-input::placeholder {
+    color: var(--text-secondary);
 }
 
 .search-btn {
@@ -140,20 +273,21 @@ header p {
 }
 
 .stat-card {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--glass-bg);
     backdrop-filter: blur(10px);
     border-radius: 20px;
     padding: 30px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px var(--shadow);
+    border: 1px solid var(--glass-border);
     text-align: center;
     transition: all 0.3s;
     cursor: pointer;
 }
 
 .stat-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 15px 40px var(--shadow-hover);
+    border-color: var(--accent-primary);
 }
 
 .stat-card .icon {
@@ -180,14 +314,38 @@ header p {
 }
 
 .main-card {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--glass-bg);
     backdrop-filter: blur(10px);
     border-radius: 20px;
     padding: 40px;
     margin-bottom: 40px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px var(--shadow);
+    border: 1px solid var(--glass-border);
     animation: fadeIn 1.2s ease 0.4s both;
+}
+
+/* Export button */
+.export-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.export-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.export-btn:active::after {
+    width: 300px;
+    height: 300px;
 }
 
 .tabs {
@@ -232,7 +390,7 @@ header p {
 }
 
 h2 {
-    color: #333;
+    color: var(--text-primary);
     margin-bottom: 25px;
     font-size: 2em;
     font-weight: 700;
@@ -282,13 +440,19 @@ select, input, button {
 }
 
 select, input {
-    background: white;
+    background: var(--input-bg);
+    color: var(--text-primary);
 }
 
 select:focus, input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--accent-primary);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+select option {
+    background: var(--input-bg);
+    color: var(--text-primary);
 }
 
 button {
@@ -510,6 +674,15 @@ pre {
 </style>
 </head>
 <body>
+<!-- Dark Mode Toggle -->
+<div class="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle dark mode (Ctrl+D)">
+    <span class="icon" id="darkModeIcon">🌙</span>
+    <span id="darkModeText">Dark</span>
+</div>
+
+<!-- Toast Notifications Container -->
+<div class="toast-container" id="toastContainer"></div>
+
 <div class="container">
     <header>
         <div class="header-icon">
@@ -594,6 +767,8 @@ pre {
                 </select>
                 <input id="limit" type="number" value="30" min="1" max="100" placeholder="Limit" />
                 <button id="loadEntities">Load Results</button>
+                <button class="export-btn" onclick="exportData('entities', 'json')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);" title="Export as JSON (Ctrl+E)">📥 JSON</button>
+                <button class="export-btn" onclick="exportData('entities', 'csv')" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);" title="Export as CSV">📊 CSV</button>
             </div>
             <div class="results-container">
                 <div id="entitiesOut"></div>
@@ -615,6 +790,8 @@ pre {
                 <input id="pred" placeholder="Filter by relationship type (optional)" style="flex: 1;" />
                 <input id="edgeLimit" type="number" value="50" min="1" max="200" />
                 <button id="loadEdges">Load Relationships</button>
+                <button class="export-btn" onclick="exportData('edges', 'json')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">📥 JSON</button>
+                <button class="export-btn" onclick="exportData('edges', 'csv')" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">📊 CSV</button>
             </div>
             <div class="results-container">
                 <div id="edgesOut"></div>
@@ -710,13 +887,238 @@ pre {
         <p>
             <a href="/docs">API Documentation</a> •
             <a href="/health">Health Check</a> •
-            <a href="https://github.com/anthropics/claude-code">Built with Claude Code</a>
+            <a href="https://github.com/anthropics/claude-code">Built with Claude Code</a> •
+            <a href="javascript:void(0)" onclick="toggleKeyboardHelp()">⌨️ Keyboard Shortcuts</a>
         </p>
+    </div>
+</div>
+
+<!-- Keyboard Shortcuts Help Overlay -->
+<div id="keyboardHelpOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; backdrop-filter: blur(10px);" onclick="toggleKeyboardHelp()">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--glass-bg); padding: 40px; border-radius: 20px; max-width: 600px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.5);" onclick="event.stopPropagation()">
+        <h2 style="margin-bottom: 30px; text-align: center; color: var(--text-primary);">⌨️ Keyboard Shortcuts</h2>
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px 30px; color: var(--text-primary);">
+            <span class="kbd">Ctrl + D</span> <span>Toggle dark/light mode</span>
+            <span class="kbd">Ctrl + E</span> <span>Export entities as JSON</span>
+            <span class="kbd">Ctrl + F</span> <span>Focus search bar</span>
+            <span class="kbd">Ctrl + 1</span> <span>Switch to Entities tab</span>
+            <span class="kbd">Ctrl + 2</span> <span>Switch to Relationships tab</span>
+            <span class="kbd">Ctrl + 3</span> <span>Switch to Graph View tab</span>
+            <span class="kbd">Ctrl + 4</span> <span>Switch to About tab</span>
+            <span class="kbd">Esc</span> <span>Clear search / Close overlays</span>
+            <span class="kbd">?</span> <span>Show this help</span>
+        </div>
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="toggleKeyboardHelp()" style="padding: 12px 30px; font-size: 1em;">Got it!</button>
+        </div>
     </div>
 </div>
 
 <script>
 let currentView = 'cards'; // or 'json'
+let lastLoadedEntities = [];
+let lastLoadedEdges = [];
+
+// ===== DARK MODE =====
+function toggleDarkMode() {
+    const body = document.body;
+    const isDark = body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+
+    // Update toggle button
+    const icon = document.getElementById('darkModeIcon');
+    const text = document.getElementById('darkModeText');
+    if (isDark) {
+        icon.textContent = '☀️';
+        text.textContent = 'Light';
+        showToast('Dark mode enabled', 'success');
+    } else {
+        icon.textContent = '🌙';
+        text.textContent = 'Dark';
+        showToast('Light mode enabled', 'success');
+    }
+}
+
+// Load dark mode preference
+window.addEventListener('DOMContentLoaded', () => {
+    const darkMode = localStorage.getItem('darkMode');
+    if (darkMode === 'enabled') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('darkModeIcon').textContent = '☀️';
+        document.getElementById('darkModeText').textContent = 'Light';
+    }
+});
+
+// ===== TOAST NOTIFICATIONS =====
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    const icons = {
+        success: '✓',
+        error: '✗',
+        info: 'ℹ',
+        warning: '⚠'
+    };
+
+    toast.innerHTML = `
+        <span class="icon">${icons[type] || icons.info}</span>
+        <span>${message}</span>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(400px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ===== EXPORT FUNCTIONALITY =====
+async function exportData(dataType, format) {
+    try {
+        let data, filename;
+
+        if (dataType === 'entities') {
+            if (lastLoadedEntities.length === 0) {
+                showToast('No entities to export. Load data first.', 'warning');
+                return;
+            }
+            data = lastLoadedEntities;
+            filename = `biograph-entities-${Date.now()}.${format}`;
+        } else if (dataType === 'edges') {
+            if (lastLoadedEdges.length === 0) {
+                showToast('No relationships to export. Load data first.', 'warning');
+                return;
+            }
+            data = lastLoadedEdges;
+            filename = `biograph-relationships-${Date.now()}.${format}`;
+        }
+
+        let content, mimeType;
+
+        if (format === 'json') {
+            content = JSON.stringify(data, null, 2);
+            mimeType = 'application/json';
+        } else if (format === 'csv') {
+            content = convertToCSV(data);
+            mimeType = 'text/csv';
+        }
+
+        // Create download
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        showToast(`Exported ${data.length} records as ${format.toUpperCase()}`, 'success');
+    } catch (e) {
+        showToast(`Export failed: ${e.message}`, 'error');
+    }
+}
+
+function convertToCSV(data) {
+    if (data.length === 0) return '';
+
+    // Get headers from first object
+    const headers = Object.keys(data[0]);
+    const csvRows = [];
+
+    // Add header row
+    csvRows.push(headers.join(','));
+
+    // Add data rows
+    for (const row of data) {
+        const values = headers.map(header => {
+            const value = row[header];
+            // Handle commas and quotes in values
+            const escaped = String(value).replace(/"/g, '""');
+            return `"${escaped}"`;
+        });
+        csvRows.push(values.join(','));
+    }
+
+    return csvRows.join('\n');
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+function toggleKeyboardHelp() {
+    const overlay = document.getElementById('keyboardHelpOverlay');
+    if (overlay.style.display === 'none') {
+        overlay.style.display = 'block';
+        overlay.style.animation = 'fadeIn 0.3s ease';
+    } else {
+        overlay.style.display = 'none';
+    }
+}
+
+document.addEventListener('keydown', (e) => {
+    // Don't trigger shortcuts if typing in an input field
+    const isInputField = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT';
+
+    // ? : Show keyboard shortcuts help
+    if (e.key === '?' && !isInputField) {
+        e.preventDefault();
+        toggleKeyboardHelp();
+        return;
+    }
+
+    // Escape: Clear search or close overlays
+    if (e.key === 'Escape') {
+        const helpOverlay = document.getElementById('keyboardHelpOverlay');
+        if (helpOverlay.style.display !== 'none') {
+            toggleKeyboardHelp();
+        } else {
+            document.getElementById('heroSearch').value = '';
+        }
+        return;
+    }
+
+    // Don't trigger Ctrl shortcuts if typing in input
+    if (isInputField && e.key !== 'Enter') return;
+
+    // Ctrl+D: Toggle dark mode
+    if (e.ctrlKey && e.key === 'd') {
+        e.preventDefault();
+        toggleDarkMode();
+    }
+
+    // Ctrl+E: Export entities as JSON
+    if (e.ctrlKey && e.key === 'e') {
+        e.preventDefault();
+        exportData('entities', 'json');
+    }
+
+    // Ctrl+F: Focus search
+    if (e.ctrlKey && e.key === 'f') {
+        e.preventDefault();
+        document.getElementById('heroSearch').focus();
+    }
+
+    // Ctrl+1-4: Switch tabs
+    if (e.ctrlKey && e.key >= '1' && e.key <= '4') {
+        e.preventDefault();
+        const tabs = ['entities', 'relationships', 'graph', 'about'];
+        switchTab(tabs[parseInt(e.key) - 1]);
+    }
+});
+
+// Show keyboard shortcut hint on first load
+window.addEventListener('load', () => {
+    const hasSeenHint = localStorage.getItem('keyboardHintSeen');
+    if (!hasSeenHint) {
+        setTimeout(() => {
+            showToast('💡 Tip: Press Ctrl+D for dark mode, Ctrl+E to export', 'info');
+            localStorage.setItem('keyboardHintSeen', 'true');
+        }, 2000);
+    }
+});
 
 async function getJSON(path) {
     const r = await fetch(path);
@@ -829,9 +1231,12 @@ async function loadEntitiesHandler() {
 
     try {
         const data = await getJSON(`/entities?kind=${encodeURIComponent(kind)}&limit=${encodeURIComponent(limit)}`);
+        lastLoadedEntities = data.items;
         out.innerHTML = renderEntityCards(data.items);
+        showToast(`Loaded ${data.items.length} ${kind} entities`, 'success');
     } catch (e) {
         out.innerHTML = `<div style="color: #d32f2f; padding: 20px; text-align: center;">Error: ${escapeHtml(String(e))}</div>`;
+        showToast('Failed to load entities', 'error');
     }
 }
 
@@ -852,9 +1257,12 @@ async function loadEdgesHandler() {
         if (pred) qs.set('predicate', pred);
         qs.set('limit', limit);
         const data = await getJSON(`/edges?${qs.toString()}`);
+        lastLoadedEdges = data.items;
         out.innerHTML = renderEdgeCards(data.items);
+        showToast(`Loaded ${data.items.length} relationships`, 'success');
     } catch (e) {
         out.innerHTML = `<div style="color: #d32f2f; padding: 20px; text-align: center;">Error: ${escapeHtml(String(e))}</div>`;
+        showToast('Failed to load relationships', 'error');
     }
 }
 
@@ -1195,7 +1603,38 @@ function renderGraph(nodes, links) {
         .append('svg')
         .attr('width', width)
         .attr('height', height)
-        .style('background', '#fafafa');
+        .style('background', 'linear-gradient(135deg, #fafafa 0%, #f0f0f5 100%)');
+
+    // Add glow filter
+    const defs = graphSvg.append('defs');
+    const filter = defs.append('filter')
+        .attr('id', 'glow')
+        .attr('x', '-50%')
+        .attr('y', '-50%')
+        .attr('width', '200%')
+        .attr('height', '200%');
+
+    filter.append('feGaussianBlur')
+        .attr('stdDeviation', '4')
+        .attr('result', 'coloredBlur');
+
+    const feMerge = filter.append('feMerge');
+    feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+    feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+    // Add arrow marker for directed edges
+    defs.append('marker')
+        .attr('id', 'arrowhead')
+        .attr('viewBox', '-0 -5 10 10')
+        .attr('refX', 25)
+        .attr('refY', 0)
+        .attr('orient', 'auto')
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .append('path')
+        .attr('d', 'M 0,-5 L 10,0 L 0,5')
+        .attr('fill', '#999')
+        .attr('opacity', 0.6);
 
     // Add zoom behavior
     graphZoom = d3.zoom()
@@ -1223,7 +1662,21 @@ function renderGraph(nodes, links) {
         .join('line')
         .attr('stroke', '#999')
         .attr('stroke-opacity', d => 0.3 + (d.confidence * 0.5))
-        .attr('stroke-width', 2);
+        .attr('stroke-width', d => 1 + (d.confidence * 2))
+        .attr('marker-end', 'url(#arrowhead)')
+        .style('transition', 'all 0.3s ease')
+        .on('mouseover', function(event, d) {
+            d3.select(this)
+                .attr('stroke', '#667eea')
+                .attr('stroke-width', 4)
+                .attr('stroke-opacity', 0.8);
+        })
+        .on('mouseout', function(event, d) {
+            d3.select(this)
+                .attr('stroke', '#999')
+                .attr('stroke-width', 1 + (d.confidence * 2))
+                .attr('stroke-opacity', 0.3 + (d.confidence * 0.5));
+        });
 
     // Draw link labels
     const linkLabel = graphG.append('g')
@@ -1257,6 +1710,20 @@ function renderGraph(nodes, links) {
         .attr('stroke', '#fff')
         .attr('stroke-width', 2)
         .style('cursor', 'pointer')
+        .style('filter', 'url(#glow)')
+        .style('transition', 'all 0.3s ease')
+        .on('mouseover', function(event, d) {
+            d3.select(this)
+                .attr('r', 16)
+                .attr('stroke-width', 3)
+                .style('filter', 'url(#glow) brightness(1.2)');
+        })
+        .on('mouseout', function(event, d) {
+            d3.select(this)
+                .attr('r', 12)
+                .attr('stroke-width', 2)
+                .style('filter', 'url(#glow)');
+        })
         .append('title')
         .text(d => `${d.name}\n(${d.kind})\nClick for details`);
 
