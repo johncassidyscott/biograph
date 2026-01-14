@@ -26,7 +26,7 @@ except ImportError:
     print("⚠️  feedparser not installed. Run: pip install feedparser")
     feedparser = None
 
-from backend.app.db import get_conn
+from app.db import get_conn
 from backend.entity_resolver import get_resolver
 
 

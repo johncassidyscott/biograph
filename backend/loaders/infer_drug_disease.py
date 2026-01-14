@@ -8,7 +8,7 @@ Logic:
 
 This enriches the graph by connecting drugs to diseases based on real clinical evidence.
 """
-from backend.app.db import get_conn
+from app.db import get_conn
 
 def infer_drug_disease_relationships(min_phase: int = 2) -> None:
     """

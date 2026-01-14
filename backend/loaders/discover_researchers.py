@@ -9,7 +9,7 @@ Discovers researchers from:
 Creates person entities and links them to their work.
 """
 from typing import Set, Dict, Tuple
-from backend.app.db import get_conn
+from app.db import get_conn
 import json
 import urllib.request
 import time

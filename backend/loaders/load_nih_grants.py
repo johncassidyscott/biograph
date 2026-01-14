@@ -11,7 +11,7 @@ import json
 import urllib.request
 import time
 from typing import List, Dict
-from backend.app.db import get_conn
+from app.db import get_conn
 
 REPORTER_BASE = "https://api.reporter.nih.gov/v2/projects/search"
 

@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 from typing import List, Tuple, Dict
 from difflib import SequenceMatcher
-from backend.app.db import get_conn
+from app.db import get_conn
 
 
 def normalize_name(name: str) -> str:

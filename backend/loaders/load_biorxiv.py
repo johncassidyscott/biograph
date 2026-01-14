@@ -13,7 +13,7 @@ import urllib.request
 import urllib.parse
 from typing import List, Dict
 from datetime import datetime, timedelta
-from backend.app.db import get_conn
+from app.db import get_conn
 
 BIORXIV_BASE = "https://api.biorxiv.org/details/biorxiv"
 MEDRXIV_BASE = "https://api.medrxiv.org/details/medrxiv"

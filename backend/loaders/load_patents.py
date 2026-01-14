@@ -12,7 +12,7 @@ import time
 import urllib.request
 import urllib.parse
 from typing import List, Dict, Optional
-from backend.app.db import get_conn
+from app.db import get_conn
 
 PATENTSVIEW_BASE = "https://search.patentsview.org/api/v1/patent"
 

@@ -13,7 +13,7 @@ import time
 import urllib.request
 import urllib.parse
 from typing import Any, Dict, List, Optional, Set
-from backend.app.db import get_conn
+from app.db import get_conn
 
 CHEMBL_BASE = "https://www.ebi.ac.uk/chembl/api/data"
 

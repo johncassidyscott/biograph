@@ -11,7 +11,7 @@ import urllib.request
 import urllib.parse
 from typing import List, Dict, Optional
 from datetime import datetime
-from backend.app.db import get_conn
+from app.db import get_conn
 
 OPENFDA_BASE = "https://api.fda.gov/drug/drugsfda.json"
 

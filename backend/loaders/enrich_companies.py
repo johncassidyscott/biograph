@@ -12,7 +12,7 @@ Uses SEC EDGAR company list (free, official government source).
 import json
 import urllib.request
 from typing import Dict, Optional
-from backend.app.db import get_conn
+from app.db import get_conn
 
 SEC_COMPANY_TICKERS = "https://www.sec.gov/files/company_tickers.json"
 

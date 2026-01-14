@@ -10,7 +10,7 @@ For POC, we'll focus on companies relevant to our disease areas:
 CIK numbers from SEC EDGAR: https://www.sec.gov/cgi-bin/browse-edgar
 """
 from typing import List, Dict
-from backend.app.db import get_conn
+from app.db import get_conn
 
 def load_companies(company_list: List[Dict[str, str]]) -> None:
     """

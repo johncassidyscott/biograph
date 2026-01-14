@@ -10,7 +10,7 @@ import time
 import urllib.request
 import urllib.parse
 from typing import List, Dict, Optional
-from backend.app.db import get_conn
+from app.db import get_conn
 
 CROSSREF_BASE = "https://api.crossref.org/works"
 

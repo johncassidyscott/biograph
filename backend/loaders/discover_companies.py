@@ -11,7 +11,7 @@ Discovers companies from:
 This runs AFTER all data is loaded and discovers companies organically.
 """
 from typing import Set, Dict, Tuple
-from backend.app.db import get_conn
+from app.db import get_conn
 
 def discover_companies_from_trials() -> Set[Tuple[str, str]]:
     """

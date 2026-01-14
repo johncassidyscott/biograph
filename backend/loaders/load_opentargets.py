@@ -9,7 +9,7 @@ API docs: https://platform-docs.opentargets.org/data-access/graphql-api
 import json
 import urllib.request
 from typing import Any, Dict, List, Optional
-from backend.app.db import get_conn
+from app.db import get_conn
 
 OPENTARGETS_API = "https://api.platform.opentargets.org/api/v4/graphql"
 

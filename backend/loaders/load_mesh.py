@@ -10,7 +10,7 @@ import sys
 import urllib.request
 import xml.etree.ElementTree as ET
 from typing import Iterable, List, Tuple
-from backend.app.db import get_conn
+from app.db import get_conn
 
 MESH_BASE = "https://nlmpubs.nlm.nih.gov/projects/mesh/MESH_FILES/xmlmesh"
 

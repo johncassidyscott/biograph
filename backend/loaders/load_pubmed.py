@@ -14,7 +14,7 @@ import urllib.request
 import urllib.parse
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Optional
-from backend.app.db import get_conn
+from app.db import get_conn
 
 ESEARCH_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 EFETCH_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"

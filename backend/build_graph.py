@@ -15,8 +15,8 @@ def check_database():
     try:
         with get_conn() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT COUNT(*) FROM entity")
-                count = cur.fetchone()[0]
+                cur.execute("SELECT COUNT(*) as count FROM entity")
+                count = cur.fetchone()['count']
                 print(f"✓ Database connected. Current entities: {count:,}")
                 return True
     except Exception as e:
@@ -34,7 +34,7 @@ def load_mesh_data():
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'disease'")
-            count = cur.fetchone()[0]
+            count = cur.fetchone()['count']
             print(f"✓ Diseases loaded: {count:,}")
 
 def load_chembl_data():
@@ -67,10 +67,10 @@ def load_chembl_data():
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'drug'")
-            drug_count = cur.fetchone()[0]
-            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'target'")
-            target_count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) as count FROM entity WHERE kind = 'drug'")
+            drug_count = cur.fetchone()['count']
+            cur.execute("SELECT COUNT(*) as count FROM entity WHERE kind = 'target'")
+            target_count = cur.fetchone()['count']
             print(f"✓ Drugs: {drug_count:,}, Targets: {target_count:,}")
 
 def load_ctgov_data():
@@ -99,8 +99,8 @@ def load_ctgov_data():
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM trial")
-            count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) as count FROM trial")
+            count = cur.fetchone()['count']
             print(f"✓ Trials loaded: {count:,}")
 
 def load_companies_data():
@@ -113,8 +113,8 @@ def load_companies_data():
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'company'")
-            count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) as count FROM entity WHERE kind = 'company'")
+            count = cur.fetchone()['count']
             print(f"✓ Total companies: {count:,}")
 
 def load_opentargets_data():
@@ -135,8 +135,8 @@ def load_opentargets_data():
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM edge WHERE source = 'opentargets'")
-            count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) as count FROM edge WHERE source = 'opentargets'")
+            count = cur.fetchone()['count']
             print(f"✓ OpenTargets associations: {count:,}")
 
 def infer_drug_disease_data():
@@ -166,8 +166,8 @@ def load_pubmed_data():
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'publication'")
-            count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) as count FROM entity WHERE kind = 'publication'")
+            count = cur.fetchone()['count']
             print(f"✓ Publications: {count:,}")
 
 def load_fda_data():
@@ -190,8 +190,8 @@ def load_fda_data():
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM drug_approval")
-            count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) as count FROM drug_approval")
+            count = cur.fetchone()['count']
             print(f"✓ FDA approvals: {count:,}")
 
 def load_patents_data():
@@ -213,8 +213,8 @@ def load_patents_data():
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'patent'")
-            count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) as count FROM entity WHERE kind = 'patent'")
+            count = cur.fetchone()['count']
             print(f"✓ Patents: {count:,}")
 
 def load_supplementary_publications():
@@ -241,8 +241,8 @@ def load_supplementary_publications():
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'publication'")
-            count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) as count FROM entity WHERE kind = 'publication'")
+            count = cur.fetchone()['count']
             print(f"✓ Total publications: {count:,}")
 
 def load_news_feeds():
@@ -259,10 +259,10 @@ def load_news_feeds():
 
         with get_conn() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'news'")
-                news_count = cur.fetchone()[0]
-                cur.execute("SELECT COUNT(*) FROM news_mesh")
-                mesh_count = cur.fetchone()[0]
+                cur.execute("SELECT COUNT(*) as count FROM entity WHERE kind = 'news'")
+                news_count = cur.fetchone()['count']
+                cur.execute("SELECT COUNT(*) as count FROM news_mesh")
+                mesh_count = cur.fetchone()['count']
                 print(f"✓ News articles: {news_count:,}")
                 print(f"✓ MeSH terms assigned: {mesh_count:,}")
     except ImportError as e:
@@ -291,8 +291,8 @@ def show_summary():
                 total_entities += row[1]
 
             # Edge counts
-            cur.execute("SELECT COUNT(*) FROM edge")
-            edge_count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) as count FROM edge")
+            edge_count = cur.fetchone()['count']
             print(f"\nTotal edges: {edge_count:,}")
 
             # Edge breakdown by source

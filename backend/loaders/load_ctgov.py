@@ -21,7 +21,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from backend.app.db import get_conn
+from app.db import get_conn
 from backend.entity_resolver import get_resolver
 
 
