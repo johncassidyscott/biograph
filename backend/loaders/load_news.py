@@ -27,7 +27,7 @@ except ImportError:
     feedparser = None
 
 from app.db import get_conn
-from backend.entity_resolver import get_resolver
+from entity_resolver import get_resolver
 
 
 # RSS Feed sources

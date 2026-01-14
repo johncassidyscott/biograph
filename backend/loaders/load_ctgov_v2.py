@@ -17,7 +17,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from backend.entity_resolver import get_resolver, ResolvedEntity
+from entity_resolver import get_resolver, ResolvedEntity
 from backend.loaders.load_ctgov import fetch_pages, extract  # Reuse fetch logic
 from app.db import get_conn
 

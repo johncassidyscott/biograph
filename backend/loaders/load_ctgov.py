@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from app.db import get_conn
-from backend.entity_resolver import get_resolver
+from entity_resolver import get_resolver
 
 
 BASE = "https://clinicaltrials.gov/api/v2/studies"
