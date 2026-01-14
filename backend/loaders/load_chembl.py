@@ -170,12 +170,13 @@ def load_chembl_drugs(drug_list: List[Dict[str, str]]) -> None:
                     target_entity_id = cur.fetchone()[0]
                     inserted_targets += 1
 
-                    # Create edge: drug --targets--> target
+                    # Create edge: drug --targets--> target (confidence 1.0 - canonical source)
                     cur.execute(
                         """
-                        INSERT INTO edge (src_id, predicate, dst_id, source)
-                        VALUES (%s, 'targets', %s, 'chembl')
-                        ON CONFLICT (src_id, predicate, dst_id) DO NOTHING
+                        INSERT INTO edge (src_id, predicate, dst_id, source, confidence)
+                        VALUES (%s, 'targets', %s, 'chembl', 1.0)
+                        ON CONFLICT (src_id, predicate, dst_id) DO UPDATE
+                          SET confidence = GREATEST(edge.confidence, EXCLUDED.confidence)
                         """,
                         (drug_entity_id, target_entity_id),
                     )

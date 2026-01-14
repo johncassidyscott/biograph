@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-BioGraph POC Builder
+BioGraph POC Builder with Entity Resolution
+
 Loads all data sources in the correct order to build the knowledge graph.
+Uses EntityResolver to prevent duplicate entities and track confidence scores.
 """
 import datetime as dt
 import sys
@@ -102,28 +104,18 @@ def load_ctgov_data():
             print(f"✓ Trials loaded: {count:,}")
 
 def load_companies_data():
-    """Step 4: Load pharmaceutical companies"""
+    """Step 4: Companies discovered from trials (via EntityResolver)"""
     print("\n" + "="*60)
-    print("STEP 4: Loading Pharmaceutical Companies")
+    print("STEP 4: Companies Auto-Discovered from Trials")
     print("="*60)
-    from loaders.load_companies import load_companies
-
-    poc_companies = [
-        {"name": "Eli Lilly and Company", "cik": "0000059478", "develops": ["CHEMBL4297448"], "aliases": ["Eli Lilly", "Lilly"]},
-        {"name": "Novo Nordisk A/S", "cik": "0000353278", "develops": ["CHEMBL2109743", "CHEMBL1201580", "CHEMBL2107834"], "aliases": ["Novo Nordisk", "Novo"]},
-        {"name": "Eisai Co., Ltd.", "cik": "0001062822", "develops": ["CHEMBL2366541"], "aliases": ["Eisai"]},
-        {"name": "Biogen Inc.", "cik": "0000875045", "develops": ["CHEMBL4297072"], "aliases": ["Biogen", "Biogen Idec"]},
-        {"name": "Amgen Inc.", "cik": "0000318154", "develops": ["CHEMBL4297299"], "aliases": ["Amgen"]},
-        {"name": "Mirati Therapeutics, Inc.", "cik": "0001440718", "develops": ["CHEMBL4594668"], "aliases": ["Mirati", "Mirati Therapeutics"]},
-    ]
-
-    load_companies(poc_companies)
+    print("✓ Companies are discovered automatically when loading trials")
+    print("✓ EntityResolver handles deduplication and CIK matching")
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'company' AND canonical_id LIKE 'CIK:%'")
+            cur.execute("SELECT COUNT(*) FROM entity WHERE kind = 'company'")
             count = cur.fetchone()[0]
-            print(f"✓ Companies with CIK: {count:,}")
+            print(f"✓ Total companies: {count:,}")
 
 def load_opentargets_data():
     """Step 5: Load OpenTargets drug-target-disease associations"""

@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from backend.app.db import get_conn
+from backend.entity_resolver import get_resolver
 
 
 BASE = "https://clinicaltrials.gov/api/v2/studies"
@@ -188,27 +189,17 @@ def load_ctgov(
     max_last_update: Optional[dt.date] = None,
 ) -> None:
     """
-    Load studies matching condition queries; optionally filter by last update posted date.
+    Load studies matching condition queries with entity resolution.
+
+    Uses EntityResolver to prevent duplicate entities and track confidence scores.
     """
-    # Build a disease alias map from promoted disease entities + aliases for fast condition linking.
-    # Assumes you have alias table populated for diseases (from MeSH promotion).
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                select e.id, e.canonical_id, e.name, a.alias
-                from entity e
-                left join alias a on a.entity_id = e.id
-                where e.kind = 'disease'
-            """)
-            disease_alias_to_entity: Dict[str, int] = {}
-            for eid, cid, name, alias in cur.fetchall():
-                if name:
-                    disease_alias_to_entity[str(name).lower()] = int(eid)
-                if alias:
-                    disease_alias_to_entity[str(alias).lower()] = int(eid)
+    # Initialize entity resolver
+    resolver = get_resolver()
+    resolver.load_lookup_tables()
 
     inserted_trials = 0
     inserted_edges = 0
+    low_confidence_matches = 0
 
     with get_conn() as conn:
         with conn.cursor() as cur:
@@ -227,7 +218,7 @@ def load_ctgov(
 
                     trial_cid = f"NCT:{ex.nct_id}"
 
-                    # Upsert trial entity node
+                    # Upsert trial entity node (NCT IDs are always canonical)
                     cur.execute(
                         """
                         insert into entity (kind, canonical_id, name)
@@ -278,78 +269,70 @@ def load_ctgov(
                     )
                     inserted_trials += 1
 
-                    # Sponsor -> company entity + edge
+                    # Resolve sponsor company
                     if ex.sponsor_name:
-                        company_cid = f"CTG_SPONSOR:{ex.sponsor_name.strip().lower().replace(' ', '_')}"
+                        company = resolver.resolve_company(ex.sponsor_name)
+
+                        # Create edge with confidence score
                         cur.execute(
                             """
-                            insert into entity (kind, canonical_id, name)
-                            values ('company', %s, %s)
-                            on conflict (kind, canonical_id) do update set
-                              name = excluded.name,
-                              updated_at = now()
-                            returning id
+                            insert into edge (src_id, predicate, dst_id, source, confidence)
+                            values (%s, 'sponsored_by', %s, 'ctgov', %s)
+                            on conflict (src_id, predicate, dst_id) do update
+                              set confidence = GREATEST(edge.confidence, EXCLUDED.confidence)
                             """,
-                            (company_cid, ex.sponsor_name),
-                        )
-                        company_id = cur.fetchone()[0]
-                        cur.execute(
-                            """
-                            insert into edge (src_id, predicate, dst_id, source)
-                            values (%s, 'sponsored_by', %s, 'ctgov')
-                            on conflict (src_id, predicate, dst_id) do nothing
-                            """,
-                            (trial_entity_id, company_id),
+                            (trial_entity_id, company.entity_id, company.confidence),
                         )
                         inserted_edges += cur.rowcount
 
-                    # Conditions -> disease edges (best-effort string match against disease names/aliases)
+                        if company.confidence < 0.85:
+                            low_confidence_matches += 1
+
+                    # Resolve condition diseases
                     for cond in ex.conditions:
-                        eid = disease_alias_to_entity.get(cond.lower())
-                        if not eid:
-                            continue
+                        disease = resolver.resolve_disease(cond)
+
                         cur.execute(
                             """
-                            insert into edge (src_id, predicate, dst_id, source)
-                            values (%s, 'for_condition', %s, 'ctgov')
-                            on conflict (src_id, predicate, dst_id) do nothing
+                            insert into edge (src_id, predicate, dst_id, source, confidence)
+                            values (%s, 'for_condition', %s, 'ctgov', %s)
+                            on conflict (src_id, predicate, dst_id) do update
+                              set confidence = GREATEST(edge.confidence, EXCLUDED.confidence)
                             """,
-                            (trial_entity_id, eid),
+                            (trial_entity_id, disease.entity_id, disease.confidence),
                         )
                         inserted_edges += cur.rowcount
 
-                    # Interventions -> drug entities + edges (DRUG/BIOLOGICAL only)
-                    for itype, name in ex.interventions:
-                        itype_u = itype.upper()
-                        if itype_u not in ("DRUG", "BIOLOGICAL"):
+                        if disease.confidence < 0.85:
+                            low_confidence_matches += 1
+
+                    # Resolve drug interventions
+                    for itype, drug_name in ex.interventions:
+                        if itype.upper() not in ("DRUG", "BIOLOGICAL"):
                             continue
-                        drug_cid = f"CTG_INT:{name.strip().lower().replace(' ', '_')}"
+
+                        drug = resolver.resolve_drug(drug_name)
+
                         cur.execute(
                             """
-                            insert into entity (kind, canonical_id, name)
-                            values ('drug', %s, %s)
-                            on conflict (kind, canonical_id) do update set
-                              name = excluded.name,
-                              updated_at = now()
-                            returning id
+                            insert into edge (src_id, predicate, dst_id, source, confidence)
+                            values (%s, 'studies', %s, 'ctgov', %s)
+                            on conflict (src_id, predicate, dst_id) do update
+                              set confidence = GREATEST(edge.confidence, EXCLUDED.confidence)
                             """,
-                            (drug_cid, name),
-                        )
-                        drug_id = cur.fetchone()[0]
-                        cur.execute(
-                            """
-                            insert into edge (src_id, predicate, dst_id, source)
-                            values (%s, 'studies', %s, 'ctgov')
-                            on conflict (src_id, predicate, dst_id) do nothing
-                            """,
-                            (trial_entity_id, drug_id),
+                            (trial_entity_id, drug.entity_id, drug.confidence),
                         )
                         inserted_edges += cur.rowcount
+
+                        if drug.confidence < 0.85:
+                            low_confidence_matches += 1
 
                 conn.commit()
 
-    print(f"Trials upserted: {inserted_trials}")
-    print(f"Edges inserted: {inserted_edges}")
+    print(f"✓ Trials inserted: {inserted_trials}")
+    print(f"✓ Edges inserted: {inserted_edges}")
+    if low_confidence_matches > 0:
+        print(f"⚠️  Low confidence matches (<0.85): {low_confidence_matches}")
 
 
 if __name__ == "__main__":
