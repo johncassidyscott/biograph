@@ -3,170 +3,202 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>BioGraph - Life Sciences Intelligence Platform</title>
+<title>BioGraph - Life Sciences Knowledge Graph</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+@keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
     min-height: 100vh;
     padding: 20px;
+    color: #333;
 }
 
 .container {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
+}
+
+/* Glassmorphism */
+.glass {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 header {
     text-align: center;
     color: white;
     margin-bottom: 40px;
-    padding: 40px 20px;
+    padding: 60px 20px;
+    animation: fadeIn 0.8s ease;
+}
+
+.header-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
 }
 
 header h1 {
-    font-size: 3em;
-    font-weight: 700;
-    margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    font-size: 4em;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
 }
 
 header p {
-    font-size: 1.2em;
-    opacity: 0.9;
+    font-size: 1.4em;
+    opacity: 0.95;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+}
+
+.search-hero {
+    max-width: 800px;
+    margin: 30px auto 0;
+    position: relative;
+}
+
+.search-input {
+    width: 100%;
+    padding: 20px 60px 20px 24px;
+    font-size: 18px;
+    border: none;
+    border-radius: 50px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    transition: all 0.3s;
+}
+
+.search-input:focus {
+    outline: none;
+    box-shadow: 0 10px 60px rgba(0,0,0,0.25);
+    transform: translateY(-2px);
+}
+
+.search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 50px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.search-btn:hover {
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    transform: translateY(-50%) scale(1.05);
 }
 
 .stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+    animation: fadeIn 1s ease 0.2s both;
 }
 
 .stat-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     text-align: center;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.stat-card .icon {
+    font-size: 2.5em;
+    margin-bottom: 10px;
 }
 
 .stat-card .number {
-    font-size: 2.5em;
-    font-weight: 700;
-    color: #667eea;
-    margin-bottom: 5px;
+    font-size: 3em;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
 }
 
 .stat-card .label {
-    font-size: 0.9em;
+    font-size: 0.95em;
     color: #666;
     text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.card {
-    background: white;
-    border-radius: 12px;
-    padding: 30px;
-    margin-bottom: 30px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.card h2 {
-    color: #333;
-    margin-bottom: 20px;
-    font-size: 1.8em;
-    border-bottom: 3px solid #667eea;
-    padding-bottom: 10px;
-}
-
-.controls {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-}
-
-select, input, button {
-    padding: 12px 20px;
-    font-size: 14px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    transition: all 0.3s;
-}
-
-select:focus, input:focus {
-    outline: none;
-    border-color: #667eea;
-}
-
-button {
-    background: #667eea;
-    color: white;
-    border: none;
-    cursor: pointer;
+    letter-spacing: 1.5px;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
-button:hover {
-    background: #5568d3;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-button:active {
-    transform: translateY(0);
-}
-
-pre {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    overflow: auto;
-    max-height: 500px;
-    font-size: 13px;
-    line-height: 1.6;
-    border: 1px solid #e0e0e0;
-}
-
-.loading {
-    color: #667eea;
-    font-style: italic;
-}
-
-.footer {
-    text-align: center;
-    color: white;
-    opacity: 0.8;
-    padding: 30px;
-    font-size: 0.9em;
-}
-
-.footer a {
-    color: white;
-    text-decoration: underline;
+.main-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 40px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    animation: fadeIn 1.2s ease 0.4s both;
 }
 
 .tabs {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #e0e0e0;
+    gap: 15px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+    flex-wrap: wrap;
 }
 
 .tab {
-    padding: 12px 24px;
+    padding: 15px 30px;
     background: transparent;
     border: none;
     border-bottom: 3px solid transparent;
     color: #666;
     cursor: pointer;
     font-weight: 600;
+    font-size: 16px;
     transition: all 0.3s;
 }
 
@@ -179,6 +211,7 @@ pre {
 .tab.active {
     color: #667eea;
     border-bottom-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
 }
 
 .tab-content {
@@ -187,159 +220,453 @@ pre {
 
 .tab-content.active {
     display: block;
+    animation: fadeIn 0.5s ease;
 }
 
-.example-queries {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 15px;
+h2 {
+    color: #333;
+    margin-bottom: 25px;
+    font-size: 2em;
+    font-weight: 700;
 }
 
-.example-btn {
-    padding: 8px 16px;
-    background: #f0f0f0;
-    border: 1px solid #d0d0d0;
-    font-size: 13px;
-    text-transform: none;
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 25px;
 }
 
-.example-btn:hover {
-    background: #667eea;
+.quick-btn {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #667eea;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+}
+
+.quick-btn:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.controls {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+}
+
+select, input, button {
+    padding: 14px 22px;
+    font-size: 15px;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 12px;
+    transition: all 0.3s;
+    font-family: inherit;
+}
+
+select, input {
+    background: white;
+}
+
+select:focus, input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.results-container {
+    min-height: 200px;
+}
+
+.entity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.entity-card {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border: 2px solid rgba(102, 126, 234, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    transition: all 0.3s;
+}
+
+.entity-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+    border-color: #667eea;
+}
+
+.entity-card .entity-name {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.entity-card .entity-id {
+    font-size: 0.85em;
+    color: #667eea;
+    font-family: monospace;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.entity-card .entity-kind {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kind-drug { background: #e8f4fd; color: #1976d2; }
+.kind-disease { background: #ffe8e8; color: #d32f2f; }
+.kind-target { background: #fff3e0; color: #f57c00; }
+.kind-trial { background: #f3e5f5; color: #7b1fa2; }
+.kind-company { background: #e0f2f1; color: #00796b; }
+.kind-publication { background: #fce4ec; color: #c2185b; }
+
+.edge-card {
+    background: white;
+    border-left: 4px solid #667eea;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: all 0.3s;
+}
+
+.edge-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transform: translateX(5px);
+}
+
+.edge-card .edge-predicate {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    margin: 10px 0;
+}
+
+.edge-card .entity-label {
+    font-weight: 600;
+    color: #333;
+}
+
+pre {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 12px;
+    overflow: auto;
+    max-height: 600px;
+    font-size: 13px;
+    line-height: 1.7;
+    border: 1px solid #e0e0e0;
+}
+
+.loading {
+    text-align: center;
+    color: #667eea;
+    font-style: italic;
+    padding: 60px 20px;
+    font-size: 1.1em;
+}
+
+.loading::after {
+    content: '...';
+    animation: pulse 1.5s infinite;
+}
+
+.footer {
+    text-align: center;
+    color: white;
+    padding: 40px 20px;
+    font-size: 0.95em;
+}
+
+.footer a {
+    color: white;
+    text-decoration: none;
+    border-bottom: 2px solid rgba(255,255,255,0.3);
+    transition: all 0.3s;
+}
+
+.footer a:hover {
+    border-bottom-color: white;
+}
+
+.about-section {
+    line-height: 1.9;
+    color: #555;
+}
+
+.about-section h3 {
+    margin: 30px 0 15px;
+    color: #667eea;
+    font-size: 1.4em;
+}
+
+.about-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.about-section li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.about-section li:last-child {
+    border-bottom: none;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+    margin: 30px 0;
+}
+
+.feature-box {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    padding: 25px;
+    border-radius: 15px;
+    border: 2px solid rgba(102, 126, 234, 0.1);
+}
+
+.feature-box h4 {
+    color: #667eea;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+@media (max-width: 768px) {
+    header h1 { font-size: 2.5em; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .entity-grid { grid-template-columns: 1fr; }
+    .quick-actions { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
 </head>
 <body>
 <div class="container">
     <header>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px;">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="24" cy="12" r="4" fill="white" opacity="0.9"/>
-                <circle cx="12" cy="24" r="4" fill="white" opacity="0.9"/>
-                <circle cx="36" cy="24" r="4" fill="white" opacity="0.9"/>
-                <circle cx="24" cy="36" r="4" fill="white" opacity="0.9"/>
-                <line x1="24" y1="12" x2="12" y2="24" stroke="white" stroke-width="2" opacity="0.6"/>
-                <line x1="24" y1="12" x2="36" y2="24" stroke="white" stroke-width="2" opacity="0.6"/>
-                <line x1="12" y1="24" x2="24" y2="36" stroke="white" stroke-width="2" opacity="0.6"/>
-                <line x1="36" y1="24" x2="24" y2="36" stroke="white" stroke-width="2" opacity="0.6"/>
+        <div class="header-icon">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                <circle cx="32" cy="16" r="6" fill="white" opacity="0.95"/>
+                <circle cx="16" cy="32" r="6" fill="white" opacity="0.95"/>
+                <circle cx="48" cy="32" r="6" fill="white" opacity="0.95"/>
+                <circle cx="32" cy="48" r="6" fill="white" opacity="0.95"/>
+                <line x1="32" y1="16" x2="16" y2="32" stroke="white" stroke-width="3" opacity="0.7"/>
+                <line x1="32" y1="16" x2="48" y2="32" stroke="white" stroke-width="3" opacity="0.7"/>
+                <line x1="16" y1="32" x2="32" y2="48" stroke="white" stroke-width="3" opacity="0.7"/>
+                <line x1="48" y1="32" x2="32" y2="48" stroke="white" stroke-width="3" opacity="0.7"/>
             </svg>
             <h1>BioGraph</h1>
         </div>
-        <p>Life Sciences Intelligence Platform</p>
+        <p>Life Sciences Knowledge Graph • Obesity • Alzheimer's • KRAS Oncology</p>
+
+        <div class="search-hero">
+            <input type="text" class="search-input" placeholder="Search drugs, diseases, trials, targets..." id="heroSearch">
+            <button class="search-btn" onclick="performSearch()">Search</button>
+        </div>
     </header>
 
     <div class="stats" id="stats">
-        <div class="stat-card">
+        <div class="stat-card" onclick="quickLoad('disease', 50)">
+            <div class="icon">🦠</div>
             <div class="number" id="stat-diseases">-</div>
             <div class="label">Diseases</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="quickLoad('drug', 50)">
+            <div class="icon">💊</div>
             <div class="number" id="stat-drugs">-</div>
             <div class="label">Drugs</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="quickLoad('trial', 50)">
+            <div class="icon">🔬</div>
             <div class="number" id="stat-trials">-</div>
-            <div class="label">Trials</div>
+            <div class="label">Clinical Trials</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="quickLoad('publication', 50)">
+            <div class="icon">📄</div>
             <div class="number" id="stat-publications">-</div>
             <div class="label">Publications</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="switchTab('relationships')">
+            <div class="icon">🔗</div>
             <div class="number" id="stat-edges">-</div>
             <div class="label">Relationships</div>
         </div>
     </div>
 
-    <div class="card">
+    <div class="main-card">
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('entities')">Explore Entities</button>
-            <button class="tab" onclick="switchTab('relationships')">Relationships</button>
-            <button class="tab" onclick="switchTab('about')">About</button>
+            <button class="tab active" onclick="switchTab('entities')">🔍 Explore Entities</button>
+            <button class="tab" onclick="switchTab('relationships')">🔗 Relationships</button>
+            <button class="tab" onclick="switchTab('about')">ℹ️ About</button>
         </div>
 
         <div id="tab-entities" class="tab-content active">
-            <h2>Explore Entities</h2>
-            <div class="example-queries">
-                <button class="example-btn" onclick="quickLoad('drug', 20)">Top Drugs</button>
-                <button class="example-btn" onclick="quickLoad('disease', 20)">Diseases</button>
-                <button class="example-btn" onclick="quickLoad('target', 20)">Targets</button>
-                <button class="example-btn" onclick="quickLoad('trial', 20)">Clinical Trials</button>
-                <button class="example-btn" onclick="quickLoad('company', 20)">Companies</button>
-                <button class="example-btn" onclick="quickLoad('publication', 20)">Publications</button>
-                <button class="example-btn" onclick="quickLoad('patent', 20)">Patents</button>
+            <h2>Explore the Knowledge Graph</h2>
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="quickLoad('drug', 30)">💊 Drugs</button>
+                <button class="quick-btn" onclick="quickLoad('disease', 30)">🦠 Diseases</button>
+                <button class="quick-btn" onclick="quickLoad('target', 30)">🎯 Targets</button>
+                <button class="quick-btn" onclick="quickLoad('trial', 30)">🔬 Trials</button>
+                <button class="quick-btn" onclick="quickLoad('company', 30)">🏢 Companies</button>
+                <button class="quick-btn" onclick="quickLoad('publication', 30)">📄 Publications</button>
+                <button class="quick-btn" onclick="quickLoad('patent', 20)">📋 Patents</button>
+                <button class="quick-btn" onclick="quickLoad('news', 20)">📰 News</button>
             </div>
             <div class="controls">
                 <select id="kind">
-                    <option value="drug">Drugs</option>
-                    <option value="disease">Diseases</option>
-                    <option value="target">Targets</option>
-                    <option value="trial">Clinical Trials</option>
-                    <option value="company">Companies</option>
-                    <option value="publication">Publications</option>
-                    <option value="patent">Patents</option>
+                    <option value="drug">💊 Drugs</option>
+                    <option value="disease">🦠 Diseases</option>
+                    <option value="target">🎯 Targets</option>
+                    <option value="trial">🔬 Clinical Trials</option>
+                    <option value="company">🏢 Companies</option>
+                    <option value="publication">📄 Publications</option>
+                    <option value="patent">📋 Patents</option>
+                    <option value="news">📰 News</option>
                 </select>
-                <input id="limit" type="number" value="20" min="1" max="100" placeholder="Limit" />
-                <button id="loadEntities">Load</button>
+                <input id="limit" type="number" value="30" min="1" max="100" placeholder="Limit" />
+                <button id="loadEntities">Load Results</button>
             </div>
-            <pre id="entitiesOut">Click a button above to explore the knowledge graph.</pre>
+            <div class="results-container">
+                <div id="entitiesOut"></div>
+            </div>
         </div>
 
         <div id="tab-relationships" class="tab-content">
-            <h2>Relationships</h2>
-            <div class="example-queries">
-                <button class="example-btn" onclick="loadEdges('targets')">Drug → Target</button>
-                <button class="example-btn" onclick="loadEdges('treats')">Drug → Disease</button>
-                <button class="example-btn" onclick="loadEdges('for_condition')">Trial → Disease</button>
-                <button class="example-btn" onclick="loadEdges('develops')">Company → Drug</button>
-                <button class="example-btn" onclick="loadEdges('mentions')">Publication → Drug</button>
-                <button class="example-btn" onclick="loadEdges('associated_with')">Target → Disease</button>
-                <button class="example-btn" onclick="loadEdges('covers')">Patent → Drug</button>
-                <button class="example-btn" onclick="loadEdges('filed')">Company → Patent</button>
+            <h2>Explore Relationships</h2>
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="loadEdges('targets')">🎯 Drug → Target</button>
+                <button class="quick-btn" onclick="loadEdges('treats')">💊 Drug → Disease</button>
+                <button class="quick-btn" onclick="loadEdges('for_condition')">🔬 Trial → Disease</button>
+                <button class="quick-btn" onclick="loadEdges('develops')">🏢 Company → Drug</button>
+                <button class="quick-btn" onclick="loadEdges('mentions')">📄 Publication → Drug</button>
+                <button class="quick-btn" onclick="loadEdges('associated_with')">🎯 Target → Disease</button>
+                <button class="quick-btn" onclick="loadEdges('sponsored_by')">🔬 Trial → Company</button>
             </div>
             <div class="controls">
-                <input id="pred" placeholder="Predicate (optional)" />
+                <input id="pred" placeholder="Filter by relationship type (optional)" style="flex: 1;" />
                 <input id="edgeLimit" type="number" value="50" min="1" max="200" />
-                <button id="loadEdges">Load</button>
+                <button id="loadEdges">Load Relationships</button>
             </div>
-            <pre id="edgesOut">Click a button above to explore relationships.</pre>
+            <div class="results-container">
+                <div id="edgesOut"></div>
+            </div>
         </div>
 
         <div id="tab-about" class="tab-content">
-            <h2>About BioGraph</h2>
-            <p style="line-height: 1.8; color: #555; margin-bottom: 20px;">
-                BioGraph is a life sciences knowledge graph that connects drugs, diseases, targets,
-                clinical trials, and companies. It integrates data from authoritative sources including
-                MeSH, ChEMBL, ClinicalTrials.gov, and OpenTargets.
-            </p>
-            <h3 style="margin: 20px 0 10px; color: #667eea;">POC Coverage</h3>
-            <ul style="line-height: 2; color: #555; margin-left: 20px;">
-                <li><strong>Disease Areas:</strong> Obesity/Metabolic, Alzheimer's Disease, KRAS Oncology</li>
-                <li><strong>Time Window:</strong> January 2024 - January 2025</li>
-                <li><strong>Data Sources:</strong> MeSH, ChEMBL, ClinicalTrials.gov, OpenTargets</li>
-            </ul>
-            <h3 style="margin: 20px 0 10px; color: #667eea;">Entity Types</h3>
-            <ul style="line-height: 2; color: #555; margin-left: 20px;">
-                <li><strong>Drugs:</strong> Small molecules and biologics with ChEMBL IDs</li>
-                <li><strong>Targets:</strong> Protein targets with UniProt IDs</li>
-                <li><strong>Diseases:</strong> Conditions from MeSH ontology</li>
-                <li><strong>Trials:</strong> Clinical studies from ClinicalTrials.gov</li>
-                <li><strong>Companies:</strong> Pharmaceutical sponsors</li>
-            </ul>
-            <p style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; color: #555;">
-                <strong>API Documentation:</strong> Visit <a href="/docs" style="color: #667eea;">/docs</a> for interactive API documentation.
-            </p>
+            <div class="about-section">
+                <h2>About BioGraph</h2>
+                <p>
+                    BioGraph is a comprehensive life sciences knowledge graph that integrates data from authoritative public sources
+                    to connect drugs, diseases, targets, clinical trials, publications, and companies. Built with modern entity resolution
+                    and comprehensive MeSH indexing for PubMed-style semantic search.
+                </p>
+
+                <div class="feature-grid">
+                    <div class="feature-box">
+                        <h4>🎯 Entity Resolution</h4>
+                        <p>Automatic deduplication during ingestion using canonical IDs from ChEMBL, MeSH, and CIK.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>🏷️ MeSH Indexing</h4>
+                        <p>Comprehensive MeSH term assignment across all categories for semantic search.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>📊 Confidence Scores</h4>
+                        <p>All relationships tracked with confidence scores (0.0-1.0) for data quality.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>🔄 Real-time Updates</h4>
+                        <p>Discovery-driven architecture with entities emerging from authoritative data sources.</p>
+                    </div>
+                </div>
+
+                <h3>Disease Areas (POC)</h3>
+                <ul>
+                    <li><strong>💊 Obesity & Metabolic Disorders:</strong> GLP-1 agonists, GIPR agonists, weight loss therapeutics</li>
+                    <li><strong>🧠 Alzheimer's Disease:</strong> Anti-amyloid antibodies, cholinesterase inhibitors, cognitive enhancers</li>
+                    <li><strong>🧬 KRAS Oncology:</strong> KRAS inhibitors, targeted cancer therapies</li>
+                </ul>
+
+                <h3>Data Sources</h3>
+                <ul>
+                    <li><strong>MeSH (2026):</strong> ~30K disease descriptors with hierarchical ontology</li>
+                    <li><strong>ChEMBL:</strong> Drug molecules, targets, and mechanisms of action</li>
+                    <li><strong>ClinicalTrials.gov:</strong> Clinical studies with entity resolution</li>
+                    <li><strong>OpenTargets:</strong> Drug-target-disease associations with evidence scores</li>
+                    <li><strong>PubMed:</strong> Scientific publications with official NLM MeSH indexing</li>
+                    <li><strong>FDA:</strong> Drug approvals and regulatory information</li>
+                    <li><strong>USPTO:</strong> Patent data linked to drugs and companies</li>
+                    <li><strong>News Feeds:</strong> FDA, Fierce Pharma, BioPharma Dive with automated MeSH indexing</li>
+                </ul>
+
+                <h3>API Access</h3>
+                <p style="margin-top: 20px; padding: 25px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 15px; border: 2px solid rgba(102, 126, 234, 0.2);">
+                    <strong>Interactive API Documentation:</strong> Visit <a href="/docs" style="color: #667eea; font-weight: 600;">/docs</a>
+                    for full API documentation with live testing. Access entities, relationships, and search endpoints programmatically.
+                </p>
+            </div>
         </div>
     </div>
 
     <div class="footer">
-        <p>BioGraph POC • Built with Claude Code</p>
-        <p><a href="/docs">API Docs</a> • <a href="/health">Health Check</a></p>
+        <p style="font-size: 1.1em; font-weight: 600; margin-bottom: 10px;">BioGraph Knowledge Graph</p>
+        <p>
+            <a href="/docs">API Documentation</a> •
+            <a href="/health">Health Check</a> •
+            <a href="https://github.com/anthropics/claude-code">Built with Claude Code</a>
+        </p>
     </div>
 </div>
 
 <script>
+let currentView = 'cards'; // or 'json'
+
 async function getJSON(path) {
     const r = await fetch(path);
     if (!r.ok) throw new Error(await r.text());
@@ -348,19 +675,26 @@ async function getJSON(path) {
 
 async function loadStats() {
     try {
-        const [diseases, drugs, trials, publications, edges] = await Promise.all([
-            getJSON('/entities?kind=disease&limit=1'),
-            getJSON('/entities?kind=drug&limit=1'),
-            getJSON('/entities?kind=trial&limit=1'),
-            getJSON('/entities?kind=publication&limit=1'),
-            getJSON('/edges?limit=1')
-        ]);
+        const kinds = ['disease', 'drug', 'trial', 'publication'];
+        const promises = kinds.map(k =>
+            fetch(`/entities?kind=${k}&limit=1`)
+                .then(r => r.json())
+                .then(data => data.count || 0)
+                .catch(() => 0)
+        );
 
-        document.getElementById('stat-diseases').textContent = diseases.count || 0;
-        document.getElementById('stat-drugs').textContent = drugs.count || 0;
-        document.getElementById('stat-trials').textContent = trials.count || 0;
-        document.getElementById('stat-publications').textContent = publications.count || 0;
-        document.getElementById('stat-edges').textContent = edges.count || 0;
+        const edgesPromise = fetch('/edges?limit=1')
+            .then(r => r.json())
+            .then(data => data.count || 0)
+            .catch(() => 0);
+
+        const [diseases, drugs, trials, publications, edges] = await Promise.all([...promises, edgesPromise]);
+
+        document.getElementById('stat-diseases').textContent = diseases.toLocaleString();
+        document.getElementById('stat-drugs').textContent = drugs.toLocaleString();
+        document.getElementById('stat-trials').textContent = trials.toLocaleString();
+        document.getElementById('stat-publications').textContent = publications.toLocaleString();
+        document.getElementById('stat-edges').textContent = edges.toLocaleString();
     } catch (e) {
         console.error('Failed to load stats:', e);
     }
@@ -377,21 +711,65 @@ function switchTab(tab) {
 async function quickLoad(kind, limit) {
     document.getElementById('kind').value = kind;
     document.getElementById('limit').value = limit;
+    switchTab('entities');
     await loadEntitiesHandler();
+}
+
+function renderEntityCards(items) {
+    if (!items || items.length === 0) {
+        return '<p style="text-align: center; color: #999; padding: 40px;">No results found</p>';
+    }
+
+    return '<div class="entity-grid">' + items.map(item => `
+        <div class="entity-card">
+            <div class="entity-name">${escapeHtml(item.name || 'Unnamed')}</div>
+            <div class="entity-id">${escapeHtml(item.canonical_id || item.id)}</div>
+            <span class="entity-kind kind-${item.kind}">${item.kind}</span>
+        </div>
+    `).join('') + '</div>';
+}
+
+function renderEdgeCards(items) {
+    if (!items || items.length === 0) {
+        return '<p style="text-align: center; color: #999; padding: 40px;">No relationships found</p>';
+    }
+
+    return items.map(item => `
+        <div class="edge-card">
+            <div>
+                <span class="entity-label">${escapeHtml(item.src_name)}</span>
+                <span style="color: #999; font-size: 0.9em;"> (${item.src_kind})</span>
+            </div>
+            <div class="edge-predicate">${escapeHtml(item.predicate)}</div>
+            <div>
+                <span class="entity-label">${escapeHtml(item.dst_name)}</span>
+                <span style="color: #999; font-size: 0.9em;"> (${item.dst_kind})</span>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.85em; color: #999;">
+                Source: ${item.source} ${item.confidence ? `• Confidence: ${(item.confidence * 100).toFixed(0)}%` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 async function loadEntitiesHandler() {
     const kind = document.getElementById('kind').value;
     const limit = document.getElementById('limit').value;
     const out = document.getElementById('entitiesOut');
-    out.textContent = 'Loading...';
-    out.className = 'loading';
+
+    out.innerHTML = '<div class="loading">Loading entities</div>';
+
     try {
         const data = await getJSON(`/entities?kind=${encodeURIComponent(kind)}&limit=${encodeURIComponent(limit)}`);
-        out.className = '';
-        out.textContent = JSON.stringify(data, null, 2);
+        out.innerHTML = renderEntityCards(data.items);
     } catch (e) {
-        out.textContent = 'Error: ' + String(e);
+        out.innerHTML = `<div style="color: #d32f2f; padding: 20px; text-align: center;">Error: ${escapeHtml(String(e))}</div>`;
     }
 }
 
@@ -404,25 +782,40 @@ async function loadEdgesHandler() {
     const pred = document.getElementById('pred').value.trim();
     const limit = document.getElementById('edgeLimit').value;
     const out = document.getElementById('edgesOut');
-    out.textContent = 'Loading...';
-    out.className = 'loading';
+
+    out.innerHTML = '<div class="loading">Loading relationships</div>';
+
     try {
         const qs = new URLSearchParams();
         if (pred) qs.set('predicate', pred);
         qs.set('limit', limit);
         const data = await getJSON(`/edges?${qs.toString()}`);
-        out.className = '';
-        out.textContent = JSON.stringify(data, null, 2);
+        out.innerHTML = renderEdgeCards(data.items);
     } catch (e) {
-        out.textContent = 'Error: ' + String(e);
+        out.innerHTML = `<div style="color: #d32f2f; padding: 20px; text-align: center;">Error: ${escapeHtml(String(e))}</div>`;
     }
+}
+
+async function performSearch() {
+    const query = document.getElementById('heroSearch').value.trim();
+    if (!query) return;
+
+    // Simple search across all entity types
+    // You can enhance this with a proper search endpoint
+    alert(`Search functionality coming soon! Searching for: "${query}"`);
 }
 
 document.getElementById('loadEntities').onclick = loadEntitiesHandler;
 document.getElementById('loadEdges').onclick = loadEdgesHandler;
+document.getElementById('heroSearch').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') performSearch();
+});
 
 // Load stats on page load
 loadStats();
+
+// Initial load
+loadEntitiesHandler();
 </script>
 </body>
 </html>
