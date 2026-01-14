@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="theme-color" content="#6366f1" />
+<meta name="description" content="Interactive knowledge graph for drugs, diseases, clinical trials, and biomedical entities" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="BioGraph" />
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="icon" type="image/svg+xml" href="/static/icon.svg" />
 <title>BioGraph - Life Sciences Knowledge Graph</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1015,6 +1022,19 @@ document.getElementById('loadEdges').onclick = loadEdgesHandler;
 document.getElementById('heroSearch').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') performSearch();
 });
+
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/service-worker.js')
+            .then(registration => {
+                console.log('[PWA] Service Worker registered:', registration.scope);
+            })
+            .catch(error => {
+                console.log('[PWA] Service Worker registration failed:', error);
+            });
+    });
+}
 
 // Load stats on page load
 loadStats();
