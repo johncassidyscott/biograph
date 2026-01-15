@@ -4,3 +4,18 @@ psycopg==3.2.1
 python-dotenv==1.0.1
 feedparser==6.0.11
 python-dateutil==2.8.2
+
+# Vector embeddings for semantic entity resolution
+sentence-transformers==3.3.1  # BioBERT, PubMedBERT, SapBERT models
+torch==2.5.1  # PyTorch for running transformer models
+numpy==2.2.1  # Array operations for embeddings
+pgvector==0.3.6  # PostgreSQL vector type support
+
+# Knowledge base integration
+SPARQLWrapper==2.0.0  # Wikidata SPARQL queries
+requests==2.32.3  # HTTP client for UMLS, ChEMBL APIs
+requests-cache==1.2.1  # Cache API responses to avoid rate limits
+
+# Entity resolution utilities
+Levenshtein==0.26.1  # Fast string distance calculations (backup for vectors)
+scikit-learn==1.6.1  # ML utilities, cosine similarity
