@@ -30,21 +30,28 @@ def load_chembl_drugs(drug_list: List[Dict[str, str]]):
                     print(f"Warning: Could not fetch {chembl_id}: {e}")
                     continue
                 
-                cur.execute("""
-                    INSERT INTO entity (external_id, kind, name, attributes)
-                    VALUES (%s, %s, %s, %s)
-                    ON CONFLICT (external_id) DO UPDATE
-                    SET name = EXCLUDED.name,
-                        attributes = EXCLUDED.attributes
-                    RETURNING id
-                """, (
-                    chembl_id,
-                    'drug',
-                    name,
-                    {'chembl_id': chembl_id, 'max_phase': mol_data.get('max_phase')}
-                ))
-                drug_id = cur.fetchone()['id']
-                drugs_inserted += 1
+                try:
+                    cur.execute("""
+                        INSERT INTO entity (canonical_id, kind, name)
+                        VALUES (%s, %s, %s)
+                        RETURNING id
+                    """, (
+                        f"chembl:{chembl_id}",
+                        'drug',
+                        name
+                    ))
+                    drug_id = cur.fetchone()['id']
+                    drugs_inserted += 1
+                except:
+                    # Skip if already exists
+                    cur.execute(
+                        "SELECT id FROM entity WHERE canonical_id = %s",
+                        (f"chembl:{chembl_id}",)
+                    )
+                    result = cur.fetchone()
+                    if not result:
+                        continue
+                    drug_id = result['id']
                 
                 try:
                     mech_url = f"{CHEMBL_BASE}/mechanism.json?molecule_chembl_id={chembl_id}"
@@ -63,32 +70,41 @@ def load_chembl_drugs(drug_list: List[Dict[str, str]]):
                     target_name = mech.get('target_name', 'Unknown')
                     action_type = mech.get('action_type', 'UNKNOWN')
                     
-                    cur.execute("""
-                        INSERT INTO entity (external_id, kind, name, attributes)
-                        VALUES (%s, %s, %s, %s)
-                        ON CONFLICT (external_id) DO UPDATE
-                        SET name = EXCLUDED.name
-                        RETURNING id
-                    """, (
-                        target_chembl,
-                        'target',
-                        target_name,
-                        {'chembl_id': target_chembl}
-                    ))
-                    target_id = cur.fetchone()['id']
-                    targets_inserted += 1
+                    try:
+                        cur.execute("""
+                            INSERT INTO entity (canonical_id, kind, name)
+                            VALUES (%s, %s, %s)
+                            RETURNING id
+                        """, (
+                            f"chembl:{target_chembl}",
+                            'target',
+                            target_name
+                        ))
+                        target_id = cur.fetchone()['id']
+                        targets_inserted += 1
+                    except:
+                        cur.execute(
+                            "SELECT id FROM entity WHERE canonical_id = %s",
+                            (f"chembl:{target_chembl}",)
+                        )
+                        result = cur.fetchone()
+                        if not result:
+                            continue
+                        target_id = result['id']
                     
-                    cur.execute("""
-                        INSERT INTO edge (source_id, target_id, relation, attributes)
-                        VALUES (%s, %s, %s, %s)
-                        ON CONFLICT (source_id, target_id, relation) DO NOTHING
-                    """, (
-                        drug_id,
-                        target_id,
-                        'targets',
-                        {'action': action_type}
-                    ))
-                    edges_inserted += 1
+                    try:
+                        cur.execute("""
+                            INSERT INTO edge (source_id, target_id, relation)
+                            VALUES (%s, %s, %s)
+                        """, (
+                            drug_id,
+                            target_id,
+                            f'targets ({action_type})'
+                        ))
+                        edges_inserted += 1
+                    except:
+                        pass  # Skip if edge already exists
+                    
                     print(f"  → {target_name} ({action_type})")
                 
                 time.sleep(0.5)

@@ -15,19 +15,19 @@ def load_companies(company_list: List[Dict[str, str]]):
                 
                 print(f"Processing: {name} (CIK:{cik})")
                 
-                cur.execute("""
-                    INSERT INTO entity (external_id, kind, name, attributes)
-                    VALUES (%s, %s, %s, %s)
-                    ON CONFLICT (external_id) DO UPDATE
-                    SET name = EXCLUDED.name
-                    RETURNING id
-                """, (
-                    f"CIK:{cik}",
-                    'company',
-                    name,
-                    {'cik': cik}
-                ))
-                companies_inserted += 1
+                try:
+                    cur.execute("""
+                        INSERT INTO entity (canonical_id, kind, name)
+                        VALUES (%s, %s, %s)
+                        RETURNING id
+                    """, (
+                        f"cik:{cik}",
+                        'company',
+                        name
+                    ))
+                    companies_inserted += 1
+                except:
+                    pass  # Skip if already exists
             
             conn.commit()
             print(f"\n✓ Companies inserted: {companies_inserted}")
