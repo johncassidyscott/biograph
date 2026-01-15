@@ -91,9 +91,9 @@ def get_entity_detail(entity_id: int):
     """Get full details for a single entity including aliases and type-specific data"""
     with get_conn() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
-            # Get basic entity info
+            # Get basic entity info (including description and metadata)
             cur.execute("""
-                SELECT id, kind, canonical_id, name, created_at, updated_at
+                SELECT id, kind, canonical_id, name, description, metadata, created_at, updated_at
                 FROM entity
                 WHERE id = %s
             """, (entity_id,))
@@ -108,6 +108,11 @@ def get_entity_detail(entity_id: int):
             if result.get("updated_at"):
                 result["updated_at"] = result["updated_at"].isoformat()
 
+            # Extract resolution confidence from metadata
+            if result.get("metadata") and isinstance(result["metadata"], dict):
+                if "resolution_confidence" in result["metadata"]:
+                    result["resolution_confidence"] = result["metadata"]["resolution_confidence"]
+
             # Get aliases
             cur.execute("""
                 SELECT alias, source
@@ -116,6 +121,28 @@ def get_entity_detail(entity_id: int):
                 ORDER BY alias
             """, (entity_id,))
             result["aliases"] = cur.fetchall()
+
+            # Get external identifiers
+            cur.execute("""
+                SELECT identifier_type, identifier, source, verified_at
+                FROM entity_identifier
+                WHERE entity_id = %s
+                ORDER BY identifier_type
+            """, (entity_id,))
+            identifiers = cur.fetchall()
+            if identifiers:
+                result["identifiers"] = identifiers
+
+            # Get industry classifications
+            cur.execute("""
+                SELECT classification_type, code, is_primary, source
+                FROM entity_classification
+                WHERE entity_id = %s
+                ORDER BY is_primary DESC, classification_type, code
+            """, (entity_id,))
+            classifications = cur.fetchall()
+            if classifications:
+                result["classifications"] = classifications
 
             # Get type-specific data based on kind
             kind = result["kind"]

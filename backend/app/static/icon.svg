@@ -1,59 +1,56 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Clean white background -->
+  <!-- Clean white background with rounded corners -->
   <rect width="512" height="512" rx="115" fill="#ffffff"/>
 
-  <!-- Connection lines (drawn first, behind nodes) -->
-  <g stroke="#6366f1" fill="none" stroke-linecap="round">
-    <!-- Varying opacity and width for depth -->
-    <line x1="256" y1="240" x2="165" y2="145" stroke-width="3" opacity="0.15"/>
-    <line x1="256" y1="240" x2="340" y2="160" stroke-width="6" opacity="0.25"/>
-    <line x1="256" y1="240" x2="380" y2="280" stroke-width="8" opacity="0.3"/>
-    <line x1="256" y1="240" x2="270" y2="385" stroke-width="7" opacity="0.28"/>
-    <line x1="256" y1="240" x2="140" y2="320" stroke-width="5" opacity="0.22"/>
-    <line x1="256" y1="240" x2="185" y2="280" stroke-width="4" opacity="0.2"/>
-    <line x1="340" y1="160" x2="420" y2="130" stroke-width="3" opacity="0.18"/>
-    <line x1="340" y1="160" x2="400" y2="200" stroke-width="4" opacity="0.2"/>
-    <line x1="380" y1="280" x2="440" y2="310" stroke-width="5" opacity="0.22"/>
-    <line x1="270" y1="385" x2="190" y2="410" stroke-width="4" opacity="0.2"/>
-    <line x1="270" y1="385" x2="340" y2="440" stroke-width="3" opacity="0.18"/>
-    <line x1="140" y1="320" x2="90" y2="370" stroke-width="3" opacity="0.15"/>
-    <line x1="185" y1="280" x2="120" y2="240" stroke-width="4" opacity="0.2"/>
-    <line x1="165" y1="145" x2="110" y2="95" stroke-width="3" opacity="0.15"/>
-    <line x1="165" y1="145" x2="200" y2="85" stroke-width="3" opacity="0.18"/>
-    <line x1="380" y1="280" x2="340" y2="160" stroke-width="3" opacity="0.15"/>
-    <line x1="185" y1="280" x2="165" y2="145" stroke-width="2" opacity="0.12"/>
+  <!-- Irregular connection lines (curved paths for organic feel) -->
+  <g stroke="#667eea" fill="none" stroke-linecap="round">
+    <!-- Varying opacity and width for 3D depth -->
+    <path d="M 140 170 Q 180 200, 220 240" stroke-width="8" opacity="0.3"/>
+    <path d="M 220 240 Q 280 200, 360 150" stroke-width="6" opacity="0.25"/>
+    <path d="M 360 150 Q 380 180, 390 220" stroke-width="4" opacity="0.2"/>
+    <path d="M 220 240 Q 240 320, 260 380" stroke-width="9" opacity="0.32"/>
+    <path d="M 260 380 Q 300 360, 340 340" stroke-width="5" opacity="0.22"/>
+    <path d="M 340 340 Q 380 300, 400 260" stroke-width="6" opacity="0.24"/>
+    <path d="M 140 170 Q 120 240, 130 310" stroke-width="5" opacity="0.21"/>
+    <path d="M 130 310 Q 180 340, 260 380" stroke-width="7" opacity="0.28"/>
+    <path d="M 360 150 Q 420 140, 460 160" stroke-width="3" opacity="0.18"/>
+    <path d="M 220 240 Q 280 260, 340 340" stroke-width="4" opacity="0.19"/>
+    <path d="M 140 170 Q 90 130, 70 100" stroke-width="3" opacity="0.16"/>
+    <path d="M 360 150 Q 340 100, 300 70" stroke-width="4" opacity="0.18"/>
+    <path d="M 400 260 Q 440 280, 470 320" stroke-width="5" opacity="0.2"/>
+    <path d="M 130 310 Q 100 360, 80 410" stroke-width="4" opacity="0.17"/>
+    <path d="M 260 380 Q 220 440, 180 470" stroke-width="3" opacity="0.15"/>
   </g>
 
-  <!-- Knowledge graph nodes - varying sizes for depth -->
-  <g fill="#6366f1">
-    <!-- Background layer (far) - smaller nodes -->
-    <circle cx="110" cy="95" r="12" opacity="0.5"/>
-    <circle cx="200" cy="85" r="10" opacity="0.5"/>
-    <circle cx="420" cy="130" r="11" opacity="0.5"/>
-    <circle cx="90" cy="370" r="10" opacity="0.5"/>
-    <circle cx="190" cy="410" r="11" opacity="0.5"/>
-    <circle cx="340" cy="440" r="10" opacity="0.5"/>
+  <!-- Knowledge graph nodes - irregular sizes for 3D effect -->
+  <g fill="#667eea">
+    <!-- Background layer (far) - smallest nodes -->
+    <circle cx="70" cy="100" r="11" opacity="0.45"/>
+    <circle cx="300" cy="70" r="9" opacity="0.42"/>
+    <circle cx="460" cy="160" r="10" opacity="0.48"/>
+    <circle cx="80" cy="410" r="8" opacity="0.40"/>
+    <circle cx="180" cy="470" r="9" opacity="0.44"/>
+    <circle cx="470" cy="320" r="11" opacity="0.46"/>
 
     <!-- Mid layer - medium nodes -->
-    <circle cx="165" cy="145" r="16" opacity="0.7"/>
-    <circle cx="400" cy="200" r="15" opacity="0.7"/>
-    <circle cx="120" cy="240" r="14" opacity="0.7"/>
-    <circle cx="440" cy="310" r="16" opacity="0.7"/>
+    <circle cx="360" cy="150" r="19" opacity="0.68"/>
+    <circle cx="130" cy="310" r="17" opacity="0.65"/>
+    <circle cx="340" cy="340" r="21" opacity="0.72"/>
+    <circle cx="400" cy="260" r="16" opacity="0.64"/>
 
     <!-- Foreground layer (near) - larger nodes -->
-    <circle cx="340" cy="160" r="24" opacity="0.9"/>
-    <circle cx="185" cy="280" r="20" opacity="0.85"/>
-    <circle cx="380" cy="280" r="26" opacity="0.95"/>
-    <circle cx="140" cy="320" r="18" opacity="0.85"/>
-    <circle cx="270" cy="385" r="22" opacity="0.9"/>
+    <circle cx="140" cy="170" r="28" opacity="0.88"/>
+    <circle cx="260" cy="380" r="25" opacity="0.85"/>
 
-    <!-- Central hub - largest, full opacity -->
-    <circle cx="256" cy="240" r="32" opacity="1">
-      <animate attributeName="opacity" values="1;0.85;1" dur="3s" repeatCount="indefinite"/>
+    <!-- Central hub - largest, full opacity, irregular position -->
+    <circle cx="220" cy="240" r="35" opacity="1">
+      <animate attributeName="opacity" values="1;0.82;1" dur="3.5s" repeatCount="indefinite"/>
     </circle>
   </g>
 
-  <!-- Subtle glow on central node for depth -->
-  <circle cx="256" cy="240" r="32" fill="none" stroke="#6366f1" stroke-width="2" opacity="0.2"/>
-  <circle cx="256" cy="240" r="40" fill="none" stroke="#6366f1" stroke-width="1" opacity="0.1"/>
+  <!-- Subtle glow on key nodes for depth -->
+  <circle cx="220" cy="240" r="35" fill="none" stroke="#667eea" stroke-width="3" opacity="0.18"/>
+  <circle cx="220" cy="240" r="44" fill="none" stroke="#667eea" stroke-width="1.5" opacity="0.1"/>
+  <circle cx="140" cy="170" r="28" fill="none" stroke="#667eea" stroke-width="2" opacity="0.12"/>
+  <circle cx="260" cy="380" r="25" fill="none" stroke="#667eea" stroke-width="1.5" opacity="0.08"/>
 </svg>

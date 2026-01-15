@@ -887,14 +887,29 @@ pre {
     <header>
         <div class="header-icon">
             <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                <circle cx="32" cy="16" r="6" fill="white" opacity="0.95"/>
-                <circle cx="16" cy="32" r="6" fill="white" opacity="0.95"/>
-                <circle cx="48" cy="32" r="6" fill="white" opacity="0.95"/>
-                <circle cx="32" cy="48" r="6" fill="white" opacity="0.95"/>
-                <line x1="32" y1="16" x2="16" y2="32" stroke="white" stroke-width="3" opacity="0.7"/>
-                <line x1="32" y1="16" x2="48" y2="32" stroke="white" stroke-width="3" opacity="0.7"/>
-                <line x1="16" y1="32" x2="32" y2="48" stroke="white" stroke-width="3" opacity="0.7"/>
-                <line x1="48" y1="32" x2="32" y2="48" stroke="white" stroke-width="3" opacity="0.7"/>
+                <!-- 3D Network Logo: Different sized nodes with irregular connections -->
+                <!-- Large nodes (foreground) -->
+                <circle cx="18" cy="22" r="9" fill="white" opacity="0.95"/>
+                <circle cx="48" cy="28" r="7" fill="white" opacity="0.90"/>
+                <circle cx="26" cy="48" r="8" fill="white" opacity="0.92"/>
+
+                <!-- Medium nodes (mid-ground) -->
+                <circle cx="40" cy="12" r="5" fill="white" opacity="0.75"/>
+                <circle cx="50" cy="46" r="6" fill="white" opacity="0.80"/>
+
+                <!-- Small nodes (background) -->
+                <circle cx="32" cy="34" r="4" fill="white" opacity="0.65"/>
+                <circle cx="14" cy="42" r="3.5" fill="white" opacity="0.60"/>
+
+                <!-- Irregular connecting lines (curved paths) -->
+                <path d="M 18 22 Q 30 18, 40 12" stroke="white" stroke-width="2.5" opacity="0.5" fill="none"/>
+                <path d="M 40 12 Q 46 18, 48 28" stroke="white" stroke-width="2" opacity="0.45" fill="none"/>
+                <path d="M 18 22 Q 22 30, 26 48" stroke="white" stroke-width="3" opacity="0.55" fill="none"/>
+                <path d="M 48 28 Q 38 36, 32 34" stroke="white" stroke-width="1.8" opacity="0.4" fill="none"/>
+                <path d="M 32 34 Q 28 40, 26 48" stroke="white" stroke-width="2.2" opacity="0.48" fill="none"/>
+                <path d="M 48 28 Q 50 36, 50 46" stroke="white" stroke-width="2" opacity="0.42" fill="none"/>
+                <path d="M 26 48 Q 36 48, 50 46" stroke="white" stroke-width="2.5" opacity="0.5" fill="none"/>
+                <path d="M 18 22 Q 24 32, 32 34" stroke="white" stroke-width="1.5" opacity="0.38" fill="none"/>
             </svg>
             <h1>BioGraph</h1>
         </div>
@@ -908,27 +923,27 @@ pre {
 
     <div class="stats" id="stats">
         <div class="stat-card" onclick="quickLoad('disease', 50)">
-            <div class="icon">🦠</div>
+            <div class="icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#667eea" stroke-width="2"/><circle cx="8" cy="8" r="2" fill="#667eea"/><circle cx="16" cy="10" r="2" fill="#667eea"/><circle cx="10" cy="15" r="2" fill="#667eea"/><circle cx="15" cy="16" r="1.5" fill="#667eea"/></svg></div>
             <div class="number" id="stat-diseases">-</div>
             <div class="label">Diseases</div>
         </div>
         <div class="stat-card" onclick="quickLoad('drug', 50)">
-            <div class="icon">💊</div>
+            <div class="icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="8" y="4" width="8" height="16" rx="4" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.2"/><line x1="12" y1="4" x2="12" y2="20" stroke="#667eea" stroke-width="2"/></svg></div>
             <div class="number" id="stat-drugs">-</div>
             <div class="label">Drugs</div>
         </div>
         <div class="stat-card" onclick="quickLoad('trial', 50)">
-            <div class="icon">🔬</div>
+            <div class="icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M8 2 L8 6 M16 2 L16 6 M6 6 L18 6 L14 22 L10 22 L6 6 Z" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.2"/></svg></div>
             <div class="number" id="stat-trials">-</div>
             <div class="label">Clinical Trials</div>
         </div>
         <div class="stat-card" onclick="quickLoad('publication', 50)">
-            <div class="icon">📄</div>
+            <div class="icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="6" y="4" width="12" height="16" rx="1" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><line x1="9" y1="9" x2="15" y2="9" stroke="#667eea" stroke-width="1.5"/><line x1="9" y1="12" x2="15" y2="12" stroke="#667eea" stroke-width="1.5"/><line x1="9" y1="15" x2="13" y2="15" stroke="#667eea" stroke-width="1.5"/></svg></div>
             <div class="number" id="stat-publications">-</div>
             <div class="label">Publications</div>
         </div>
         <div class="stat-card" onclick="switchTab('relationships')">
-            <div class="icon">🔗</div>
+            <div class="icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><circle cx="7" cy="12" r="3" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.2"/><circle cx="17" cy="12" r="3" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.2"/><line x1="10" y1="12" x2="14" y2="12" stroke="#667eea" stroke-width="2"/></svg></div>
             <div class="number" id="stat-edges">-</div>
             <div class="label">Relationships</div>
         </div>
@@ -936,42 +951,42 @@ pre {
 
     <div class="main-card">
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('entities')">🔍 Explore</button>
-            <button class="tab" onclick="switchTab('relationships')">🔗 Relationships</button>
-            <button class="tab" onclick="switchTab('graph')">📊 Graph</button>
-            <button class="tab" onclick="switchTab('analytics')">📈 Analytics</button>
-            <button class="tab" onclick="switchTab('library')">⭐ Library</button>
-            <button class="tab" onclick="switchTab('chat')">💬 Chat</button>
-            <button class="tab" onclick="switchTab('about')">ℹ️ About</button>
+            <button class="tab active" onclick="switchTab('entities')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><line x1="16" y1="16" x2="21" y2="21" stroke="currentColor" stroke-width="2"/></svg>Explore</button>
+            <button class="tab" onclick="switchTab('relationships')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><circle cx="7" cy="12" r="3" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="12" r="3" stroke="currentColor" stroke-width="2"/><line x1="10" y1="12" x2="14" y2="12" stroke="currentColor" stroke-width="2"/></svg>Relationships</button>
+            <button class="tab" onclick="switchTab('graph')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><circle cx="6" cy="6" r="3" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="8" r="3" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="18" r="3" stroke="currentColor" stroke-width="2"/><line x1="8" y1="7" x2="10" y2="16" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="7" x2="16" y2="9" stroke="currentColor" stroke-width="1.5"/><line x1="15" y1="10" x2="13" y2="16" stroke="currentColor" stroke-width="1.5"/></svg>Graph</button>
+            <button class="tab" onclick="switchTab('analytics')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><polyline points="3,18 7,12 11,15 17,8 21,11" stroke="currentColor" stroke-width="2" fill="none"/><polyline points="17,8 21,8 21,11" stroke="currentColor" stroke-width="2" fill="currentColor"/></svg>Analytics</button>
+            <button class="tab" onclick="switchTab('library')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><path d="M12 2 L15 9 L22 10 L17 15 L18 22 L12 18 L6 22 L7 15 L2 10 L9 9 Z" stroke="currentColor" stroke-width="2" fill="none"/></svg>Library</button>
+            <button class="tab" onclick="switchTab('chat')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><path d="M21 11.5C21 16.7467 16.9706 21 12 21C10.7733 21 9.60584 20.7733 8.53326 20.36L3 22L4.64 16.4667C3.61178 15.1633 3 13.5867 3 11.5C3 6.25329 7.02944 2 12 2C16.9706 2 21 6.25329 21 11.5Z" stroke="currentColor" stroke-width="2" fill="none"/></svg>Chat</button>
+            <button class="tab" onclick="switchTab('about')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>About</button>
         </div>
 
         <div id="tab-entities" class="tab-content active">
             <h2>Explore the Knowledge Graph</h2>
             <div class="quick-actions">
-                <button class="quick-btn" onclick="quickLoad('drug', 30)">💊 Drugs</button>
-                <button class="quick-btn" onclick="quickLoad('disease', 30)">🦠 Diseases</button>
-                <button class="quick-btn" onclick="quickLoad('target', 30)">🎯 Targets</button>
-                <button class="quick-btn" onclick="quickLoad('trial', 30)">🔬 Trials</button>
-                <button class="quick-btn" onclick="quickLoad('company', 30)">🏢 Companies</button>
-                <button class="quick-btn" onclick="quickLoad('publication', 30)">📄 Publications</button>
-                <button class="quick-btn" onclick="quickLoad('patent', 20)">📋 Patents</button>
-                <button class="quick-btn" onclick="quickLoad('news', 20)">📰 News</button>
+                <button class="quick-btn" onclick="quickLoad('drug', 30)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="8" y="4" width="8" height="16" rx="4" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.2"/><line x1="12" y1="4" x2="12" y2="20" stroke="#667eea" stroke-width="2"/></svg>Drugs</button>
+                <button class="quick-btn" onclick="quickLoad('disease', 30)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><circle cx="12" cy="12" r="8" stroke="#667eea" stroke-width="2"/><circle cx="8" cy="8" r="2" fill="#667eea"/><circle cx="16" cy="10" r="2" fill="#667eea"/><circle cx="10" cy="15" r="2" fill="#667eea"/><circle cx="15" cy="16" r="1.5" fill="#667eea"/></svg>Diseases</button>
+                <button class="quick-btn" onclick="quickLoad('target', 30)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><circle cx="12" cy="12" r="9" stroke="#667eea" stroke-width="2"/><circle cx="12" cy="12" r="6" stroke="#667eea" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="#667eea"/></svg>Targets</button>
+                <button class="quick-btn" onclick="quickLoad('trial', 30)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><path d="M8 2 L8 6 M16 2 L16 6 M6 6 L18 6 L14 22 L10 22 L6 6 Z" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.2"/></svg>Trials</button>
+                <button class="quick-btn" onclick="quickLoad('company', 30)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="4" y="8" width="16" height="14" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><rect x="8" y="4" width="8" height="4" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.2"/><line x1="8" y1="13" x2="10" y2="13" stroke="#667eea" stroke-width="1.5"/><line x1="14" y1="13" x2="16" y2="13" stroke="#667eea" stroke-width="1.5"/><line x1="8" y1="17" x2="10" y2="17" stroke="#667eea" stroke-width="1.5"/><line x1="14" y1="17" x2="16" y2="17" stroke="#667eea" stroke-width="1.5"/></svg>Companies</button>
+                <button class="quick-btn" onclick="quickLoad('publication', 30)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="6" y="4" width="12" height="16" rx="1" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><line x1="9" y1="9" x2="15" y2="9" stroke="#667eea" stroke-width="1.5"/><line x1="9" y1="12" x2="15" y2="12" stroke="#667eea" stroke-width="1.5"/><line x1="9" y1="15" x2="13" y2="15" stroke="#667eea" stroke-width="1.5"/></svg>Publications</button>
+                <button class="quick-btn" onclick="quickLoad('patent', 20)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="5" y="3" width="14" height="18" rx="1" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><circle cx="12" cy="10" r="3" stroke="#667eea" stroke-width="2"/><path d="M12 13 L12 16" stroke="#667eea" stroke-width="2"/></svg>Patents</button>
+                <button class="quick-btn" onclick="quickLoad('news', 20)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="4" y="5" width="16" height="14" rx="1" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><line x1="7" y1="9" x2="13" y2="9" stroke="#667eea" stroke-width="1.5"/><line x1="7" y1="12" x2="17" y2="12" stroke="#667eea" stroke-width="1"/><line x1="7" y1="15" x2="17" y2="15" stroke="#667eea" stroke-width="1"/></svg>News</button>
             </div>
             <div class="controls">
                 <select id="kind">
-                    <option value="drug">💊 Drugs</option>
-                    <option value="disease">🦠 Diseases</option>
-                    <option value="target">🎯 Targets</option>
-                    <option value="trial">🔬 Clinical Trials</option>
-                    <option value="company">🏢 Companies</option>
-                    <option value="publication">📄 Publications</option>
-                    <option value="patent">📋 Patents</option>
-                    <option value="news">📰 News</option>
+                    <option value="drug">Drugs</option>
+                    <option value="disease">Diseases</option>
+                    <option value="target">Targets</option>
+                    <option value="trial">Clinical Trials</option>
+                    <option value="company">Companies</option>
+                    <option value="publication">Publications</option>
+                    <option value="patent">Patents</option>
+                    <option value="news">News</option>
                 </select>
                 <input id="limit" type="number" value="30" min="1" max="100" placeholder="Limit" />
                 <button id="loadEntities">Load Results</button>
-                <button class="export-btn" onclick="exportData('entities', 'json')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);" title="Export as JSON (Ctrl+E)">📥 JSON</button>
-                <button class="export-btn" onclick="exportData('entities', 'csv')" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);" title="Export as CSV">📊 CSV</button>
+                <button class="export-btn" onclick="exportData('entities', 'json')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);" title="Export as JSON (Ctrl+E)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 4px;"><path d="M12 3 L12 15 M8 11 L12 15 L16 11" stroke="white" stroke-width="2"/><path d="M4 17 L4 19 L20 19 L20 17" stroke="white" stroke-width="2"/></svg>JSON</button>
+                <button class="export-btn" onclick="exportData('entities', 'csv')" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);" title="Export as CSV"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 4px;"><rect x="4" y="4" width="16" height="16" stroke="white" stroke-width="2" fill="none"/><line x1="4" y1="9" x2="20" y2="9" stroke="white" stroke-width="1.5"/><line x1="4" y1="14" x2="20" y2="14" stroke="white" stroke-width="1.5"/><line x1="12" y1="4" x2="12" y2="20" stroke="white" stroke-width="1.5"/></svg>CSV</button>
             </div>
             <div class="results-container">
                 <div id="entitiesOut"></div>
@@ -1819,6 +1834,87 @@ async function showEntityDetail(entityId, entityName, entityKind) {
 
 function renderEntityMetadata(entity) {
     let html = '';
+
+    // Entity Description
+    if (entity.description) {
+        html += `
+            <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+                <h4 style="margin: 0 0 12px 0; color: #667eea;">📖 Description</h4>
+                <p style="line-height: 1.6; margin: 0;">${escapeHtml(entity.description)}</p>
+            </div>
+        `;
+    }
+
+    // External Identifiers
+    if (entity.identifiers && entity.identifiers.length > 0) {
+        html += `
+            <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+                <h4 style="margin: 0 0 12px 0; color: #667eea;">🔗 External Identifiers</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
+                    ${entity.identifiers.map(id => {
+                        const links = {
+                            'lei': (val) => `https://search.gleif.org/#/record/${val}`,
+                            'permid': (val) => `https://permid.org/1-${val}`,
+                            'wikidata_qid': (val) => `https://www.wikidata.org/wiki/${val}`,
+                            'chembl': (val) => `https://www.ebi.ac.uk/chembl/compound_report_card/${val}/`,
+                            'opencorporates': (val) => `https://opencorporates.com/companies/${val}`,
+                            'umls_cui': (val) => `https://uts.nlm.nih.gov/uts/umls/concept/${val}`,
+                            'mesh': (val) => `https://meshb.nlm.nih.gov/record/ui?ui=${val}`
+                        };
+                        const url = links[id.identifier_type]?.(id.identifier);
+                        return `
+                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                                <div style="font-size: 0.85em; color: #667eea; font-weight: 600; margin-bottom: 4px;">${id.identifier_type.toUpperCase()}</div>
+                                ${url ?
+                                    `<a href="${url}" target="_blank" style="color: #667eea; font-weight: 600; text-decoration: none; display: block; margin-bottom: 4px;">${escapeHtml(id.identifier)} →</a>` :
+                                    `<span style="font-weight: 600; display: block; margin-bottom: 4px;">${escapeHtml(id.identifier)}</span>`
+                                }
+                                <div style="font-size: 0.75em; color: #999;">Source: ${id.source}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Industry Classifications
+    if (entity.classifications && entity.classifications.length > 0) {
+        html += `
+            <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+                <h4 style="margin: 0 0 12px 0; color: #667eea;">🏢 Industry Classifications</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                    ${entity.classifications.map(cls => `
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 12px 16px; border-radius: 8px; color: white;">
+                            <span style="font-weight: 700;">${cls.classification_type.toUpperCase()}: ${cls.code}</span>
+                            ${cls.description ? `<div style="font-size: 0.85em; opacity: 0.9; margin-top: 4px;">${escapeHtml(cls.description)}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Resolution Confidence
+    if (entity.resolution_confidence !== undefined) {
+        const confidence = entity.resolution_confidence;
+        const confidenceColor = confidence >= 0.95 ? '#10b981' : confidence >= 0.85 ? '#667eea' : confidence >= 0.70 ? '#f59e0b' : '#ef4444';
+        const confidenceLabel = confidence >= 0.95 ? 'Exact Match' : confidence >= 0.85 ? 'High Confidence' : confidence >= 0.70 ? 'Medium Confidence' : 'Low Confidence';
+
+        html += `
+            <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid ${confidenceColor};">
+                <h4 style="margin: 0 0 12px 0; color: ${confidenceColor};">🎯 Resolution Quality</h4>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="flex: 1; background: #f3f4f6; border-radius: 8px; height: 24px; overflow: hidden;">
+                        <div style="background: ${confidenceColor}; height: 100%; width: ${confidence * 100}%; transition: width 0.3s;"></div>
+                    </div>
+                    <div style="font-weight: 700; color: ${confidenceColor}; white-space: nowrap;">
+                        ${confidenceLabel} (${(confidence * 100).toFixed(1)}%)
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
     // Aliases
     if (entity.aliases && entity.aliases.length > 0) {
