@@ -72,6 +72,18 @@ def entities(
 ):
     with get_conn() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
+            # Get total count
+            cur.execute(
+                """
+                SELECT COUNT(*) as total
+                FROM entity
+                WHERE kind = %s
+                """,
+                (kind,),
+            )
+            total_count = cur.fetchone()["total"]
+
+            # Get items
             cur.execute(
                 """
                 SELECT id, kind, canonical_id, name
@@ -83,7 +95,7 @@ def entities(
                 (kind, limit),
             )
             items = cur.fetchall()
-    return JSONResponse(content={"count": len(items), "items": items})
+    return JSONResponse(content={"count": total_count, "items": items})
 
 
 @app.get("/entity/{entity_id}")
@@ -294,6 +306,13 @@ def list_edges(
 
     where_sql = ("where " + " and ".join(where)) if where else ""
 
+    # Get total count
+    count_sql = f"""
+      select count(*) as total
+      from edge e
+      {where_sql}
+    """
+
     sql = f"""
       select e.id,
              e.src_id,
@@ -313,10 +332,15 @@ def list_edges(
       order by e.id
       limit %s
     """
-    params.append(limit)
 
     with get_conn() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
+            # Get total count
+            cur.execute(count_sql, params if where else [])
+            total_count = cur.fetchone()["total"]
+
+            # Get items
+            params.append(limit)
             cur.execute(sql, params)
             rows = cur.fetchall()
 
@@ -327,4 +351,4 @@ def list_edges(
             d["created_at"] = d["created_at"].isoformat()
         items.append(d)
 
-    return {"count": len(items), "items": items}
+    return {"count": total_count, "items": items}
