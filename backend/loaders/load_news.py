@@ -27,7 +27,7 @@ except ImportError:
     feedparser = None
 
 from app.db import get_conn
-from entity_resolver import get_resolver
+from entity_resolver_v2 import EntityResolverV2
 
 
 # RSS Feed sources
@@ -142,7 +142,7 @@ def index_news_with_mesh(news_entity_id: int, title: str, summary: str) -> Dict:
     """
     from loaders.comprehensive_mesh_indexer import extract_candidate_terms, match_mesh_descriptors, categorize_mesh_terms
 
-    resolver = get_resolver()
+    resolver = EntityResolverV2()
     text = f"{title}. {summary or ''}"
 
     # Extract candidate terms for MeSH matching
@@ -260,8 +260,8 @@ def load_rss_feed(
         print("  ⚠️  No entries found in feed")
         return 0
 
-    resolver = get_resolver()
-    resolver.load_lookup_tables()
+    # Note: EntityResolverV2 doesn't need explicit load_lookup_tables() call
+    # It loads on-demand or uses vector search
 
     cutoff_date = datetime.now() - timedelta(days=days_back)
     inserted = 0
