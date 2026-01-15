@@ -131,7 +131,14 @@ def get_entity_detail(entity_id: int):
             """, (entity_id,))
             identifiers = cur.fetchall()
             if identifiers:
-                result["identifiers"] = identifiers
+                # Convert verified_at timestamps to ISO format
+                result["identifiers"] = [
+                    {
+                        **dict(id_row),
+                        "verified_at": id_row["verified_at"].isoformat() if id_row.get("verified_at") else None
+                    }
+                    for id_row in identifiers
+                ]
 
             # Get industry classifications
             cur.execute("""
