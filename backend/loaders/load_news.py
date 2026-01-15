@@ -32,12 +32,35 @@ from entity_resolver_v2 import EntityResolverV2
 
 # RSS Feed sources
 RSS_SOURCES = [
+    # Regulatory/Government
     {
         "name": "FDA Press Releases",
         "url": "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml",
         "source_id": "fda_rss",
         "type": "regulatory"
     },
+
+    # Major Newswires (Press Releases)
+    {
+        "name": "Business Wire - Healthcare",
+        "url": "https://www.businesswire.com/portal/site/home/news/subject/landing/healthcare/?rss=1",
+        "source_id": "businesswire_healthcare",
+        "type": "newswire"
+    },
+    {
+        "name": "PR Newswire - Pharmaceutical",
+        "url": "https://www.prnewswire.com/rss/health-care-hospitals-latest-news/health-care-pharmaceuticals-latest-news-list.rss",
+        "source_id": "prnewswire_pharma",
+        "type": "newswire"
+    },
+    {
+        "name": "GlobeNewswire - Healthcare",
+        "url": "https://www.globenewswire.com/RssFeed/industry/Health-Care/feedTitle/GlobeNewswire%20-%20Health%20Care",
+        "source_id": "globenewswire_healthcare",
+        "type": "newswire"
+    },
+
+    # Industry News Sites
     {
         "name": "Fierce Pharma",
         "url": "https://www.fiercepharma.com/rss/xml",
@@ -60,6 +83,12 @@ RSS_SOURCES = [
         "name": "Endpoints News",
         "url": "https://endpointsnews.com/feed/",
         "source_id": "endpoints_news",
+        "type": "industry"
+    },
+    {
+        "name": "STAT News",
+        "url": "https://www.statnews.com/feed/",
+        "source_id": "stat_news",
         "type": "industry"
     },
 ]
