@@ -19,6 +19,8 @@ def load_companies(company_list: List[Dict[str, str]]):
                     cur.execute("""
                         INSERT INTO entity (canonical_id, kind, name)
                         VALUES (%s, %s, %s)
+                        ON CONFLICT (kind, canonical_id) DO UPDATE
+                        SET name = EXCLUDED.name
                         RETURNING id
                     """, (
                         f"cik:{cik}",
@@ -26,8 +28,9 @@ def load_companies(company_list: List[Dict[str, str]]):
                         name
                     ))
                     companies_inserted += 1
-                except:
-                    pass  # Skip if already exists
+                except Exception as e:
+                    print(f"Error inserting company: {e}")
+                    conn.rollback()
             
             conn.commit()
             print(f"\n✓ Companies inserted: {companies_inserted}")
