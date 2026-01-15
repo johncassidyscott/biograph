@@ -876,7 +876,7 @@ pre {
 <body>
 <!-- Dark Mode Toggle -->
 <div class="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle dark mode (Ctrl+D)">
-    <span class="icon" id="darkModeIcon">🌙</span>
+    <span class="icon" id="darkModeIcon">☾</span>
     <span id="darkModeText">Dark</span>
 </div>
 
@@ -1048,10 +1048,10 @@ pre {
             <h2>Knowledge Graph Analytics</h2>
             <div style="margin-bottom: 30px;">
                 <button onclick="loadAnalytics()" style="font-size: 1em; padding: 14px 32px;">
-                    📊 Generate Analytics Report
+                    Generate Analytics Report
                 </button>
                 <button onclick="exportAnalytics()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-left: 10px; font-size: 1em; padding: 14px 32px;">
-                    💾 Export Report
+                    Export Report
                 </button>
             </div>
 
@@ -1107,13 +1107,13 @@ pre {
 
                 <!-- Top Entities -->
                 <div class="glass" style="padding: 30px;">
-                    <h3 style="margin-bottom: 20px; color: var(--text-primary); font-size: 1.3em;">🔥 Most Connected Entities</h3>
+                    <h3 style="margin-bottom: 20px; color: var(--text-primary); font-size: 1.3em;">Most Connected Entities</h3>
                     <div id="topEntitiesList"></div>
                 </div>
             </div>
 
             <div id="analyticsEmpty" style="text-align: center; padding: 80px 20px; color: var(--text-secondary);">
-                <div style="font-size: 4em; margin-bottom: 20px; opacity: 0.3;">📊</div>
+                <div style="font-size: 4em; margin-bottom: 20px; opacity: 0.3; color: #667eea;">📈</div>
                 <h3 style="color: var(--text-primary); margin-bottom: 15px;">Analytics Dashboard</h3>
                 <p style="font-size: 1.1em;">Click "Generate Analytics Report" to see comprehensive insights about your knowledge graph.</p>
             </div>
@@ -1123,16 +1123,16 @@ pre {
             <h2>My Library</h2>
             <div style="margin-bottom: 30px;">
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <button onclick="showLibrarySection('favorites')" class="quick-btn" style="flex: 1; min-width: 150px;">⭐ Favorites (<span id="favoritesCount">0</span>)</button>
-                    <button onclick="showLibrarySection('tagged')" class="quick-btn" style="flex: 1; min-width: 150px;">🏷️ Tagged (<span id="taggedCount">0</span>)</button>
-                    <button onclick="showLibrarySection('commented')" class="quick-btn" style="flex: 1; min-width: 150px;">💬 Commented (<span id="commentedCount">0</span>)</button>
-                    <button onclick="clearLibrary()" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 14px 22px;">🗑️ Clear All</button>
+                    <button onclick="showLibrarySection('favorites')" class="quick-btn" style="flex: 1; min-width: 150px;">Favorites (<span id="favoritesCount">0</span>)</button>
+                    <button onclick="showLibrarySection('tagged')" class="quick-btn" style="flex: 1; min-width: 150px;">Tagged (<span id="taggedCount">0</span>)</button>
+                    <button onclick="showLibrarySection('commented')" class="quick-btn" style="flex: 1; min-width: 150px;">Commented (<span id="commentedCount">0</span>)</button>
+                    <button onclick="clearLibrary()" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 14px 22px;">Clear All</button>
                 </div>
             </div>
 
             <div id="libraryContent">
                 <div style="text-align: center; padding: 80px 20px; color: var(--text-secondary);">
-                    <div style="font-size: 4em; margin-bottom: 20px; opacity: 0.3;">⭐</div>
+                    <div style="font-size: 4em; margin-bottom: 20px; opacity: 0.3;">☆</div>
                     <h3 style="color: var(--text-primary); margin-bottom: 15px;">Your Personal Library</h3>
                     <p style="font-size: 1.1em; max-width: 500px; margin: 0 auto;">
                         Save entities, add tags, and write notes as you explore the knowledge graph.
@@ -1146,7 +1146,7 @@ pre {
             <h2>AI Research Assistant</h2>
             <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); padding: 30px; border-radius: 15px; border: 2px solid rgba(102, 126, 234, 0.2); margin-bottom: 30px;">
                 <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px;">
-                    <div style="font-size: 3em;">🤖</div>
+                    
                     <div>
                         <h3 style="color: var(--text-primary); margin-bottom: 8px;">Claude AI Integration</h3>
                         <p style="color: var(--text-secondary); margin: 0;">Ask questions about the knowledge graph, discover insights, and explore connections using natural language.</p>
@@ -1156,7 +1156,7 @@ pre {
 
             <div id="chatMessages" style="background: var(--glass-bg); border-radius: 15px; padding: 30px; min-height: 400px; max-height: 500px; overflow-y: auto; margin-bottom: 20px; border: 2px solid var(--glass-border);">
                 <div style="text-align: center; color: var(--text-secondary); padding: 40px 20px;">
-                    <div style="font-size: 2.5em; margin-bottom: 15px;">💬</div>
+                    
                     <h4 style="color: var(--text-primary); margin-bottom: 10px;">Ready to Chat!</h4>
                     <p>Try asking:<br/>
                         • "What are the most promising KRAS inhibitors?"<br/>
@@ -1174,7 +1174,7 @@ pre {
             </div>
 
             <div style="margin-top: 20px; padding: 20px; background: rgba(251, 146, 60, 0.1); border-radius: 12px; border-left: 4px solid #fb923c;">
-                <strong>🚧 Coming Soon:</strong> Connect your Claude API key to enable AI-powered insights, relationship discovery, and semantic search across the knowledge graph.
+                <strong>Coming Soon:</strong> Connect your Claude API key to enable AI-powered insights, relationship discovery, and semantic search across the knowledge graph.
             </div>
         </div>
 
@@ -1189,28 +1189,28 @@ pre {
 
                 <div class="feature-grid">
                     <div class="feature-box">
-                        <h4>🎯 Entity Resolution</h4>
+                        <h4>Entity Resolution</h4>
                         <p>Automatic deduplication during ingestion using canonical IDs from ChEMBL, MeSH, and CIK.</p>
                     </div>
                     <div class="feature-box">
-                        <h4>🏷️ MeSH Indexing</h4>
+                        <h4>MeSH Indexing</h4>
                         <p>Comprehensive MeSH term assignment across all categories for semantic search.</p>
                     </div>
                     <div class="feature-box">
-                        <h4>📊 Confidence Scores</h4>
+                        <h4>Confidence Scores</h4>
                         <p>All relationships tracked with confidence scores (0.0-1.0) for data quality.</p>
                     </div>
                     <div class="feature-box">
-                        <h4>🔄 Real-time Updates</h4>
+                        <h4>Real-time Updates</h4>
                         <p>Discovery-driven architecture with entities emerging from authoritative data sources.</p>
                     </div>
                 </div>
 
                 <h3>Disease Areas (POC)</h3>
                 <ul>
-                    <li><strong>💊 Obesity & Metabolic Disorders:</strong> GLP-1 agonists, GIPR agonists, weight loss therapeutics</li>
-                    <li><strong>🧠 Alzheimer's Disease:</strong> Anti-amyloid antibodies, cholinesterase inhibitors, cognitive enhancers</li>
-                    <li><strong>🧬 KRAS Oncology:</strong> KRAS inhibitors, targeted cancer therapies</li>
+                    <li><strong>Obesity & Metabolic Disorders:</strong> GLP-1 agonists, GIPR agonists, weight loss therapeutics</li>
+                    <li><strong>Alzheimer's Disease:</strong> Anti-amyloid antibodies, cholinesterase inhibitors, cognitive enhancers</li>
+                    <li><strong>KRAS Oncology:</strong> KRAS inhibitors, targeted cancer therapies</li>
                 </ul>
 
                 <h3>Data Sources</h3>
@@ -1234,7 +1234,7 @@ pre {
                 <h3 style="margin-top: 40px;">🚀 Coming Soon</h3>
                 <div class="feature-grid">
                     <div class="feature-box" style="border-color: #fb923c; background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, rgba(249, 115, 22, 0.08) 100%);">
-                        <h4 style="color: #fb923c;">🤖 AI Auto-Tagging</h4>
+                        <h4 style="color: #fb923c;">AI Auto-Tagging</h4>
                         <p><strong>KEY FEATURE:</strong> Automatically tag news articles and publications using MeSH terms + custom events taxonomy. Filter by regulatory events, clinical milestones, M&A activity, and more.</p>
                     </div>
                     <div class="feature-box">
@@ -1314,7 +1314,7 @@ function toggleDarkMode() {
         text.textContent = 'Light';
         showToast('Dark mode enabled', 'success');
     } else {
-        icon.textContent = '🌙';
+        icon.textContent = '☾';
         text.textContent = 'Dark';
         showToast('Light mode enabled', 'success');
     }
@@ -1495,7 +1495,7 @@ window.addEventListener('load', () => {
     const hasSeenHint = localStorage.getItem('keyboardHintSeen');
     if (!hasSeenHint) {
         setTimeout(() => {
-            showToast('💡 Tip: Press Ctrl+D for dark mode, Ctrl+E to export', 'info');
+            showToast('Tip: Press Ctrl+D for dark mode, Ctrl+E to export', 'info');
             localStorage.setItem('keyboardHintSeen', 'true');
         }, 2000);
     }
@@ -1754,10 +1754,10 @@ async function showEntityDetail(entityId, entityName, entityKind) {
                         ${isFavorite ? '⭐' : '☆'} ${isFavorite ? 'Favorited' : 'Add to Favorites'}
                     </button>
                     <button onclick="promptTag(${entityId})" style="background: #f0f0f0; color: var(--text-primary);">
-                        🏷️ Add Tag
+                        Add Tag
                     </button>
                     <button onclick="promptComment(${entityId})" style="background: #f0f0f0; color: var(--text-primary);">
-                        💬 Add Note
+                        Add Note
                     </button>
                 </div>
 
@@ -1773,14 +1773,14 @@ async function showEntityDetail(entityId, entityName, entityKind) {
                     </div>
                     ${(entityTags[entityId] || []).length > 0 ? `
                         <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 6px;">
-                            ${(entityTags[entityId] || []).map(tag => `<span style="background: #667eea; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.85em;">🏷️ ${escapeHtml(tag)}</span>`).join('')}
+                            ${(entityTags[entityId] || []).map(tag => `<span style="background: #667eea; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.85em;">Tag: ${escapeHtml(tag)}</span>`).join('')}
                         </div>
                     ` : ''}
                 </div>
 
                 ${(entityComments[entityId] || []).length > 0 ? `
                     <div style="background: var(--glass-bg); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 4px solid #667eea;">
-                        <h4 style="margin: 0 0 12px 0; color: #667eea;">💬 Your Notes (${entityComments[entityId].length})</h4>
+                        <h4 style="margin: 0 0 12px 0; color: #667eea;">Your Notes (${entityComments[entityId].length})</h4>
                         ${entityComments[entityId].map(c => `
                             <div style="background: rgba(102, 126, 234, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
                                 <div style="color: var(--text-primary);">${escapeHtml(c.text)}</div>
@@ -1903,7 +1903,7 @@ function renderEntityMetadata(entity) {
 
         html += `
             <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid ${confidenceColor};">
-                <h4 style="margin: 0 0 12px 0; color: ${confidenceColor};">🎯 Resolution Quality</h4>
+                <h4 style="margin: 0 0 12px 0; color: ${confidenceColor};">Resolution Quality</h4>
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="flex: 1; background: #f3f4f6; border-radius: 8px; height: 24px; overflow: hidden;">
                         <div style="background: ${confidenceColor}; height: 100%; width: ${confidence * 100}%; transition: width 0.3s;"></div>
@@ -2028,7 +2028,7 @@ function toggleFavorite(entityId, entityName, entityKind) {
         showToast(`Removed from favorites`, 'info');
     } else {
         favorites[entityId] = { id: entityId, name: entityName, kind: entityKind, addedAt: new Date().toISOString() };
-        showToast(`⭐ Added to favorites`, 'success');
+        showToast(`Added to favorites`, 'success');
     }
     localStorage.setItem('biograph_favorites', JSON.stringify(favorites));
     updateLibraryCounts();
@@ -2078,7 +2078,7 @@ function showLibrarySection(section) {
         const items = Object.values(favorites);
         if (items.length === 0) {
             content.innerHTML = `<div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
-                <div style="font-size: 3em; margin-bottom: 15px;">⭐</div>
+                <div style="font-size: 3em; margin-bottom: 15px;">☆</div>
                 <p>No favorites yet. Click the ⭐ on any entity to save it!</p>
             </div>`;
             return;
@@ -2086,7 +2086,7 @@ function showLibrarySection(section) {
 
         content.innerHTML = '<div class="entity-grid">' + items.map(item => `
             <div class="entity-card" onclick="showEntityDetail(${item.id}, '${escapeJs(item.name)}', '${item.kind}')" style="cursor: pointer; position: relative;">
-                <button onclick="event.stopPropagation(); toggleFavorite(${item.id}, '${escapeJs(item.name)}', '${item.kind}')" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5em; cursor: pointer; padding: 5px;">⭐</button>
+                <button onclick="event.stopPropagation(); toggleFavorite(${item.id}, '${escapeJs(item.name)}', '${item.kind}')" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5em; cursor: pointer; padding: 5px;">☆</button>
                 <div class="entity-name">${escapeHtml(item.name)}</div>
                 <span class="entity-kind kind-${item.kind}">${item.kind}</span>
                 <div style="margin-top: 10px; font-size: 0.85em; color: var(--text-secondary);">
@@ -2099,7 +2099,7 @@ function showLibrarySection(section) {
     else if (section === 'tagged') {
         if (Object.keys(entityTags).length === 0) {
             content.innerHTML = `<div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
-                <div style="font-size: 3em; margin-bottom: 15px;">🏷️</div>
+                
                 <p>No tagged entities yet.</p>
             </div>`;
             return;
@@ -2119,7 +2119,7 @@ function showLibrarySection(section) {
     else if (section === 'commented') {
         if (Object.keys(entityComments).length === 0) {
             content.innerHTML = `<div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
-                <div style="font-size: 3em; margin-bottom: 15px;">💬</div>
+                
                 <p>No comments yet.</p>
             </div>`;
             return;
@@ -2157,7 +2157,7 @@ function clearLibrary() {
 
     const content = document.getElementById('libraryContent');
     content.innerHTML = `<div style="text-align: center; padding: 80px 20px; color: var(--text-secondary);">
-        <div style="font-size: 4em; margin-bottom: 20px; opacity: 0.3;">⭐</div>
+        <div style="font-size: 4em; margin-bottom: 20px; opacity: 0.3;">☆</div>
         <h3 style="color: var(--text-primary); margin-bottom: 15px;">Library Cleared</h3>
         <p style="font-size: 1.1em;">Start exploring and save your favorite entities!</p>
     </div>`;
@@ -2210,7 +2210,7 @@ function sendChatMessage() {
             <div style="margin-bottom: 20px;">
                 <div style="display: inline-block; background: var(--glass-bg); border: 2px solid var(--glass-border); padding: 12px 18px; border-radius: 18px 18px 18px 4px; max-width: 70%;">
                     <div style="color: var(--text-primary); margin-bottom: 8px;">
-                        🤖 <strong>Claude:</strong> Great question! To enable AI-powered responses, you'll need to connect your Claude API key in settings.
+                        <strong>Claude:</strong> Great question! To enable AI-powered responses, you'll need to connect your Claude API key in settings.
                     </div>
                     <div style="font-size: 0.85em; color: var(--text-secondary);">
                         Coming soon: Real-time semantic search, entity recommendations, and insights based on your query.
@@ -2220,7 +2220,7 @@ function sendChatMessage() {
         `;
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
         buttonText.textContent = 'Send';
-        showToast('💡 Claude API integration coming soon!', 'info');
+        showToast('Claude API integration coming soon!', 'info');
     }, 1000);
 
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -2618,7 +2618,7 @@ async function loadGraphData() {
         }));
 
         loading.style.display = 'none';
-        stats.innerHTML = `<strong>📊 Graph:</strong> ${nodes.length} nodes, ${links.length} relationships`;
+        stats.innerHTML = `<strong>Graph:</strong> ${nodes.length} nodes, ${links.length} relationships`;
 
         renderGraph(nodes, links);
     } catch (e) {
