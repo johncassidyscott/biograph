@@ -34,6 +34,8 @@ def load_chembl_drugs(drug_list: List[Dict[str, str]]):
                     cur.execute("""
                         INSERT INTO entity (canonical_id, kind, name)
                         VALUES (%s, %s, %s)
+                        ON CONFLICT (kind, canonical_id) DO UPDATE
+                        SET name = EXCLUDED.name
                         RETURNING id
                     """, (
                         f"chembl:{chembl_id}",
@@ -42,16 +44,10 @@ def load_chembl_drugs(drug_list: List[Dict[str, str]]):
                     ))
                     drug_id = cur.fetchone()['id']
                     drugs_inserted += 1
-                except:
-                    # Skip if already exists
-                    cur.execute(
-                        "SELECT id FROM entity WHERE canonical_id = %s",
-                        (f"chembl:{chembl_id}",)
-                    )
-                    result = cur.fetchone()
-                    if not result:
-                        continue
-                    drug_id = result['id']
+                except Exception as e:
+                    print(f"Error inserting drug: {e}")
+                    conn.rollback()
+                    continue
                 
                 try:
                     mech_url = f"{CHEMBL_BASE}/mechanism.json?molecule_chembl_id={chembl_id}"
@@ -74,6 +70,8 @@ def load_chembl_drugs(drug_list: List[Dict[str, str]]):
                         cur.execute("""
                             INSERT INTO entity (canonical_id, kind, name)
                             VALUES (%s, %s, %s)
+                            ON CONFLICT (kind, canonical_id) DO UPDATE
+                            SET name = EXCLUDED.name
                             RETURNING id
                         """, (
                             f"chembl:{target_chembl}",
@@ -82,34 +80,31 @@ def load_chembl_drugs(drug_list: List[Dict[str, str]]):
                         ))
                         target_id = cur.fetchone()['id']
                         targets_inserted += 1
-                    except:
-                        cur.execute(
-                            "SELECT id FROM entity WHERE canonical_id = %s",
-                            (f"chembl:{target_chembl}",)
-                        )
-                        result = cur.fetchone()
-                        if not result:
-                            continue
-                        target_id = result['id']
+                    except Exception as e:
+                        print(f"Error inserting target: {e}")
+                        conn.rollback()
+                        continue
                     
                     try:
                         cur.execute("""
-                            INSERT INTO edge (source_id, target_id, relation)
-                            VALUES (%s, %s, %s)
+                            INSERT INTO edge (src_id, dst_id, predicate, source)
+                            VALUES (%s, %s, %s, %s)
+                            ON CONFLICT (src_id, dst_id, predicate) DO NOTHING
                         """, (
                             drug_id,
                             target_id,
-                            f'targets ({action_type})'
+                            'targets',
+                            f'chembl ({action_type})'
                         ))
                         edges_inserted += 1
-                    except:
-                        pass  # Skip if edge already exists
-                    
-                    print(f"  → {target_name} ({action_type})")
+                        print(f"  → {target_name} ({action_type})")
+                    except Exception as e:
+                        print(f"Error inserting edge: {e}")
+                        conn.rollback()
                 
                 time.sleep(0.5)
-                conn.commit()
             
+            conn.commit()
             print(f"\n✓ Drugs inserted: {drugs_inserted}")
             print(f"✓ Targets inserted: {targets_inserted}")
             print(f"✓ Drug-target edges: {edges_inserted}")
