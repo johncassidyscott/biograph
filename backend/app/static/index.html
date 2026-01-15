@@ -923,27 +923,27 @@ pre {
 
     <div class="stats" id="stats">
         <div class="stat-card" onclick="quickLoad('disease', 50)">
-            <div class="icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#667eea" stroke-width="2"/><circle cx="8" cy="8" r="2" fill="#667eea"/><circle cx="16" cy="10" r="2" fill="#667eea"/><circle cx="10" cy="15" r="2" fill="#667eea"/><circle cx="15" cy="16" r="1.5" fill="#667eea"/></svg></div>
+            <div class="icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" fill="#667eea"/><circle cx="8" cy="8" r="2" fill="white"/><circle cx="16" cy="10" r="2" fill="white"/><circle cx="10" cy="15" r="2" fill="white"/><circle cx="15" cy="16" r="1.5" fill="white"/></svg></div>
             <div class="number" id="stat-diseases">-</div>
             <div class="label">Diseases</div>
         </div>
         <div class="stat-card" onclick="quickLoad('drug', 50)">
-            <div class="icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="7" y="4" width="10" height="14" rx="2" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><rect x="7" y="4" width="10" height="4" rx="2" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.3"/><circle cx="10" cy="11" r="1.5" fill="#667eea"/><circle cx="14" cy="11" r="1.5" fill="#667eea"/><circle cx="12" cy="14" r="1.5" fill="#667eea"/></svg></div>
+            <div class="icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none"><rect x="7" y="6" width="10" height="12" rx="5" fill="#667eea"/><line x1="12" y1="6" x2="12" y2="18" stroke="white" stroke-width="2.5"/></svg></div>
             <div class="number" id="stat-drugs">-</div>
             <div class="label">Drugs</div>
         </div>
         <div class="stat-card" onclick="quickLoad('trial', 50)">
-            <div class="icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="10" y="3" width="4" height="3" rx="0.5" stroke="#667eea" stroke-width="1.5" fill="#667eea" opacity="0.3"/><rect x="9" y="6" width="6" height="12" rx="1" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><path d="M15 12 L18 14 L18 18 L15 17" stroke="#667eea" stroke-width="2" stroke-linejoin="round" fill="none"/><line x1="11" y1="10" x2="13" y2="10" stroke="#667eea" stroke-width="1.5"/></svg></div>
+            <div class="icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="4" rx="1" fill="#667eea"/><rect x="10" y="7" width="4" height="11" rx="0.5" fill="#667eea"/><path d="M14 10 L17.5 12 L17.5 17 L14 16 Z" fill="#667eea"/><line x1="10.5" y1="10" x2="13.5" y2="10" stroke="white" stroke-width="2"/></svg></div>
             <div class="number" id="stat-trials">-</div>
             <div class="label">Clinical Trials</div>
         </div>
         <div class="stat-card" onclick="quickLoad('publication', 50)">
-            <div class="icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="6" y="4" width="12" height="16" rx="1" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><line x1="9" y1="9" x2="15" y2="9" stroke="#667eea" stroke-width="1.5"/><line x1="9" y1="12" x2="15" y2="12" stroke="#667eea" stroke-width="1.5"/><line x1="9" y1="15" x2="13" y2="15" stroke="#667eea" stroke-width="1.5"/></svg></div>
+            <div class="icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none"><rect x="6" y="4" width="12" height="16" rx="1" fill="#667eea"/><line x1="9" y1="9" x2="15" y2="9" stroke="white" stroke-width="2"/><line x1="9" y1="12" x2="15" y2="12" stroke="white" stroke-width="2"/><line x1="9" y1="15" x2="13" y2="15" stroke="white" stroke-width="2"/></svg></div>
             <div class="number" id="stat-publications">-</div>
             <div class="label">Publications</div>
         </div>
         <div class="stat-card" onclick="switchTab('relationships')">
-            <div class="icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><circle cx="7" cy="12" r="3" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.2"/><circle cx="17" cy="12" r="3" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.2"/><line x1="10" y1="12" x2="14" y2="12" stroke="#667eea" stroke-width="2"/></svg></div>
+            <div class="icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none"><circle cx="7" cy="12" r="3" fill="#667eea"/><circle cx="17" cy="12" r="3" fill="#667eea"/><line x1="10" y1="12" x2="14" y2="12" stroke="#667eea" stroke-width="2.5"/></svg></div>
             <div class="number" id="stat-edges">-</div>
             <div class="label">Relationships</div>
         </div>
@@ -963,14 +963,14 @@ pre {
         <div id="tab-entities" class="tab-content active">
             <h2>Explore the Knowledge Graph</h2>
             <div class="quick-actions">
-                <button class="quick-btn" onclick="quickLoad('drug', 30)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="7" y="4" width="10" height="14" rx="2" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><rect x="7" y="4" width="10" height="4" rx="2" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.3"/><circle cx="10" cy="11" r="1.5" fill="#667eea"/><circle cx="14" cy="11" r="1.5" fill="#667eea"/><circle cx="12" cy="14" r="1.5" fill="#667eea"/></svg>Drugs</button>
-                <button class="quick-btn" onclick="quickLoad('disease', 30)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><circle cx="12" cy="12" r="8" stroke="#667eea" stroke-width="2"/><circle cx="8" cy="8" r="2" fill="#667eea"/><circle cx="16" cy="10" r="2" fill="#667eea"/><circle cx="10" cy="15" r="2" fill="#667eea"/><circle cx="15" cy="16" r="1.5" fill="#667eea"/></svg>Diseases</button>
-                <button class="quick-btn" onclick="quickLoad('target', 30)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><circle cx="12" cy="12" r="9" stroke="#667eea" stroke-width="2"/><circle cx="12" cy="12" r="6" stroke="#667eea" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="#667eea"/></svg>Targets</button>
-                <button class="quick-btn" onclick="quickLoad('trial', 30)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="10" y="3" width="4" height="3" rx="0.5" stroke="#667eea" stroke-width="1.5" fill="#667eea" opacity="0.3"/><rect x="9" y="6" width="6" height="12" rx="1" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><path d="M15 12 L18 14 L18 18 L15 17" stroke="#667eea" stroke-width="2" stroke-linejoin="round" fill="none"/><line x1="11" y1="10" x2="13" y2="10" stroke="#667eea" stroke-width="1.5"/></svg>Trials</button>
-                <button class="quick-btn" onclick="quickLoad('company', 30)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="4" y="8" width="16" height="14" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><rect x="8" y="4" width="8" height="4" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.2"/><line x1="8" y1="13" x2="10" y2="13" stroke="#667eea" stroke-width="1.5"/><line x1="14" y1="13" x2="16" y2="13" stroke="#667eea" stroke-width="1.5"/><line x1="8" y1="17" x2="10" y2="17" stroke="#667eea" stroke-width="1.5"/><line x1="14" y1="17" x2="16" y2="17" stroke="#667eea" stroke-width="1.5"/></svg>Companies</button>
-                <button class="quick-btn" onclick="quickLoad('publication', 30)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="6" y="4" width="12" height="16" rx="1" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><line x1="9" y1="9" x2="15" y2="9" stroke="#667eea" stroke-width="1.5"/><line x1="9" y1="12" x2="15" y2="12" stroke="#667eea" stroke-width="1.5"/><line x1="9" y1="15" x2="13" y2="15" stroke="#667eea" stroke-width="1.5"/></svg>Publications</button>
-                <button class="quick-btn" onclick="quickLoad('patent', 20)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="6" y="3" width="12" height="17" rx="1" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><path d="M9 7 L15 7 M9 10 L15 10" stroke="#667eea" stroke-width="1.5"/><circle cx="12" cy="15" r="2.5" stroke="#667eea" stroke-width="2" fill="none"/><path d="M12 3 L14 5 L12 7 L10 5 Z" fill="#667eea"/></svg>Patents</button>
-                <button class="quick-btn" onclick="quickLoad('news', 20)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="4" y="5" width="16" height="14" rx="1" stroke="#667eea" stroke-width="2" fill="#667eea" opacity="0.1"/><line x1="7" y1="9" x2="13" y2="9" stroke="#667eea" stroke-width="1.5"/><line x1="7" y1="12" x2="17" y2="12" stroke="#667eea" stroke-width="1"/><line x1="7" y1="15" x2="17" y2="15" stroke="#667eea" stroke-width="1"/></svg>News</button>
+                <button class="quick-btn" onclick="quickLoad('drug', 30)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 8px;"><rect x="7" y="6" width="10" height="12" rx="5" fill="#667eea"/><line x1="12" y1="6" x2="12" y2="18" stroke="white" stroke-width="2.5"/></svg>Drugs</button>
+                <button class="quick-btn" onclick="quickLoad('disease', 30)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 8px;"><circle cx="12" cy="12" r="8" fill="#667eea"/><circle cx="8" cy="8" r="2" fill="white"/><circle cx="16" cy="10" r="2" fill="white"/><circle cx="10" cy="15" r="2" fill="white"/><circle cx="15" cy="16" r="1.5" fill="white"/></svg>Diseases</button>
+                <button class="quick-btn" onclick="quickLoad('target', 30)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 8px;"><circle cx="12" cy="12" r="9" stroke="#667eea" stroke-width="2.5" fill="none"/><circle cx="12" cy="12" r="6" stroke="#667eea" stroke-width="2.5" fill="none"/><circle cx="12" cy="12" r="2.5" fill="#667eea"/></svg>Targets</button>
+                <button class="quick-btn" onclick="quickLoad('trial', 30)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 8px;"><rect x="9" y="3" width="6" height="4" rx="1" fill="#667eea"/><rect x="10" y="7" width="4" height="11" rx="0.5" fill="#667eea"/><path d="M14 10 L17.5 12 L17.5 17 L14 16 Z" fill="#667eea"/><line x1="10.5" y1="10" x2="13.5" y2="10" stroke="white" stroke-width="2"/></svg>Trials</button>
+                <button class="quick-btn" onclick="quickLoad('company', 30)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 8px;"><rect x="4" y="8" width="16" height="14" fill="#667eea"/><rect x="8" y="4" width="8" height="4" fill="#667eea"/><line x1="8" y1="13" x2="10" y2="13" stroke="white" stroke-width="2"/><line x1="14" y1="13" x2="16" y2="13" stroke="white" stroke-width="2"/><line x1="8" y1="17" x2="10" y2="17" stroke="white" stroke-width="2"/><line x1="14" y1="17" x2="16" y2="17" stroke="white" stroke-width="2"/></svg>Companies</button>
+                <button class="quick-btn" onclick="quickLoad('publication', 30)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 8px;"><rect x="6" y="4" width="12" height="16" rx="1" fill="#667eea"/><line x1="9" y1="9" x2="15" y2="9" stroke="white" stroke-width="2"/><line x1="9" y1="12" x2="15" y2="12" stroke="white" stroke-width="2"/><line x1="9" y1="15" x2="13" y2="15" stroke="white" stroke-width="2"/></svg>Publications</button>
+                <button class="quick-btn" onclick="quickLoad('patent', 20)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 8px;"><rect x="6" y="3" width="12" height="17" rx="1" fill="#667eea"/><path d="M9 7 L15 7 M9 10 L15 10" stroke="white" stroke-width="2"/><circle cx="12" cy="15" r="2.5" stroke="white" stroke-width="2" fill="none"/><path d="M12 3 L14 5 L12 7 L10 5 Z" fill="#667eea"/></svg>Patents</button>
+                <button class="quick-btn" onclick="quickLoad('news', 20)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 8px;"><rect x="4" y="5" width="16" height="14" rx="1" fill="#667eea"/><line x1="7" y1="9" x2="13" y2="9" stroke="white" stroke-width="2"/><line x1="7" y1="12" x2="17" y2="12" stroke="white" stroke-width="1.5"/><line x1="7" y1="15" x2="17" y2="15" stroke="white" stroke-width="1.5"/></svg>News</button>
             </div>
             <div class="controls">
                 <select id="kind">
@@ -996,20 +996,20 @@ pre {
         <div id="tab-relationships" class="tab-content">
             <h2>Explore Relationships</h2>
             <div class="quick-actions">
-                <button class="quick-btn" onclick="loadEdges('targets')">🎯 Drug → Target</button>
-                <button class="quick-btn" onclick="loadEdges('treats')">💊 Drug → Disease</button>
-                <button class="quick-btn" onclick="loadEdges('for_condition')">🔬 Trial → Disease</button>
-                <button class="quick-btn" onclick="loadEdges('develops')">🏢 Company → Drug</button>
-                <button class="quick-btn" onclick="loadEdges('mentions')">📄 Publication → Drug</button>
-                <button class="quick-btn" onclick="loadEdges('associated_with')">🎯 Target → Disease</button>
-                <button class="quick-btn" onclick="loadEdges('sponsored_by')">🔬 Trial → Company</button>
+                <button class="quick-btn" onclick="loadEdges('targets')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><circle cx="12" cy="12" r="9" stroke="#667eea" stroke-width="2.5" fill="none"/><circle cx="12" cy="12" r="6" stroke="#667eea" stroke-width="2.5" fill="none"/><circle cx="12" cy="12" r="2.5" fill="#667eea"/></svg>Drug → Target</button>
+                <button class="quick-btn" onclick="loadEdges('treats')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="7" y="6" width="10" height="12" rx="5" fill="#667eea"/><line x1="12" y1="6" x2="12" y2="18" stroke="white" stroke-width="2.5"/></svg>Drug → Disease</button>
+                <button class="quick-btn" onclick="loadEdges('for_condition')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="9" y="3" width="6" height="4" rx="1" fill="#667eea"/><rect x="10" y="7" width="4" height="11" rx="0.5" fill="#667eea"/><path d="M14 10 L17.5 12 L17.5 17 L14 16 Z" fill="#667eea"/><line x1="10.5" y1="10" x2="13.5" y2="10" stroke="white" stroke-width="2"/></svg>Trial → Disease</button>
+                <button class="quick-btn" onclick="loadEdges('develops')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="4" y="8" width="16" height="14" fill="#667eea"/><rect x="8" y="4" width="8" height="4" fill="#667eea"/><line x1="8" y1="13" x2="10" y2="13" stroke="white" stroke-width="2"/><line x1="14" y1="13" x2="16" y2="13" stroke="white" stroke-width="2"/><line x1="8" y1="17" x2="10" y2="17" stroke="white" stroke-width="2"/><line x1="14" y1="17" x2="16" y2="17" stroke="white" stroke-width="2"/></svg>Company → Drug</button>
+                <button class="quick-btn" onclick="loadEdges('mentions')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="6" y="4" width="12" height="16" rx="1" fill="#667eea"/><line x1="9" y1="9" x2="15" y2="9" stroke="white" stroke-width="2"/><line x1="9" y1="12" x2="15" y2="12" stroke="white" stroke-width="2"/><line x1="9" y1="15" x2="13" y2="15" stroke="white" stroke-width="2"/></svg>Publication → Drug</button>
+                <button class="quick-btn" onclick="loadEdges('associated_with')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><circle cx="12" cy="12" r="9" stroke="#667eea" stroke-width="2.5" fill="none"/><circle cx="12" cy="12" r="6" stroke="#667eea" stroke-width="2.5" fill="none"/><circle cx="12" cy="12" r="2.5" fill="#667eea"/></svg>Target → Disease</button>
+                <button class="quick-btn" onclick="loadEdges('sponsored_by')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 6px;"><rect x="9" y="3" width="6" height="4" rx="1" fill="#667eea"/><rect x="10" y="7" width="4" height="11" rx="0.5" fill="#667eea"/><path d="M14 10 L17.5 12 L17.5 17 L14 16 Z" fill="#667eea"/><line x1="10.5" y1="10" x2="13.5" y2="10" stroke="white" stroke-width="2"/></svg>Trial → Company</button>
             </div>
             <div class="controls">
                 <input id="pred" placeholder="Filter by relationship type (optional)" style="flex: 1;" />
                 <input id="edgeLimit" type="number" value="50" min="1" max="200" />
                 <button id="loadEdges">Load Relationships</button>
-                <button class="export-btn" onclick="exportData('edges', 'json')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">📥 JSON</button>
-                <button class="export-btn" onclick="exportData('edges', 'csv')" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">📊 CSV</button>
+                <button class="export-btn" onclick="exportData('edges', 'json')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 4px;"><path d="M12 3 L12 15 M8 11 L12 15 L16 11" stroke="white" stroke-width="2"/><path d="M4 17 L4 19 L20 19 L20 17" stroke="white" stroke-width="2"/></svg>JSON</button>
+                <button class="export-btn" onclick="exportData('edges', 'csv')" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 4px;"><rect x="4" y="4" width="16" height="16" stroke="white" stroke-width="2" fill="none"/><line x1="4" y1="9" x2="20" y2="9" stroke="white" stroke-width="1.5"/><line x1="4" y1="14" x2="20" y2="14" stroke="white" stroke-width="1.5"/><line x1="12" y1="4" x2="12" y2="20" stroke="white" stroke-width="1.5"/></svg>CSV</button>
             </div>
             <div class="results-container">
                 <div id="edgesOut"></div>
@@ -1020,18 +1020,18 @@ pre {
             <h2>Interactive Knowledge Graph</h2>
             <div class="controls">
                 <select id="graphEntityType">
-                    <option value="drug">💊 Drugs</option>
-                    <option value="disease">🦠 Diseases</option>
-                    <option value="target">🎯 Targets</option>
-                    <option value="trial">🔬 Clinical Trials</option>
-                    <option value="company">🏢 Companies</option>
+                    <option value="drug">Drugs</option>
+                    <option value="disease">Diseases</option>
+                    <option value="target">Targets</option>
+                    <option value="trial">Clinical Trials</option>
+                    <option value="company">Companies</option>
                 </select>
                 <input id="graphLimit" type="number" value="20" min="5" max="50" placeholder="Node limit" />
                 <button onclick="loadGraphData()">Load Graph</button>
                 <button onclick="resetGraphZoom()" style="background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);">Reset View</button>
             </div>
             <div style="margin: 20px 0; padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 12px; font-size: 0.9em;">
-                <strong>💡 Tip:</strong> Click nodes to see details • Drag nodes to rearrange • Scroll to zoom • Drag background to pan
+                <strong>Tip:</strong> Click nodes to see details • Drag nodes to rearrange • Scroll to zoom • Drag background to pan
             </div>
             <div id="graphContainer" style="width: 100%; height: 600px; background: white; border-radius: 15px; border: 2px solid rgba(102, 126, 234, 0.2); position: relative; overflow: hidden;">
                 <div id="graphCanvas"></div>
