@@ -1,0 +1,608 @@
+# Life Sciences Events Taxonomy (NOVEL)
+# This taxonomy fills the gap for clinical, regulatory, and R&D events
+# No existing standard covers these comprehensively
+
+metadata:
+  name: "Life Sciences Events Taxonomy"
+  version: "0.1-draft"
+  status: "DRAFT - Novel taxonomy, no prior standard exists"
+  author: "BioGraph"
+  license: "TBD (considering CC-BY 4.0 for open publication)"
+  last_updated: "2026-01-15"
+  note: "Combines FDA guidance, ClinicalTrials.gov vocabulary, and industry practice"
+
+# Clinical Development Events
+clinical_development:
+  # Pre-Clinical
+  preclinical_initiated:
+    category: "clinical"
+    phase: "preclinical"
+    description: "Preclinical development program initiated"
+    definition: "Company begins preclinical studies for drug candidate"
+    typical_activities:
+      - "In vitro studies"
+      - "Animal efficacy studies"
+      - "Toxicology studies"
+      - "PK/PD studies"
+
+  ind_enabling_studies_initiated:
+    category: "clinical"
+    phase: "preclinical"
+    description: "IND-enabling studies initiated"
+    definition: "Formal IND-enabling toxicology and manufacturing initiated"
+    typical_timeline: "12-18 months before IND submission"
+
+  # IND Process
+  ind_submitted:
+    category: "regulatory"
+    phase: "ind"
+    description: "IND (Investigational New Drug) application submitted"
+    definition: "IND application submitted to FDA"
+    regulatory_body: "FDA"
+    automatic_clearance: "30 days if no clinical hold"
+    sec_materiality: "high"
+
+  ind_cleared:
+    category: "regulatory"
+    phase: "ind"
+    description: "IND cleared - clinical trials may begin"
+    definition: "FDA did not place IND on clinical hold; trials may proceed"
+    regulatory_body: "FDA"
+    typical_timeline: "30 days after submission"
+
+  ind_clinical_hold:
+    category: "regulatory"
+    phase: "ind"
+    description: "IND placed on clinical hold"
+    definition: "FDA issues clinical hold, preventing trial initiation or requiring halt"
+    severity: "critical"
+    typical_reasons:
+      - "Safety concerns"
+      - "Insufficient manufacturing information"
+      - "Protocol deficiencies"
+
+  ind_clinical_hold_lifted:
+    category: "regulatory"
+    phase: "ind"
+    description: "Clinical hold lifted"
+    definition: "FDA lifts clinical hold after concerns addressed"
+
+  # Phase 1
+  phase1_initiated:
+    category: "clinical"
+    phase: "phase1"
+    description: "Phase 1 clinical trial initiated"
+    definition: "First-in-human study begins enrollment"
+    typical_subjects: "20-100 healthy volunteers or patients"
+    primary_objective: "Safety, tolerability, pharmacokinetics"
+    typical_duration: "6-12 months"
+    success_rate: "~70%"
+
+  phase1_first_patient_dosed:
+    category: "clinical"
+    phase: "phase1"
+    description: "First patient dosed in Phase 1"
+    definition: "First human receives study drug"
+    sec_materiality: "medium-high"
+    note: "Major de-risking milestone"
+
+  phase1_enrollment_completed:
+    category: "clinical"
+    phase: "phase1"
+    description: "Phase 1 enrollment completed"
+    definition: "All planned subjects enrolled"
+
+  phase1_topline_results:
+    category: "clinical"
+    phase: "phase1"
+    description: "Phase 1 top-line results announced"
+    definition: "Initial high-level efficacy and safety results disclosed"
+    sec_materiality: "high"
+    market_impact: "high"
+
+  phase1_full_results:
+    category: "clinical"
+    phase: "phase1"
+    description: "Phase 1 full results presented/published"
+    definition: "Complete data presented at conference or published in journal"
+    typical_venues:
+      - "ASCO"
+      - "ASH"
+      - "AAN"
+      - "Peer-reviewed journals"
+
+  phase1_discontinued:
+    category: "clinical"
+    phase: "phase1"
+    description: "Phase 1 trial discontinued"
+    definition: "Trial stopped before completion"
+    severity: "critical"
+    typical_reasons:
+      - "Safety concerns"
+      - "Futility"
+      - "Strategic reprioritization"
+
+  # Phase 2
+  phase2_initiated:
+    category: "clinical"
+    phase: "phase2"
+    description: "Phase 2 clinical trial initiated"
+    definition: "Proof-of-concept study in target patient population begins"
+    typical_subjects: "100-300 patients"
+    primary_objective: "Efficacy signal, optimal dose, safety"
+    typical_duration: "12-24 months"
+    success_rate: "~30%"
+
+  phase2_enrollment_completed:
+    category: "clinical"
+    phase: "phase2"
+    description: "Phase 2 enrollment completed"
+
+  phase2_interim_analysis:
+    category: "clinical"
+    phase: "phase2"
+    description: "Phase 2 interim analysis results"
+    definition: "Pre-planned interim look at efficacy/futility"
+    note: "Can trigger early termination or expansion"
+
+  phase2_topline_results_positive:
+    category: "clinical"
+    phase: "phase2"
+    description: "Phase 2 top-line results (positive)"
+    definition: "Primary endpoint met, positive efficacy signal"
+    sec_materiality: "critical"
+    market_impact: "very high"
+    triggers: "Phase 3 initiation discussions"
+
+  phase2_topline_results_negative:
+    category: "clinical"
+    phase: "phase2"
+    description: "Phase 2 top-line results (negative)"
+    definition: "Primary endpoint not met"
+    severity: "critical"
+    market_impact: "very negative"
+
+  phase2_topline_results_mixed:
+    category: "clinical"
+    phase: "phase2"
+    description: "Phase 2 top-line results (mixed)"
+    definition: "Some endpoints met, others missed; or efficacy in subgroup"
+
+  # Phase 3
+  phase3_initiated:
+    category: "clinical"
+    phase: "phase3"
+    description: "Phase 3 pivotal trial initiated"
+    definition: "Registrational trial begins"
+    typical_subjects: "300-3000+ patients"
+    primary_objective: "Confirm efficacy, monitor adverse events"
+    typical_duration: "24-48 months"
+    success_rate: "~60%"
+    sec_materiality: "critical"
+
+  phase3_enrollment_completed:
+    category: "clinical"
+    phase: "phase3"
+    description: "Phase 3 enrollment completed"
+    definition: "All planned patients enrolled in pivotal trial"
+    note: "Major milestone; data lock approaching"
+
+  phase3_interim_analysis:
+    category: "clinical"
+    phase: "phase3"
+    description: "Phase 3 interim analysis"
+    definition: "Pre-planned interim efficacy/futility analysis"
+    dsmb: "Data Safety Monitoring Board reviews"
+    potential_outcomes:
+      - "Continue as planned"
+      - "Early termination for efficacy (positive)"
+      - "Early termination for futility (negative)"
+      - "Sample size adjustment"
+
+  phase3_early_termination_efficacy:
+    category: "clinical"
+    phase: "phase3"
+    description: "Phase 3 stopped early for efficacy"
+    definition: "Trial halted early due to overwhelming efficacy"
+    sec_materiality: "critical"
+    market_impact: "extremely positive"
+    note: "Rare but highly positive signal"
+
+  phase3_topline_results_positive:
+    category: "clinical"
+    phase: "phase3"
+    description: "Phase 3 top-line results (positive)"
+    definition: "Primary endpoint(s) met with statistical significance"
+    sec_materiality: "critical"
+    market_impact: "extremely high"
+    triggers: "Regulatory filing preparation"
+
+  phase3_topline_results_negative:
+    category: "clinical"
+    phase: "phase3"
+    description: "Phase 3 top-line results (negative)"
+    definition: "Primary endpoint not met"
+    severity: "critical"
+    market_impact: "catastrophic"
+
+  # Regulatory Submissions
+  nda_submitted:
+    category: "regulatory"
+    phase: "nda"
+    description: "NDA (New Drug Application) submitted"
+    definition: "Application for drug approval submitted to FDA"
+    regulatory_body: "FDA"
+    sec_materiality: "critical"
+    typical_timing: "6-12 months after Phase 3 results"
+
+  bla_submitted:
+    category: "regulatory"
+    phase: "bla"
+    description: "BLA (Biologics License Application) submitted"
+    definition: "Application for biologic approval submitted to FDA"
+    regulatory_body: "FDA"
+    sec_materiality: "critical"
+    note: "For biologics instead of small molecules"
+
+  fda_filing_accepted:
+    category: "regulatory"
+    phase: "review"
+    description: "FDA accepts filing for review"
+    definition: "FDA deems application sufficiently complete for review"
+    typical_timeline: "60 days after submission"
+    sec_materiality: "high"
+    pdufa_date: "PDUFA target action date assigned"
+
+  fda_filing_refused:
+    category: "regulatory"
+    phase: "review"
+    description: "FDA refuses to file application"
+    definition: "Application deemed incomplete; must be resubmitted"
+    severity: "critical"
+    typical_reasons:
+      - "Major manufacturing deficiencies"
+      - "Incomplete data"
+      - "CMC issues"
+
+  fda_priority_review_granted:
+    category: "regulatory"
+    phase: "review"
+    description: "FDA grants Priority Review"
+    definition: "FDA expedites review to 6 months (vs 10 months standard)"
+    review_timeline: "6 months"
+    criteria: "Drug treats serious condition and provides significant improvement"
+    sec_materiality: "high"
+
+  breakthrough_designation_granted:
+    category: "regulatory"
+    phase: "designation"
+    description: "Breakthrough Therapy designation granted"
+    definition: "FDA grants Breakthrough status for expedited development"
+    benefits:
+      - "More frequent FDA meetings"
+      - "Rolling review"
+      - "Organizational commitment"
+    criteria: "Preliminary clinical evidence of substantial improvement"
+    timing: "Can be requested after Phase 1"
+
+  fast_track_designation_granted:
+    category: "regulatory"
+    phase: "designation"
+    description: "Fast Track designation granted"
+    definition: "FDA grants Fast Track for expedited development and review"
+    benefits:
+      - "Rolling review"
+      - "More frequent interactions"
+
+  orphan_drug_designation_granted:
+    category: "regulatory"
+    phase: "designation"
+    description: "Orphan Drug designation granted"
+    definition: "FDA grants Orphan status for rare disease (<200K patients)"
+    benefits:
+      - "7 years market exclusivity"
+      - "Tax credits"
+      - "Fee waivers"
+    criteria: "Affects <200,000 people in US"
+
+  # FDA Meetings
+  fda_type_a_meeting:
+    category: "regulatory"
+    phase: "interaction"
+    description: "FDA Type A meeting"
+    definition: "Dispute resolution meeting with FDA"
+    urgency: "high"
+    timing: "Within 30 days"
+
+  fda_type_b_meeting:
+    category: "regulatory"
+    phase: "interaction"
+    description: "FDA Type B meeting"
+    definition: "Pre-IND, End-of-Phase-2, or Pre-NDA/BLA meeting"
+    typical_types:
+      - "Pre-IND"
+      - "End-of-Phase-2"
+      - "Pre-NDA/BLA"
+    timing: "Within 60 days of request"
+    note: "Critical for alignment on pivotal trial design"
+
+  fda_type_c_meeting:
+    category: "regulatory"
+    phase: "interaction"
+    description: "FDA Type C meeting"
+    definition: "Other meeting not fitting Type A or B"
+    timing: "Within 75 days"
+
+  fda_advisory_committee_scheduled:
+    category: "regulatory"
+    phase: "review"
+    description: "FDA Advisory Committee meeting scheduled"
+    definition: "External expert panel to review data and vote"
+    note: "FDA not bound by recommendation but usually follows"
+    market_signal: "Can indicate FDA concerns or close call"
+
+  fda_advisory_committee_positive_vote:
+    category: "regulatory"
+    phase: "review"
+    description: "FDA Advisory Committee votes in favor"
+    definition: "Panel recommends approval"
+    market_impact: "very positive"
+    note: "FDA approval highly likely but not guaranteed"
+
+  fda_advisory_committee_negative_vote:
+    category: "regulatory"
+    phase: "review"
+    description: "FDA Advisory Committee votes against"
+    definition: "Panel recommends against approval"
+    severity: "critical"
+    market_impact: "very negative"
+
+  # FDA Decisions
+  fda_approved:
+    category: "regulatory"
+    phase: "approval"
+    description: "FDA grants approval"
+    definition: "Drug approved for marketing in US"
+    sec_materiality: "critical"
+    market_impact: "extremely positive"
+    typical_timeline: "By PDUFA date"
+
+  fda_rejected:
+    category: "regulatory"
+    phase: "approval"
+    description: "FDA rejects application (CRL issued)"
+    definition: "Complete Response Letter issued, listing deficiencies"
+    severity: "critical"
+    market_impact: "very negative"
+    crl_types:
+      major: "Requires new clinical data or inspection resolution"
+      minor: "Addressable with existing data or labeling changes"
+
+  fda_approval_label_expansion:
+    category: "regulatory"
+    phase: "post_approval"
+    description: "FDA approves label expansion"
+    definition: "Approval for additional indication, population, or use"
+    sec_materiality: "high"
+    examples:
+      - "New indication approved"
+      - "Pediatric indication"
+      - "Adjuvant setting"
+
+  # International Regulatory
+  ema_marketing_authorization:
+    category: "regulatory"
+    phase: "approval"
+    description: "EMA grants Marketing Authorization"
+    definition: "European Medicines Agency approves drug for EU"
+    regulatory_body: "EMA"
+
+  pmda_approval:
+    category: "regulatory"
+    phase: "approval"
+    description: "PMDA grants approval"
+    definition: "Japan's PMDA approves drug"
+    regulatory_body: "PMDA (Japan)"
+
+  china_nmpa_approval:
+    category: "regulatory"
+    phase: "approval"
+    description: "NMPA grants approval"
+    definition: "China's National Medical Products Administration approves drug"
+    regulatory_body: "NMPA (China)"
+
+# Commercial Events
+commercial:
+  drug_launched:
+    category: "commercial"
+    description: "Drug commercially launched"
+    definition: "Product becomes available for sale"
+    sec_materiality: "high"
+    typical_timing: "3-6 months after approval"
+
+  first_commercial_sale:
+    category: "commercial"
+    description: "First commercial sale"
+    definition: "First revenue-generating sale of approved product"
+
+  manufacturing_partnership:
+    category: "commercial"
+    description: "Manufacturing partnership announced"
+    definition: "Agreement for third-party manufacturing"
+    examples:
+      - "CMO agreement"
+      - "Co-manufacturing deal"
+
+  supply_agreement:
+    category: "commercial"
+    description: "Supply agreement signed"
+    definition: "Agreement to supply product to distributor/partner"
+
+# Business Development
+business_development:
+  licensing_deal_announced:
+    category: "business_development"
+    description: "Licensing deal announced"
+    definition: "Agreement to license technology or compound"
+    typical_structure: "Upfront + milestones + royalties"
+    sec_materiality: "high (if material)"
+
+  research_collaboration:
+    category: "business_development"
+    description: "Research collaboration announced"
+    definition: "Agreement to collaborate on R&D"
+    examples:
+      - "Target discovery collaboration"
+      - "Platform technology deal"
+      - "Research sponsored by pharma"
+
+  co_development_agreement:
+    category: "business_development"
+    description: "Co-development agreement"
+    definition: "Agreement to jointly develop drug candidate"
+    typical_terms: "Shared costs and profits"
+
+  commercialization_partnership:
+    category: "business_development"
+    description: "Commercialization partnership"
+    definition: "Agreement for partner to commercialize product in territory"
+    examples:
+      - "Ex-US rights licensed"
+      - "Co-promotion agreement"
+
+  option_agreement:
+    category: "business_development"
+    description: "Option agreement"
+    definition: "Partner gains option to license/acquire program later"
+    typical_structure: "Option fee + exercise price + milestones"
+
+  asset_acquisition:
+    category: "business_development"
+    description: "Asset acquisition (program/drug)"
+    definition: "Company acquires drug candidate or program from another entity"
+    note: "Distinct from full company M&A"
+
+  asset_divestiture:
+    category: "business_development"
+    description: "Asset divestiture (program/drug)"
+    definition: "Company divests program or drug rights"
+    typical_reasons:
+      - "Portfolio prioritization"
+      - "Capital needs"
+      - "Strategic refocus"
+
+# Manufacturing & Supply
+manufacturing:
+  manufacturing_facility_announced:
+    category: "manufacturing"
+    description: "Manufacturing facility expansion/construction"
+    definition: "Company announces new facility or expansion"
+    sec_materiality: "medium"
+
+  manufacturing_issue:
+    category: "manufacturing"
+    description: "Manufacturing issue disclosed"
+    definition: "Problem with manufacturing affecting supply or quality"
+    severity: "high"
+    examples:
+      - "Contamination"
+      - "FDA Form 483"
+      - "Supply disruption"
+
+  fda_form_483:
+    category: "regulatory"
+    description: "FDA Form 483 issued"
+    definition: "FDA inspection finds deficiencies"
+    severity: "medium-high"
+    note: "Can delay approval or require remediation"
+
+  fda_warning_letter:
+    category: "regulatory"
+    description: "FDA Warning Letter issued"
+    definition: "Formal notice of serious GMP violations"
+    severity: "critical"
+    market_impact: "very negative"
+
+# Post-Market Safety
+safety:
+  safety_signal_disclosed:
+    category: "safety"
+    description: "Safety signal disclosed"
+    definition: "Company discloses potential safety concern"
+    severity: "high"
+    triggers: "Further investigation required"
+
+  black_box_warning_added:
+    category: "safety"
+    description: "Black Box Warning added"
+    definition: "FDA requires strongest safety warning"
+    severity: "critical"
+    market_impact: "negative"
+
+  rems_required:
+    category: "safety"
+    description: "REMS (Risk Evaluation and Mitigation Strategy) required"
+    definition: "FDA requires risk management program"
+    examples:
+      - "Restricted distribution"
+      - "Prescriber certification"
+      - "Patient registry"
+
+  product_recall:
+    category: "safety"
+    description: "Product recall"
+    definition: "Voluntary or mandated removal from market"
+    severity: "critical"
+    classes:
+      class_1: "Serious health hazard or death"
+      class_2: "Temporary health problem"
+      class_3: "Minor violation"
+
+  market_withdrawal:
+    category: "commercial"
+    description: "Product withdrawn from market"
+    definition: "Company voluntarily discontinues product"
+    severity: "high"
+    typical_reasons:
+      - "Safety concerns"
+      - "Commercial viability"
+      - "Generic competition"
+
+# Pipeline Updates
+pipeline:
+  pipeline_update:
+    category: "corporate"
+    description: "Pipeline update presentation"
+    definition: "Company provides comprehensive pipeline overview"
+    typical_venues:
+      - "R&D Day"
+      - "JPM Healthcare Conference"
+      - "Investor Day"
+
+  program_discontinued:
+    category: "pipeline"
+    description: "Development program discontinued"
+    definition: "Company halts development of drug candidate"
+    severity: "medium-high"
+    typical_reasons:
+      - "Clinical failure"
+      - "Safety concerns"
+      - "Commercial rationale"
+      - "Portfolio prioritization"
+
+  new_program_disclosed:
+    category: "pipeline"
+    description: "New development program disclosed"
+    definition: "Company announces new drug candidate entering development"
+    sec_materiality: "medium"
+
+  indication_expansion:
+    category: "pipeline"
+    description: "New indication initiated"
+    definition: "Company begins development in additional indication"
+
+  candidate_selection:
+    category: "pipeline"
+    description: "Development candidate selected"
+    definition: "Company nominates specific molecule for development"
+    typical_stage: "Preclinical → IND"

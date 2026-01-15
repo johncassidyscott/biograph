@@ -1,0 +1,301 @@
+# Corporate & Financial Events Taxonomy
+# Primary Source: SEC Form 8-K Material Events (Public Domain)
+# Supplemented with industry-standard business events
+
+metadata:
+  name: "Corporate & Financial Events"
+  version: "0.1-draft"
+  source: "SEC Form 8-K + Industry Standards"
+  license: "Public Domain (SEC) + BioGraph Enhancements"
+  url: "https://www.sec.gov/files/form8-k.pdf"
+  last_updated: "2026-01-15"
+
+# SEC Form 8-K Section 1: Business and Operations
+business_operations:
+  material_agreement_entered:
+    sec_item: "1.01"
+    category: "corporate"
+    description: "Entry into a Material Definitive Agreement"
+    definition: "Company enters into material agreement not made in ordinary course of business"
+    examples:
+      - "Major supplier contracts"
+      - "Distribution agreements"
+      - "Strategic partnerships"
+    typical_disclosure_timeline: "4 business days"
+
+  material_agreement_terminated:
+    sec_item: "1.02"
+    category: "corporate"
+    description: "Termination of a Material Definitive Agreement"
+    definition: "Material agreement terminated, expired, or company elected not to renew"
+    examples:
+      - "Contract cancellation"
+      - "Partnership dissolution"
+
+  bankruptcy:
+    sec_item: "1.03"
+    category: "corporate"
+    description: "Bankruptcy or Receivership"
+    definition: "Company or significant subsidiary enters bankruptcy/receivership"
+    examples:
+      - "Chapter 11 filing"
+      - "Chapter 7 liquidation"
+      - "Receivership appointment"
+    severity: "critical"
+
+  cybersecurity_incident:
+    sec_item: "1.05"
+    category: "corporate"
+    description: "Material Cybersecurity Incidents"
+    definition: "Cybersecurity incident determined to be material"
+    examples:
+      - "Data breach"
+      - "Ransomware attack"
+      - "System compromise"
+    added_date: "2023-12-18"
+    severity: "high"
+
+# SEC Form 8-K Section 2: Financial Information
+financial_events:
+  acquisition_completed:
+    sec_item: "2.01"
+    category: "corporate"
+    description: "Completion of Acquisition or Disposition of Assets"
+    definition: "Acquisition or disposition of significant amount of assets"
+    examples:
+      - "Company acquisition closed"
+      - "Asset purchase completed"
+      - "Divestiture completed"
+    subcategories:
+      - "merger_completed"
+      - "acquisition_completed"
+      - "asset_purchase_completed"
+      - "divestiture_completed"
+      - "spin_off_completed"
+
+  earnings_announcement:
+    sec_item: "2.02"
+    category: "financial"
+    description: "Results of Operations and Financial Condition"
+    definition: "Public announcement of material non-public information regarding results of operations or financial condition"
+    examples:
+      - "Quarterly earnings release"
+      - "Annual earnings announcement"
+      - "Preliminary results"
+      - "Earnings guidance update"
+    frequency: "quarterly"
+    note: "Often furnished on 8-K (not filed)"
+
+  financial_obligation_created:
+    sec_item: "2.03"
+    category: "financial"
+    description: "Creation of Direct Financial Obligation"
+    definition: "Creation of material direct financial obligation or off-balance sheet arrangement"
+    examples:
+      - "New debt issuance"
+      - "Credit facility drawn"
+      - "Loan agreement entered"
+
+  debt_acceleration:
+    sec_item: "2.04"
+    category: "financial"
+    description: "Triggering Events That Accelerate or Increase Direct Financial Obligation"
+    definition: "Event that triggers obligation to make payments earlier or increase amount owed"
+    examples:
+      - "Loan default"
+      - "Covenant breach"
+      - "Cross-default triggered"
+    severity: "high"
+
+  restructuring_costs:
+    sec_item: "2.05"
+    category: "financial"
+    description: "Costs Associated with Exit or Disposal Activities"
+    definition: "Commitment to exit or disposal plan under which material charges will be incurred"
+    examples:
+      - "Facility closure"
+      - "Employee layoffs"
+      - "Product line discontinuation"
+
+  impairment_charge:
+    sec_item: "2.06"
+    category: "financial"
+    description: "Material Impairments"
+    definition: "Conclusion that material charge for asset impairment is required"
+    examples:
+      - "Goodwill impairment"
+      - "Asset write-down"
+      - "Inventory write-off"
+
+# SEC Form 8-K Section 3: Securities and Trading Markets
+securities_events:
+  delisting_notice:
+    sec_item: "3.01"
+    category: "securities"
+    description: "Notice of Delisting or Failure to Satisfy Listing Rule"
+    definition: "Notice that securities may be delisted or fail to satisfy continued listing requirements"
+    examples:
+      - "NASDAQ delisting notice"
+      - "NYSE listing deficiency"
+      - "Failure to maintain minimum bid price"
+    severity: "high"
+
+  unregistered_securities_sale:
+    sec_item: "3.02"
+    category: "securities"
+    description: "Unregistered Sales of Equity Securities"
+    definition: "Sale of equity securities in transaction not registered under Securities Act"
+    examples:
+      - "Private placement (PIPE)"
+      - "Regulation D offering"
+      - "Convertible note issuance"
+      - "Warrant exercise"
+    related_forms: ["Form D"]
+
+  securities_rights_modification:
+    sec_item: "3.03"
+    category: "securities"
+    description: "Material Modification to Rights of Security Holders"
+    definition: "Material modification to instruments defining rights of any class of securities"
+    examples:
+      - "Rights plan adoption (poison pill)"
+      - "Preferred stock terms modified"
+      - "Warrant terms amended"
+
+# SEC Form 8-K Section 4: Accountants and Financial Statements
+accounting_events:
+  auditor_change:
+    sec_item: "4.01"
+    category: "corporate"
+    description: "Changes in Registrant's Certifying Accountant"
+    definition: "Independent accountant resigns, dismissed, or new accountant engaged"
+    examples:
+      - "Auditor resignation"
+      - "Auditor dismissal"
+      - "New auditor engaged"
+    severity: "medium"
+    note: "Can signal accounting issues"
+
+  financial_restatement:
+    sec_item: "4.02"
+    category: "financial"
+    description: "Non-Reliance on Previously Issued Financial Statements"
+    definition: "Previous financial statements should no longer be relied upon"
+    examples:
+      - "Earnings restatement"
+      - "Financial restatement"
+      - "Revenue recognition correction"
+    severity: "critical"
+    note: "Major red flag for investors"
+
+# SEC Form 8-K Section 5: Corporate Governance and Management
+governance_events:
+  change_of_control:
+    sec_item: "5.01"
+    category: "corporate"
+    description: "Changes in Control of Registrant"
+    definition: "Change in control of the company occurs"
+    examples:
+      - "Acquisition by another entity"
+      - "Shareholder control change"
+      - "Management buyout"
+    severity: "critical"
+
+  officer_director_departure:
+    sec_item: "5.02"
+    category: "corporate"
+    description: "Departure of Directors or Certain Officers"
+    definition: "Director or specified officer departs; or new director elected or officer appointed"
+    examples:
+      - "CEO resignation"
+      - "CFO departure"
+      - "Board member resignation"
+      - "New CEO appointed"
+    roles:
+      - "CEO (Principal Executive Officer)"
+      - "CFO (Principal Financial Officer)"
+      - "COO (Principal Operating Officer)"
+      - "Board Director"
+
+  charter_amendment:
+    sec_item: "5.03"
+    category: "corporate"
+    description: "Amendments to Articles of Incorporation or Bylaws"
+    definition: "Material amendment to certificate of incorporation or bylaws"
+    examples:
+      - "Authorized shares increased"
+      - "Bylaws amended"
+      - "Corporate name change"
+
+  compensation_arrangement:
+    sec_item: "5.02"
+    category: "corporate"
+    description: "Compensatory Arrangements of Certain Officers"
+    definition: "Material compensatory plans, contracts or arrangements entered into or materially amended"
+    examples:
+      - "Executive compensation package"
+      - "Stock option grants"
+      - "Retention bonuses"
+    note: "Part of Item 5.02"
+
+  shareholder_vote:
+    sec_item: "5.07"
+    category: "corporate"
+    description: "Submission of Matters to Vote of Security Holders"
+    definition: "Matters submitted to shareholder vote at any meeting"
+    examples:
+      - "Annual meeting results"
+      - "Special meeting results"
+      - "Proxy vote outcomes"
+      - "M&A approval vote"
+
+# Additional Industry-Standard Events (Not SEC-Specific)
+additional_corporate_events:
+  guidance_update:
+    category: "financial"
+    description: "Financial Guidance Update"
+    definition: "Company updates forward-looking financial guidance"
+    examples:
+      - "Guidance raised"
+      - "Guidance lowered"
+      - "Guidance withdrawn"
+    note: "May be included in Item 2.02 or separate press release"
+
+  share_buyback_announcement:
+    category: "securities"
+    description: "Share Repurchase Program Announced"
+    definition: "Board authorizes stock buyback program"
+    examples:
+      - "$1B share repurchase authorized"
+      - "Buyback program extended"
+
+  dividend_declaration:
+    category: "financial"
+    description: "Dividend Declared"
+    definition: "Board declares cash or stock dividend"
+    examples:
+      - "Quarterly dividend declared"
+      - "Special dividend announced"
+      - "Dividend increased/decreased"
+
+  credit_rating_change:
+    category: "financial"
+    description: "Credit Rating Change"
+    definition: "Credit rating agency upgrades or downgrades company debt"
+    examples:
+      - "Moody's upgrade"
+      - "S&P downgrade"
+      - "Fitch rating change"
+    agencies:
+      - "Moody's"
+      - "S&P Global"
+      - "Fitch Ratings"
+
+  analyst_day:
+    category: "corporate"
+    description: "Analyst Day / Investor Day"
+    definition: "Company holds event for analysts and investors"
+    examples:
+      - "Annual investor day"
+      - "R&D day"
+      - "Pipeline update event"

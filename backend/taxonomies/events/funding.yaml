@@ -1,0 +1,451 @@
+# Funding Events Taxonomy
+# Primary Sources: Crunchbase API taxonomy + SEC Form D (Regulation D)
+# Focused on life sciences funding patterns
+
+metadata:
+  name: "Funding Events Taxonomy"
+  version: "0.1-draft"
+  sources:
+    - "Crunchbase Funding Types API (industry standard)"
+    - "SEC Form D / Regulation D (Public Domain)"
+  url_crunchbase: "https://data.crunchbase.com/reference/funding-types"
+  url_sec: "https://www.sec.gov/resources-small-businesses/exempt-offerings"
+  last_updated: "2026-01-15"
+
+# Early Stage Venture Capital
+early_stage_venture:
+  pre_seed:
+    category: "funding"
+    stage: "pre-seed"
+    typical_amount_usd: [100000, 500000]
+    description: "Pre-seed funding round"
+    definition: "Very early stage funding, often from founders, friends, family, or pre-seed funds"
+    typical_investors:
+      - "Founders"
+      - "Friends and family"
+      - "Angel investors"
+      - "Pre-seed funds"
+    typical_use:
+      - "Concept validation"
+      - "Initial team building"
+      - "Early prototype"
+    crunchbase_code: "pre_seed"
+
+  seed:
+    category: "funding"
+    stage: "seed"
+    typical_amount_usd: [500000, 5000000]
+    description: "Seed funding round"
+    definition: "First institutional funding round to prove product-market fit"
+    typical_investors:
+      - "Angel investors"
+      - "Seed funds"
+      - "Accelerators"
+      - "Early-stage VCs"
+    typical_use:
+      - "Product development"
+      - "Initial market validation"
+      - "Team expansion"
+    biotech_note: "Often larger ($2M-10M) in biotech for preclinical work"
+    crunchbase_code: "seed"
+
+  angel:
+    category: "funding"
+    stage: "angel"
+    typical_amount_usd: [25000, 500000]
+    description: "Angel investment"
+    definition: "Investment from high net worth individuals"
+    typical_investors:
+      - "Angel investors"
+      - "Angel groups"
+    crunchbase_code: "angel"
+    note: "Can occur at any stage but most common pre-seed/seed"
+
+# Series Funding (Institutional VC)
+series_venture:
+  series_a:
+    category: "funding"
+    stage: "series_a"
+    typical_amount_usd: [2000000, 20000000]
+    description: "Series A financing"
+    definition: "First significant institutional VC round to scale proven business model"
+    typical_investors:
+      - "Venture capital firms"
+      - "Corporate VCs"
+    typical_use:
+      - "Scaling operations"
+      - "Market expansion"
+      - "Team growth"
+    biotech_typical_amount_usd: [10000000, 50000000]
+    biotech_use:
+      - "IND-enabling studies"
+      - "Phase 1 clinical trials"
+      - "Platform development"
+    crunchbase_code: "series_a"
+
+  series_b:
+    category: "funding"
+    stage: "series_b"
+    typical_amount_usd: [10000000, 50000000]
+    description: "Series B financing"
+    definition: "Growth capital to scale beyond product-market fit"
+    typical_investors:
+      - "Growth-stage VCs"
+      - "Crossover funds"
+      - "Corporate VCs"
+    biotech_typical_amount_usd: [30000000, 100000000]
+    biotech_use:
+      - "Phase 2 clinical trials"
+      - "Multiple programs advancement"
+      - "Manufacturing scale-up"
+    crunchbase_code: "series_b"
+
+  series_c:
+    category: "funding"
+    stage: "series_c"
+    typical_amount_usd: [25000000, 100000000]
+    description: "Series C financing"
+    definition: "Late-stage growth capital, often pre-IPO"
+    typical_investors:
+      - "Late-stage VCs"
+      - "Private equity"
+      - "Hedge funds"
+      - "Sovereign wealth funds"
+    biotech_typical_amount_usd: [50000000, 300000000]
+    biotech_use:
+      - "Phase 3 clinical trials"
+      - "Pivotal studies"
+      - "Pre-commercialization"
+      - "M&A preparation"
+    crunchbase_code: "series_c"
+
+  series_d_plus:
+    category: "funding"
+    stage: "series_d+"
+    typical_amount_usd: [50000000, 500000000]
+    description: "Series D and beyond"
+    definition: "Very late-stage private financing, often alternative to IPO"
+    typical_investors:
+      - "Crossover funds"
+      - "Hedge funds"
+      - "Private equity"
+      - "Sovereign wealth"
+    biotech_use:
+      - "Registrational trials"
+      - "Pre-launch activities"
+      - "Acquisition financing"
+    crunchbase_codes: ["series_d", "series_e", "series_f", "series_g", "series_h", "series_i", "series_j"]
+    note: "Letters continue as long as company stays private"
+
+  corporate_round:
+    category: "funding"
+    stage: "corporate_venture"
+    typical_amount_usd: [5000000, 100000000]
+    description: "Corporate venture round"
+    definition: "Funding led by strategic corporate investor"
+    typical_investors:
+      - "Big Pharma corporate VCs"
+      - "Medtech corporates"
+      - "Healthcare strategics"
+    biotech_examples:
+      - "Pfizer Ventures"
+      - "Johnson & Johnson Innovation"
+      - "Novartis Venture Fund"
+      - "Roche Venture Fund"
+    strategic_value: "Often includes partnership, licensing, or acquisition option"
+    crunchbase_code: "corporate_round"
+
+# Alternative Equity Financing
+alternative_equity:
+  convertible_note:
+    category: "funding"
+    type: "debt_convertible"
+    typical_amount_usd: [100000, 5000000]
+    description: "Convertible note"
+    definition: "Short-term debt that converts to equity, typically at next priced round"
+    typical_terms:
+      - "Discount rate: 10-30%"
+      - "Valuation cap"
+      - "Interest rate: 2-8%"
+      - "Maturity: 12-24 months"
+    common_stage: "Seed to Series A bridge"
+    crunchbase_code: "convertible_note"
+    note: "Being replaced by SAFEs in many cases"
+
+  safe:
+    category: "funding"
+    type: "equity_instrument"
+    description: "SAFE (Simple Agreement for Future Equity)"
+    definition: "Y Combinator instrument that converts to equity at next priced round"
+    typical_amount_usd: [50000, 2000000]
+    advantages:
+      - "No interest"
+      - "No maturity date"
+      - "Simple legal terms"
+    typical_terms:
+      - "Valuation cap"
+      - "Discount (optional)"
+      - "MFN clause (optional)"
+    common_stage: "Pre-seed to Seed"
+    note: "Not yet in Crunchbase taxonomy but increasingly common"
+
+  equity_crowdfunding:
+    category: "funding"
+    type: "crowdfunding"
+    description: "Equity crowdfunding"
+    definition: "Raising equity capital from large number of small investors via online platform"
+    platforms:
+      - "WeFunder"
+      - "Republic"
+      - "StartEngine"
+      - "SeedInvest"
+    regulation: "Regulation CF (up to $5M), Regulation A+ (up to $75M)"
+    crunchbase_code: "equity_crowdfunding"
+    typical_amount_usd: [50000, 5000000]
+
+# Debt Financing
+debt_financing:
+  venture_debt:
+    category: "funding"
+    type: "debt"
+    description: "Venture debt"
+    definition: "Debt financing for venture-backed companies, typically alongside equity round"
+    typical_amount_usd: [1000000, 30000000]
+    typical_terms:
+      - "Warrants: 5-20% of loan"
+      - "Interest rate: 8-14%"
+      - "Term: 3-4 years"
+    typical_lenders:
+      - "Silicon Valley Bank"
+      - "Western Technology Investment"
+      - "Horizon Technology Finance"
+    common_use:
+      - "Extend runway"
+      - "Finance equipment"
+      - "Bridge to next equity round"
+    crunchbase_code: "debt_financing"
+
+  credit_facility:
+    category: "funding"
+    type: "debt"
+    description: "Credit facility / revolving credit"
+    definition: "Line of credit that can be drawn and repaid"
+    typical_use: "Working capital management"
+
+  term_loan:
+    category: "funding"
+    type: "debt"
+    description: "Term loan"
+    definition: "Traditional bank loan with fixed repayment schedule"
+
+# Public Market Financing
+public_markets:
+  ipo:
+    category: "funding"
+    type: "public_offering"
+    stage: "ipo"
+    description: "Initial Public Offering"
+    definition: "Company's first sale of stock to public market"
+    typical_amount_usd: [50000000, 500000000]
+    biotech_typical_amount_usd: [75000000, 300000000]
+    exchanges:
+      - "NASDAQ"
+      - "NYSE"
+    typical_timing: "18-24 months after Series C in biotech"
+    crunchbase_code: "post_ipo_equity"
+    sec_form: "Form S-1"
+
+  direct_listing:
+    category: "funding"
+    type: "public_offering"
+    description: "Direct listing"
+    definition: "Company lists shares directly on exchange without underwriting"
+    note: "No new capital raised, existing shares become tradeable"
+    examples:
+      - "Spotify (2018)"
+      - "Coinbase (2021)"
+    sec_form: "Form S-1 (or F-1 for foreign issuers)"
+
+  spac_merger:
+    category: "funding"
+    type: "public_offering"
+    description: "SPAC merger / de-SPAC"
+    definition: "Merger with Special Purpose Acquisition Company to go public"
+    typical_amount_usd: [100000000, 1000000000]
+    note: "Alternative to traditional IPO, peaked in 2020-2021"
+    biotech_examples:
+      - "23andMe (VG Acquisition Corp)"
+      - "Nautilus Biotechnology (Arya Sciences)"
+
+  follow_on_offering:
+    category: "funding"
+    type: "public_offering"
+    description: "Follow-on public offering"
+    definition: "Additional public stock offering after IPO"
+    typical_amount_usd: [25000000, 300000000]
+    sec_form: "Form S-3"
+    crunchbase_code: "post_ipo_equity"
+
+  atm_offering:
+    category: "funding"
+    type: "public_offering"
+    description: "At-The-Market (ATM) offering"
+    definition: "Gradual sale of shares into public market over time"
+    typical_amount_usd: [10000000, 200000000]
+    advantages:
+      - "Less dilutive than follow-on"
+      - "Flexibility in timing"
+      - "Lower transaction costs"
+    biotech_note: "Extremely common in biotech for ongoing capital needs"
+    sec_form: "Prospectus supplement to S-3"
+
+  pipe:
+    category: "funding"
+    type: "public_offering"
+    description: "PIPE (Private Investment in Public Equity)"
+    definition: "Private placement to institutional investors by public company"
+    typical_amount_usd: [10000000, 200000000]
+    typical_discount: "5-20% to market price"
+    common_in: "Small-cap biotech"
+    sec_item: "3.02 (Form 8-K)"
+    crunchbase_code: "post_ipo_equity"
+
+  registered_direct:
+    category: "funding"
+    type: "public_offering"
+    description: "Registered direct offering"
+    definition: "Registered offering sold directly to institutional investors"
+    typical_amount_usd: [5000000, 100000000]
+    typical_close: "2-3 days"
+    common_in: "Biotech"
+    sec_form: "Form S-3"
+
+# Non-Equity Assistance
+non_dilutive:
+  grant:
+    category: "funding"
+    type: "non_dilutive"
+    description: "Grant funding"
+    definition: "Non-dilutive funding from government, foundation, or other source"
+    biotech_sources:
+      - "NIH SBIR/STTR"
+      - "NSF grants"
+      - "BARDA contracts"
+      - "State innovation funds"
+      - "Disease foundations"
+    nih_phases:
+      phase_1:
+        description: "SBIR/STTR Phase I"
+        typical_amount_usd: [50000, 300000]
+        duration: "6-12 months"
+        purpose: "Feasibility"
+      phase_2:
+        description: "SBIR/STTR Phase II"
+        typical_amount_usd: [500000, 2000000]
+        duration: "24 months"
+        purpose: "R&D and development"
+      phase_2b:
+        description: "SBIR/STTR Phase IIB"
+        typical_amount_usd: [2000000, 10000000]
+        purpose: "Transition to commercialization"
+    crunchbase_code: "grant"
+    note: "Critical for early-stage biotech - non-dilutive capital"
+
+  revenue_based_financing:
+    category: "funding"
+    type: "non_dilutive"
+    description: "Revenue-based financing"
+    definition: "Repaid as percentage of monthly revenues until cap reached"
+    typical_terms:
+      - "Repayment: 2-8% of monthly revenue"
+      - "Cap: 1.3-2.5x advance"
+    note: "Requires revenue, uncommon in early biotech"
+
+# Strategic/Partnership
+strategic:
+  strategic_investment:
+    category: "funding"
+    type: "strategic"
+    description: "Strategic investment from partner"
+    definition: "Investment tied to business development relationship"
+    typical_structure: "Equity + partnership/licensing terms"
+    examples:
+      - "Big Pharma invests in platform company"
+      - "CRO invests in drug developer client"
+
+  licensing_upfront:
+    category: "funding"
+    type: "business_development"
+    description: "Licensing deal upfront payment"
+    definition: "Upfront cash payment as part of licensing agreement"
+    typical_amount_usd: [5000000, 500000000]
+    structure: "Upfront + milestones + royalties"
+    note: "Not equity, but functions as funding"
+
+  milestone_payment:
+    category: "funding"
+    type: "business_development"
+    description: "Milestone payment received"
+    definition: "Payment triggered by achieving development/regulatory/commercial milestone"
+    typical_milestones:
+      - "IND clearance"
+      - "Phase completion"
+      - "FDA approval"
+      - "Sales targets"
+
+# SEC Regulation D Mapping
+regulation_d:
+  rule_506b:
+    sec_rule: "Rule 506(b)"
+    description: "Private placement without general solicitation"
+    investor_requirements:
+      - "Unlimited accredited investors"
+      - "Up to 35 sophisticated non-accredited investors"
+    amount_limit: "Unlimited"
+    general_solicitation: false
+    verification: "Reasonable belief standard"
+    typical_use: "Traditional VC rounds"
+    form_required: "Form D"
+
+  rule_506c:
+    sec_rule: "Rule 506(c)"
+    description: "Private placement with general solicitation"
+    investor_requirements:
+      - "All investors must be accredited"
+    amount_limit: "Unlimited"
+    general_solicitation: true
+    verification: "Strict verification required"
+    typical_use: "Crowdfunding, demo days"
+    form_required: "Form D"
+
+  regulation_a_plus:
+    sec_rule: "Regulation A+"
+    description: "Mini-IPO (Tier 1: $20M, Tier 2: $75M)"
+    tiers:
+      tier_1:
+        amount_limit: 20000000
+        testing_the_waters: true
+        state_review: true
+      tier_2:
+        amount_limit: 75000000
+        testing_the_waters: true
+        ongoing_reporting: true
+    typical_use: "Alternative to traditional IPO for smaller offerings"
+    form_required: "Form 1-A"
+
+# Other
+other:
+  secondary_market:
+    category: "funding"
+    type: "secondary"
+    description: "Secondary sale"
+    definition: "Existing shareholders sell shares to new investors"
+    note: "Company doesn't receive proceeds"
+    crunchbase_code: "secondary_market"
+
+  undisclosed:
+    category: "funding"
+    type: "undisclosed"
+    description: "Undisclosed financing"
+    definition: "Funding round with undisclosed terms"
+    crunchbase_code: "undisclosed"

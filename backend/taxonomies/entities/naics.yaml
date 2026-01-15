@@ -1,0 +1,165 @@
+# NAICS (North American Industry Classification System) Codes
+# Source: US Census Bureau (Public Domain)
+# Last Updated: 2022 Revision
+# Focus: Life Sciences, Healthcare, and Related Industries
+
+metadata:
+  name: "NAICS 2022"
+  source: "US Census Bureau"
+  url: "https://www.census.gov/naics/"
+  license: "Public Domain (US Government)"
+  scope: "Life sciences, healthcare, biotech, pharma industries"
+  last_updated: "2022"
+
+# Pharmaceutical and Medicine Manufacturing
+pharmaceutical_manufacturing:
+  "325411":
+    description: "Medicinal and Botanical Manufacturing"
+    definition: "Manufacturing uncompounded medicinal chemicals and their derivatives (i.e., generally for use by pharmaceutical preparation manufacturers) and grading, grinding, and milling uncompounded botanicals."
+    examples:
+      - "Antibiotics, uncompounded, manufacturing"
+      - "Botanical products, uncompounded, manufacturing"
+      - "Vitamins, natural or synthetic, uncompounded, manufacturing"
+
+  "325412":
+    description: "Pharmaceutical Preparation Manufacturing"
+    definition: "Manufacturing in-vivo diagnostic substances and pharmaceutical preparations (except biological) intended for internal and external consumption in dose forms"
+    examples:
+      - "Medicines (e.g., capsules, liniments, ointments, tablets), manufacturing"
+      - "Pharmaceutical preparations, manufacturing"
+      - "Prescription drugs, manufacturing"
+      - "Over-the-counter drugs, manufacturing"
+    typical_companies:
+      - "Pfizer"
+      - "Moderna"
+      - "Merck"
+      - "Bristol-Myers Squibb"
+
+  "325413":
+    description: "In-Vitro Diagnostic Substance Manufacturing"
+    definition: "Manufacturing in-vitro (i.e., not taken internally) diagnostic substances, such as chemical, biological, or radioactive substances"
+    examples:
+      - "Diagnostic reagents, in vitro, manufacturing"
+      - "Pregnancy test kits manufacturing"
+
+  "325414":
+    description: "Biological Product (except Diagnostic) Manufacturing"
+    definition: "Manufacturing vaccines, toxoids, blood fractions, and culture media of plant or animal origin (except diagnostic)"
+    examples:
+      - "Vaccines, manufacturing"
+      - "Blood derivatives, manufacturing"
+      - "Monoclonal antibodies, in vivo, manufacturing"
+      - "Cell therapy products, manufacturing"
+      - "Gene therapy products, manufacturing"
+    typical_companies:
+      - "Genentech"
+      - "Amgen"
+      - "BioNTech"
+
+# Research and Development
+research_and_development:
+  "541711":
+    description: "Research and Development in Biotechnology"
+    definition: "Conducting research and experimental development in biotechnology, including research on plant and animal life forms, human diseases, and genetic engineering"
+    examples:
+      - "Biotechnology research and development laboratories"
+      - "Genetic engineering research and development"
+      - "Stem cell research and development"
+      - "CRISPR research facilities"
+    typical_companies:
+      - "Ginkgo Bioworks"
+      - "Twist Bioscience"
+      - "Recursion Pharmaceuticals"
+
+  "541712":
+    description: "Research and Development in the Physical, Engineering, and Life Sciences (except Nanotechnology and Biotechnology)"
+    definition: "Conducting research and development (except nanotechnology and biotechnology) in the physical, engineering, and life sciences"
+    examples:
+      - "Agricultural research and development"
+      - "Pharmaceutical research and development"
+      - "Medical research and development laboratories"
+    typical_companies:
+      - "Charles River Laboratories"
+      - "ICON plc"
+
+# Medical Device Manufacturing
+medical_devices:
+  "334510":
+    description: "Electromedical and Electrotherapeutic Apparatus Manufacturing"
+    definition: "Manufacturing electromedical and electrotherapeutic apparatus, such as magnetic resonance imaging equipment, medical ultrasound equipment"
+    examples:
+      - "CT scanners manufacturing"
+      - "MRI equipment manufacturing"
+      - "Pacemakers manufacturing"
+
+  "339112":
+    description: "Surgical and Medical Instrument Manufacturing"
+    definition: "Manufacturing medical, surgical, ophthalmic, and veterinary instruments and apparatus"
+    examples:
+      - "Surgical instruments manufacturing"
+      - "Medical thermometers manufacturing"
+      - "Syringes manufacturing"
+
+  "339113":
+    description: "Surgical Appliance and Supplies Manufacturing"
+    definition: "Manufacturing surgical appliances and supplies"
+    examples:
+      - "Prosthetic devices manufacturing"
+      - "Orthopedic devices manufacturing"
+      - "Surgical drapes and sheets manufacturing"
+
+# Healthcare Services
+healthcare_services:
+  "621511":
+    description: "Medical Laboratories"
+    definition: "Providing analytic or diagnostic services, including body fluid analysis, to the medical profession or to the patient on referral from a health practitioner"
+    examples:
+      - "Clinical laboratories"
+      - "Medical testing laboratories"
+      - "Blood testing laboratories"
+
+  "621512":
+    description: "Diagnostic Imaging Centers"
+    definition: "Providing diagnostic imaging services"
+    examples:
+      - "CT-scan centers"
+      - "MRI centers"
+      - "Medical imaging centers"
+
+# Venture Capital and Investment
+investment:
+  "523910":
+    description: "Miscellaneous Intermediation"
+    definition: "Arranging for the purchase or sale of financial contracts (except investment banking and securities brokerage)"
+    examples:
+      - "Venture capital companies"
+      - "Placement of commercial paper"
+    note: "Covers venture capital firms investing in biotech/pharma"
+
+# Consulting and Testing
+consulting_testing:
+  "541380":
+    description: "Testing Laboratories"
+    definition: "Performing physical, chemical, and other analytical testing services"
+    examples:
+      - "Pharmaceutical product testing laboratories"
+      - "Clinical trial testing laboratories"
+      - "Drug testing laboratories"
+
+  "541690":
+    description: "Other Scientific and Technical Consulting Services"
+    definition: "Providing scientific and technical consulting advice and assistance"
+    examples:
+      - "Regulatory consulting for pharmaceuticals"
+      - "Clinical trial consulting"
+      - "FDA submission consulting"
+
+# Academic/Government Research
+academic_government:
+  "611310":
+    description: "Colleges, Universities, and Professional Schools"
+    note: "Research universities conducting biomedical research"
+
+  "927110":
+    description: "Space Research and Technology"
+    note: "Government research facilities (NIH, FDA, etc.)"

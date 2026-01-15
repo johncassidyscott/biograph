@@ -1,0 +1,190 @@
+# SIC (Standard Industrial Classification) Codes
+# Source: SEC/US Government (Public Domain)
+# Purpose: SEC EDGAR filing compatibility
+# Note: Legacy system (last revised 1987), but still required by SEC
+
+metadata:
+  name: "SIC Codes"
+  source: "US Securities and Exchange Commission"
+  url: "https://www.sec.gov/search-filings/standard-industrial-classification-sic-code-list"
+  license: "Public Domain (US Government)"
+  scope: "Life sciences and healthcare codes for SEC filing compatibility"
+  status: "Legacy (1987) - Still used by SEC EDGAR"
+  note: "NAICS replaced SIC for statistical purposes, but SEC still requires SIC codes"
+
+# Pharmaceutical Preparations
+pharmaceutical:
+  "2834":
+    description: "Pharmaceutical Preparations"
+    definition: "Manufacturing, fabricating, or processing drugs in pharmaceutical preparations for human or veterinary use"
+    examples:
+      - "Capsules, pharmaceutical"
+      - "Drugs, pharmaceutical: sold to wholesalers"
+      - "Medicinal chemicals, uncompounded"
+      - "Tablets, pharmaceutical"
+      - "Vaccines"
+    typical_companies:
+      - "Pfizer (SIC: 2834)"
+      - "Moderna (SIC: 2834)"
+      - "Johnson & Johnson (SIC: 2834)"
+      - "Merck (SIC: 2834)"
+    naics_equivalent: "325412, 325414"
+
+  "2833":
+    description: "Medicinal Chemicals and Botanical Products"
+    definition: "Manufacturing bulk organic and inorganic medicinal chemicals and their derivatives, and processing (grading, grinding, and milling) bulk botanical drugs and herbs"
+    examples:
+      - "Antibiotics, bulk: uncompounded"
+      - "Vitamins, natural and synthetic: bulk, uncompounded"
+      - "Botanical products, medicinal: ground, graded, and milled"
+    naics_equivalent: "325411"
+
+  "2835":
+    description: "In Vitro and In Vivo Diagnostic Substances"
+    definition: "Manufacturing in vitro and in vivo diagnostic substances, whether or not packaged for retail sale"
+    examples:
+      - "Diagnostic reagents"
+      - "Radioactive diagnostic substances"
+      - "Test kits, medical: in vitro and in vivo"
+    naics_equivalent: "325413"
+
+  "2836":
+    description: "Biological Products, Except Diagnostic Substances"
+    definition: "Manufacturing biological products (except diagnostic substances), including vaccines, toxoids, blood derivatives, and other biological products"
+    examples:
+      - "Blood derivatives"
+      - "Culture media"
+      - "Serums"
+      - "Vaccines, except veterinary"
+      - "Toxoids"
+    naics_equivalent: "325414"
+
+# Medical Instruments and Supplies
+medical_devices:
+  "3841":
+    description: "Surgical and Medical Instruments and Apparatus"
+    definition: "Manufacturing medical, surgical, ophthalmic, and veterinary instruments and apparatus"
+    examples:
+      - "Surgical instruments"
+      - "Hypodermic needles and syringes"
+      - "Thermometers, medical"
+      - "Scalpels"
+    naics_equivalent: "339112"
+
+  "3842":
+    description: "Orthopedic, Prosthetic, and Surgical Appliances and Supplies"
+    definition: "Manufacturing orthopedic, prosthetic, and surgical appliances and supplies, arch supports, and other foot appliances"
+    examples:
+      - "Prosthetic appliances"
+      - "Orthopedic devices"
+      - "Surgical dressings"
+      - "Sutures"
+    naics_equivalent: "339113"
+
+  "3845":
+    description: "Electromedical and Electrotherapeutic Apparatus"
+    definition: "Manufacturing electromedical and electrotherapeutic apparatus"
+    examples:
+      - "CT scanners"
+      - "MRI equipment"
+      - "Pacemakers"
+      - "Electrocardiographs"
+      - "Hearing aids"
+    naics_equivalent: "334510"
+
+# Research and Development
+research:
+  "8731":
+    description: "Commercial Physical and Biological Research"
+    definition: "Commercial research, including research in electronics and other fields of physical science; and commercial research in biology, botany, biotechnology, and other life sciences"
+    examples:
+      - "Biotechnology research, commercial"
+      - "Drug discovery research"
+      - "Pharmaceutical research and development"
+      - "Clinical trial research organizations (CROs)"
+    typical_companies:
+      - "IQVIA (SIC: 8731)"
+      - "Charles River Laboratories (SIC: 8731)"
+      - "Covance (SIC: 8731)"
+    naics_equivalent: "541711, 541712"
+
+  "8732":
+    description: "Commercial Economic, Sociological, and Educational Research"
+    note: "Includes healthcare economics and outcomes research (HEOR)"
+    naics_equivalent: "541720"
+
+# Testing Laboratories
+testing:
+  "8734":
+    description: "Testing Laboratories"
+    definition: "Testing services, including automotive, electrical, and mechanical testing"
+    examples:
+      - "Drug testing laboratories"
+      - "Pharmaceutical testing laboratories"
+      - "Clinical laboratories, testing"
+    naics_equivalent: "541380"
+
+# Healthcare Services
+healthcare_services:
+  "8071":
+    description: "Medical Laboratories"
+    definition: "Operating medical and dental laboratories that provide professional analytic or diagnostic services"
+    examples:
+      - "Clinical laboratories"
+      - "Blood testing laboratories"
+      - "Pathology laboratories"
+    naics_equivalent: "621511"
+
+  "8082":
+    description: "Home Health Care Services"
+    naics_equivalent: "621610"
+
+# Investment Services
+investment:
+  "6282":
+    description: "Investment Advice"
+    definition: "Furnishing investment advice to clients on a fee basis"
+    examples:
+      - "Investment advisory services"
+      - "Financial planning services"
+    note: "Some healthcare-focused investment firms use this code"
+    naics_equivalent: "523930"
+
+# Wholesale Distribution
+wholesale:
+  "5122":
+    description: "Drugs, Drug Proprietaries, and Druggists' Sundries"
+    definition: "Wholesaling drugs and druggists' sundries"
+    examples:
+      - "Pharmaceutical distribution"
+      - "Drug wholesalers"
+    typical_companies:
+      - "McKesson (SIC: 5122)"
+      - "Cardinal Health (SIC: 5122)"
+      - "AmerisourceBergen (SIC: 5122)"
+    naics_equivalent: "424210"
+
+# Retail Pharmacy
+retail:
+  "5912":
+    description: "Drug Stores and Proprietary Stores"
+    definition: "Retail sale of prescription drugs"
+    typical_companies:
+      - "CVS Health (SIC: 5912)"
+      - "Walgreens (SIC: 5912)"
+      - "Rite Aid (SIC: 5912)"
+    naics_equivalent: "446110"
+
+# Mapping Notes
+mapping_notes:
+  sic_to_naics:
+    note: "SIC is more aggregated than NAICS. One SIC code may map to multiple NAICS codes."
+    key_differences:
+      - "SIC 2834 splits into NAICS 325412 (preparations) and 325414 (biologics)"
+      - "SIC 8731 splits into NAICS 541711 (biotech R&D) and 541712 (other R&D)"
+
+  sec_usage:
+    note: "SEC EDGAR requires primary SIC code on all registration statements"
+    form_8k: "Material events filed on Form 8-K include SIC code"
+    form_10k: "Annual reports (10-K) include SIC code"
+    search: "SEC EDGAR search can filter by SIC code"
