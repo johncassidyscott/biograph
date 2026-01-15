@@ -137,6 +137,13 @@ body {
 .dark-mode-toggle .icon {
     font-size: 1.3em;
     animation: glow 2s ease-in-out infinite;
+    color: #667eea;
+    display: flex;
+    align-items: center;
+}
+
+body.dark-mode .dark-mode-toggle .icon {
+    color: white;
 }
 
 /* Toast notifications */
@@ -876,7 +883,22 @@ pre {
 <body>
 <!-- Dark Mode Toggle -->
 <div class="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle dark mode (Ctrl+D)">
-    <span class="icon" id="darkModeIcon">☾</span>
+    <span class="icon" id="darkModeIcon">
+        <svg id="moonIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: block;">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor"/>
+        </svg>
+        <svg id="sunIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: none;">
+            <circle cx="12" cy="12" r="5" fill="currentColor"/>
+            <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </span>
     <span id="darkModeText">Dark</span>
 </div>
 
@@ -1312,14 +1334,17 @@ function toggleDarkMode() {
     localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
 
     // Update toggle button
-    const icon = document.getElementById('darkModeIcon');
+    const moonIcon = document.getElementById('moonIcon');
+    const sunIcon = document.getElementById('sunIcon');
     const text = document.getElementById('darkModeText');
     if (isDark) {
-        icon.textContent = '☀️';
+        moonIcon.style.display = 'none';
+        sunIcon.style.display = 'block';
         text.textContent = 'Light';
         showToast('Dark mode enabled', 'success');
     } else {
-        icon.textContent = '☾';
+        moonIcon.style.display = 'block';
+        sunIcon.style.display = 'none';
         text.textContent = 'Dark';
         showToast('Light mode enabled', 'success');
     }
@@ -1330,7 +1355,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const darkMode = localStorage.getItem('darkMode');
     if (darkMode === 'enabled') {
         document.body.classList.add('dark-mode');
-        document.getElementById('darkModeIcon').textContent = '☀️';
+        document.getElementById('moonIcon').style.display = 'none';
+        document.getElementById('sunIcon').style.display = 'block';
         document.getElementById('darkModeText').textContent = 'Light';
     }
 });
