@@ -1,11 +1,12 @@
+"""Target MeSH IDs for filtering."""
 import pandas as pd
-from pathlib import Path
+import os
 
-TA_MAPPING_PATH = Path(__file__).resolve().parents[2] / "data" / "ta_mapping.csv"
+# Load TA mapping
+TA_FILE = os.path.join(os.path.dirname(__file__), "../../data/ta_mapping.csv")
+TA_MAPPING_DF = pd.read_csv(TA_FILE)
 
-def load_target_mesh():
-    df = pd.read_csv(TA_MAPPING_PATH, dtype={"mesh_id": str})
-    ids = set(df["mesh_id"].dropna().astype(str))
-    return ids, df
+# Extract target MeSH IDs
+TARGET_MESH_IDS = set(TA_MAPPING_DF["mesh_id"].unique())
 
-TARGET_MESH_IDS, TA_MAPPING_DF = load_target_mesh()
+print(f"Loaded {len(TARGET_MESH_IDS)} target MeSH IDs")

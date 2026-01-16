@@ -1,9 +1,7 @@
-mesh_id,l3_market,l2_segment,l1_therapy
-D002289,NSCLC,Solid Tumor,Oncology
-D009101,Multiple Myeloma,Hematologic,Oncology
-D015179,Colorectal Cancer,Solid Tumor,Oncology
-D001172,Rheumatoid Arthritis,Rheumatologic,Immunology
-D003876,Atopic Dermatitis,Barrier Inflammation,Immunology
-D015212,Inflammatory Bowel Disease,Barrier Inflammation,Immunology
-D006333,Heart Failure,CV & Renal,Cardiometabolic
-D000544,Alzheimer Disease,Neurology,Neuroscience
+disease_name,mesh_id,efo_id,therapy_area
+Non-small cell lung cancer,D002289,EFO_0003060,Oncology
+Multiple Myeloma,D009101,EFO_0000756,Oncology
+Rheumatoid Arthritis,D001172,EFO_0000684,Immunology
+Atopic Dermatitis,D003876,EFO_0000274,Immunology
+Inflammatory Bowel Disease,D015212,EFO_0003767,Immunology
+Alzheimer Disease,D000544,MONDO_0004975,Neuroscience
