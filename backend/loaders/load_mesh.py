@@ -10,7 +10,10 @@ import sys
 import urllib.request
 import xml.etree.ElementTree as ET
 from typing import Iterable, List, Tuple
-from app.db import get_conn
+from backend.app.db import get_conn
+from backend.loaders.target_mesh import TARGET_MESH_IDS
+from backend.loaders.target_mesh import TARGET_MESH_IDS
+from backend.loaders.target_mesh import TARGET_MESH_IDS
 
 MESH_BASE = "https://nlmpubs.nlm.nih.gov/projects/mesh/MESH_FILES/xmlmesh"
 
@@ -94,7 +97,7 @@ def load_mesh(year: int, promote_diseases: bool = True, batch_size: int = 1000) 
                    seen.add(s.lower())
                    alias_rows.append((ui, s))
                # Promote diseases: any TreeNumber under 'C'
-               is_disease = promote_diseases and any(tn.startswith("C") for tn in tree_nums)
+               is_disease = promote_diseases and any(tn.startswith("C") for tn in tree_nums) and ui in TARGET_MESH_IDS
                if is_disease:
                    promoted += 1
                    canonical_id = f"MESH:{ui}"
