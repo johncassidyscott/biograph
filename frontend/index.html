@@ -1,231 +1,178 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>biograph - Disease Target Graph</title>
+    <title>biograph</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
-        .container { display: flex; height: 100vh; }
+        body { font-family: sans-serif; display: flex; height: 100vh; background: #f5f5f5; }
         #graph { flex: 1; background: white; }
-        .sidebar { width: 320px; background: white; border-left: 1px solid #ddd; overflow-y: auto; padding: 20px; }
-        h1 { font-size: 24px; margin-bottom: 5px; color: #2c3e50; }
-        .stats { font-size: 12px; color: #666; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-        .controls { margin-bottom: 15px; }
-        .btn { padding: 8px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; background: #3498db; color: white; margin-bottom: 5px; width: 100%; }
-        .btn:hover { background: #2980b9; }
-        .btn.secondary { background: #95a5a6; }
-        .btn.secondary:hover { background: #7f8c8d; }
-        .filter-group { margin-bottom: 15px; }
-        .filter-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #2c3e50; }
-        select { width: 100%; padding: 6px; font-size: 12px; border: 1px solid #ddd; border-radius: 4px; }
-        .node-info { background: #f9f9f9; padding: 15px; border-radius: 4px; margin-top: 15px; border: 1px solid #eee; }
-        .node-info h3 { font-size: 14px; margin-bottom: 8px; color: #2c3e50; }
-        .node-info p { font-size: 12px; color: #666; margin: 4px 0; }
-        .disease-list { margin-top: 15px; }
-        .disease-list label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #2c3e50; }
-        .disease-btn { display: block; width: 100%; padding: 8px; margin-bottom: 5px; font-size: 11px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; text-align: left; }
-        .disease-btn:hover { background: #f0f0f0; border-color: #3498db; }
-        .disease-btn.active { background: #e74c3c; color: white; border-color: #e74c3c; }
+        .sidebar { width: 320px; background: white; border-left: 1px solid #ddd; padding: 20px; overflow-y: auto; }
+        h1 { font-size: 20px; margin-bottom: 10px; }
+        button { width: 100%; padding: 8px; margin-bottom: 5px; cursor: pointer; border: none; border-radius: 4px; background: #3498db; color: white; }
+        button:hover { background: #2980b9; }
+        .filter { margin: 15px 0; padding: 10px; background: #f9f9f9; border-radius: 4px; }
+        .filter label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+        .filter input { width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; }
+        .info { background: #f9f9f9; padding: 10px; margin-top: 15px; border-radius: 4px; font-size: 12px; }
+        .error { background: #ffe6e6; color: #e74c3c; padding: 10px; border-radius: 4px; }
+        .stats { font-size: 12px; color: #666; margin-bottom: 15px; line-height: 1.6; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div id="graph"></div>
-        <div class="sidebar">
-            <h1>biograph</h1>
-            <div class="stats">
-                <div id="graphStats"></div>
-            </div>
-            <div class="controls">
-                <button class="btn" onclick="showAllDiseases()">Show All</button>
-                <button class="btn secondary" onclick="resetGraph()">Clear</button>
-            </div>
-            <div class="disease-list">
-                <label>Select a Disease:</label>
-                <div id="diseaseButtons"></div>
-            </div>
-            <div id="nodeInfo"></div>
+    <div id="graph"></div>
+    <div class="sidebar">
+        <h1>biograph</h1>
+        <div class="stats" id="stats">Loading...</div>
+        <div class="filter">
+            <label>Min Score:</label>
+            <input type="range" id="scoreSlider" min="0" max="1" step="0.01" value="0" onchange="updateFilter()">
+            <span id="scoreValue">0.0</span>
         </div>
+        <button onclick="clearAll()" style="background: #95a5a6;">Show All</button>
+        <h3 style="margin-top: 20px; font-size: 14px;">Diseases</h3>
+        <div id="diseases"></div>
+        <div id="info"></div>
     </div>
 
     <script>
-        let container = document.getElementById('graph');
-        let allData = { nodes: [], edges: [] };
-        let network = null;
-        let diseases = [];
-
-        async function loadGraph() {
+        let fullData = { nodes: [], edges: [] }, filteredData = { nodes: [], edges: [] }, network = null, minScore = 0;
+        
+        async function load() {
             try {
-                // Fetch nodes
-                const nodesRes = await fetch('/api/graph/nodes');
-                const nodesData = await nodesRes.json();
+                const nr = await fetch('/api/graph/nodes');
+                if(!nr.ok) throw new Error(`Nodes: ${nr.status}`);
+                const nd = await nr.json();
                 
-                // Fetch edges
-                const edgesRes = await fetch('/api/graph/edges');
-                const edgesData = await edgesRes.json();
-
-                allData.nodes = nodesData.nodes.map(n => ({
+                const er = await fetch('/api/graph/edges?min_score=0');
+                if(!er.ok) throw new Error(`Edges: ${er.status}`);
+                const ed = await er.json();
+                
+                const colorMap = { disease:'#e74c3c', target:'#3498db', drug:'#2ecc71', patent:'#9b59b6', company:'#f39c12' };
+                
+                fullData.nodes = nd.nodes.map(n => ({
                     id: n.id,
                     label: n.name,
-                    title: `${n.kind}: ${n.canonical_id}`,
+                    title: `<b>${n.name}</b><br/>${n.canonical_id}`,
                     kind: n.kind,
-                    color: getColor(n.kind),
-                    shape: getShape(n.kind),
-                    size: getSize(n.kind),
-                    font: { size: 12 }
+                    color: colorMap[n.kind] || '#95a5a6',
+                    shape: n.kind==='disease'?'diamond'
+                         : n.kind==='drug'?'box'
+                         : n.kind==='company'?'box'
+                         : n.kind==='patent'?'star'
+                         : 'dot',
+                    size: n.kind==='disease'?35
+                        : n.kind==='drug'?30
+                        : n.kind==='company'?25
+                        : n.kind==='patent'?25
+                        : 20
                 }));
-
-                allData.edges = edgesData.edges.map(e => ({
+                
+                fullData.edges = ed.edges.map(e => ({
                     from: e.src_id,
                     to: e.dst_id,
-                    label: e.type,
-                    title: `${e.src_name} --[${e.type}]--> ${e.dst_name}`,
+                    title: `${e.src_name} → ${e.dst_name} [${e.type}]`,
                     arrows: 'to',
-                    color: { color: '#cccccc', opacity: 0.2 },
-                    smooth: { type: 'continuous' }
+                    width: Math.max(0.5, (e.score || 0) * 5),
+                    color: { color: '#cccccc', opacity: Math.max(0.2, (e.score || 0)) },
+                    score: e.score || 0
                 }));
-
-                // Extract unique diseases
-                diseases = allData.nodes
-                    .filter(n => n.kind === 'disease')
-                    .sort((a, b) => a.label.localeCompare(b.label));
-
-                renderDiseaseButtons();
-                updateStats();
-                console.log(`Loaded ${allData.nodes.length} nodes and ${allData.edges.length} edges`);
-            } catch (error) {
-                console.error('Error loading graph:', error);
-                alert('Failed to load graph: ' + error.message);
+                
+                console.log(`Loaded ${fullData.nodes.length} nodes, ${fullData.edges.length} edges`);
+                console.log('Nodes:', fullData.nodes.reduce((a,n)=>{a[n.kind]=(a[n.kind]||0)+1; return a},{}));
+                
+                const diseases = fullData.nodes.filter(n=>n.kind==='disease').sort((a,b)=>a.label.localeCompare(b.label));
+                document.getElementById('diseases').innerHTML = diseases.map(d=>
+                    `<button style="background:#e74c3c;margin-top:5px;" onclick="show(${d.id})">${d.label}</button>`
+                ).join('');
+                
+                loadAll();
+            } catch(e) {
+                console.error(e);
+                document.getElementById('stats').innerHTML = `<div class="error">Error: ${e.message}</div>`;
             }
         }
-
-        function renderDiseaseButtons() {
-            const container = document.getElementById('diseaseButtons');
-            container.innerHTML = diseases.map(d => 
-                `<button class="disease-btn" onclick="showDiseaseSubgraph(${d.id}, this)">${d.label}</button>`
-            ).join('');
+        
+        function updateFilter() {
+            minScore = parseFloat(document.getElementById('scoreSlider').value);
+            document.getElementById('scoreValue').textContent = minScore.toFixed(2);
+            loadAll();
         }
-
-        function showDiseaseSubgraph(diseaseId, btn) {
-            // Highlight button
-            document.querySelectorAll('.disease-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            // Find disease node
-            const disease = allData.nodes.find(n => n.id === diseaseId);
-            if (!disease) return;
-
-            // Get edges from this disease
-            const edgesFromDisease = allData.edges.filter(e => e.from === diseaseId);
-            const targetIds = new Set(edgesFromDisease.map(e => e.to));
-
-            // Get edges from targets to drugs
-            const edgesFromTargets = allData.edges.filter(e => 
-                targetIds.has(e.from) && allData.nodes.find(n => n.id === e.to)?.kind === 'drug'
-            );
-            const drugIds = new Set(edgesFromTargets.map(e => e.to));
-
-            // Build subgraph: disease + targets + drugs + edges
-            const subgraphNodeIds = new Set([diseaseId, ...targetIds, ...drugIds]);
-            const subgraphNodes = allData.nodes.filter(n => subgraphNodeIds.has(n.id));
-            const subgraphEdges = allData.edges.filter(e => 
-                subgraphNodeIds.has(e.from) && subgraphNodeIds.has(e.to)
-            );
-
-            renderGraph({ nodes: subgraphNodes, edges: subgraphEdges });
-            showNodeInfo(disease);
-            updateStats(subgraphNodes.length, subgraphEdges.length);
-        }
-
-        function showAllDiseases() {
-            document.querySelectorAll('.disease-btn').forEach(b => b.classList.remove('active'));
-            renderGraph(allData);
+        
+        function loadAll() {
+            filteredData.nodes = fullData.nodes;
+            filteredData.edges = fullData.edges.filter(e => e.score >= minScore);
+            render(filteredData.nodes, filteredData.edges);
             updateStats();
         }
-
-        function renderGraph(data) {
-            const options = {
-                physics: {
-                    enabled: true,
-                    stabilization: { iterations: 100 },
-                    barnesHut: { gravitationalConstant: -30000, centralGravity: 0.3, springLength: 200 }
-                },
-                interaction: { navigationButtons: true, keyboard: true, zoomView: true },
-                nodes: { font: { size: 12 } }
-            };
+        
+        function show(disease_id) {
+            const sub = new Set([disease_id]);
+            const sedges = [];
             
-            network = new vis.Network(container, data, options);
-            
-            network.on('click', (params) => {
-                if (params.nodes.length > 0) {
-                    const nodeId = params.nodes[0];
-                    const node = allData.nodes.find(n => n.id === nodeId);
-                    showNodeInfo(node);
+            // Get all targets for this disease
+            fullData.edges.forEach(e=>{
+                if(e.from===disease_id && fullData.nodes.find(n=>n.id===e.to && n.kind==='target')){
+                    sub.add(e.to);
+                    sedges.push(e);
                 }
             });
-        }
-
-        function showNodeInfo(node) {
-            const info = document.getElementById('nodeInfo');
-            const edgeCount = allData.edges.filter(e => e.from === node.id || e.to === node.id).length;
-            info.innerHTML = `
-                <div class="node-info">
-                    <h3>${node.label}</h3>
-                    <p><strong>Type:</strong> ${node.kind}</p>
-                    <p><strong>ID:</strong> ${node.title.split(':')[1]}</p>
-                    <p><strong>Connections:</strong> ${edgeCount}</p>
-                </div>
-            `;
-        }
-
-        function updateStats(nodeCount = null, edgeCount = null) {
-            const stats = document.getElementById('graphStats');
-            if (nodeCount === null) {
-                nodeCount = allData.nodes.length;
-                edgeCount = allData.edges.length;
-            }
-            const diseases = allData.nodes.filter(n => n.kind === 'disease').length;
-            const targets = allData.nodes.filter(n => n.kind === 'target').length;
-            const drugs = allData.nodes.filter(n => n.kind === 'drug').length;
             
-            stats.innerHTML = `
-                <strong>Graph Stats</strong><br/>
-                Nodes: ${nodeCount}<br/>
-                Edges: ${edgeCount}<br/>
-                <br/>
-                <strong>Entity Types</strong><br/>
-                Diseases: ${diseases}<br/>
-                Targets: ${targets}<br/>
-                Drugs: ${drugs}
-            `;
+            // Get all drugs for those targets
+            fullData.edges.forEach(e=>{
+                if(fullData.nodes.find(n=>n.id===e.from && n.kind==='drug') && sub.has(e.to)){
+                    sub.add(e.from);
+                    sedges.push(e);
+                }
+            });
+            
+            // Get companies for those drugs
+            fullData.edges.forEach(e=>{
+                if(fullData.nodes.find(n=>n.id===e.from && n.kind==='drug') && fullData.nodes.find(n=>n.id===e.to && n.kind==='company')){
+                    if(sub.has(e.from)){
+                        sub.add(e.to);
+                        sedges.push(e);
+                    }
+                }
+            });
+            
+            const snodes = fullData.nodes.filter(n=>sub.has(n.id));
+            render(snodes, sedges);
+            updateStats(snodes.length, sedges.length);
         }
-
-        function getColor(kind) {
-            const colors = { disease: '#e74c3c', target: '#3498db', drug: '#2ecc71' };
-            return colors[kind] || '#95a5a6';
+        
+        function render(n, e) {
+            if(network) network.destroy();
+            network = new vis.Network(document.getElementById('graph'), {nodes:n,edges:e}, {
+                physics: { enabled: false },
+                layout: { hierarchical: { enabled: true, direction: 'LR', nodeSpacing: 150, levelSeparation: 300 } },
+                interaction: { navigationButtons: true, keyboard: true }
+            });
+            network.on('click', p=>{if(p.nodes.length>0){const nd=fullData.nodes.find(x=>x.id===p.nodes[0]);if(nd)show_info(nd);}});
         }
-
-        function getShape(kind) {
-            const shapes = { disease: 'diamond', target: 'dot', drug: 'box' };
-            return shapes[kind] || 'dot';
+        
+        function show_info(n) {
+            const ec = fullData.edges.filter(e=>e.from===n.id||e.to===n.id).length;
+            document.getElementById('info').innerHTML = `<div class="info"><b>${n.label}</b><br/>Type: ${n.kind}<br/>Connections: ${ec}</div>`;
         }
-
-        function getSize(kind) {
-            const sizes = { disease: 35, target: 20, drug: 30 };
-            return sizes[kind] || 20;
+        
+        function updateStats(nc=null,ec=null) {
+            if(!nc) { nc = filteredData.nodes.length; ec = filteredData.edges.length; }
+            const d=filteredData.nodes.filter(n=>n.kind==='disease').length,
+                  t=filteredData.nodes.filter(n=>n.kind==='target').length,
+                  dr=filteredData.nodes.filter(n=>n.kind==='drug').length,
+                  c=filteredData.nodes.filter(n=>n.kind==='company').length,
+                  p=filteredData.nodes.filter(n=>n.kind==='patent').length;
+            document.getElementById('stats').innerHTML=`<strong>Nodes:</strong> ${nc}<br/><strong>Edges:</strong> ${ec}<br/><strong>Diseases:</strong> ${d}<br/><strong>Targets:</strong> ${t}<br/><strong>Drugs:</strong> ${dr}<br/><strong>Companies:</strong> ${c}<br/><strong>Patents:</strong> ${p}`;
         }
-
-        function resetGraph() {
-            document.querySelectorAll('.disease-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('nodeInfo').innerHTML = '';
-            showAllDiseases();
+        
+        function clearAll() {
+            document.getElementById('info').innerHTML = '';
+            loadAll();
         }
-
-        window.addEventListener('load', loadGraph);
+        
+        window.addEventListener('load', load);
     </script>
 </body>
 </html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head><title>Debug</title></head>
+<body>
+<h1>Debug Info</h1>
+<pre id="output"></pre>
+<script>
+async function debug() {
+    const out = [];
+    try {
+        const nr = await fetch('/api/graph/nodes');
+        const nodes = await nr.json();
+        const er = await fetch('/api/graph/edges?min_score=0');
+        const edges = await er.json();
+        
+        out.push(`Total nodes: ${nodes.nodes.length}`);
+        out.push(`Total edges: ${edges.edges.length}`);
+        
+        const byKind = nodes.nodes.reduce((a,n)=>{a[n.kind]=(a[n.kind]||0)+1; return a},{});
+        out.push(`\nNodes by kind: ${JSON.stringify(byKind, null, 2)}`);
+        
+        const companies = nodes.nodes.filter(n => n.kind === 'company');
+        out.push(`\nCompany nodes: ${companies.length}`);
+        companies.forEach(c => out.push(`  ${c.id}: ${c.name}`));
+        
+        const companyEdges = edges.edges.filter(e => e.dst_kind === 'company');
+        out.push(`\nEdges to companies: ${companyEdges.length}`);
+        companyEdges.forEach(e => out.push(`  ${e.src_name} -> ${e.dst_name} [${e.type}]`));
+        
+    } catch(e) {
+        out.push(`ERROR: ${e.message}`);
+    }
+    document.getElementById('output').textContent = out.join('\n');
+}
+debug();
+</script>
+</body>
+</html>
