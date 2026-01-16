@@ -66,3 +66,7 @@ def debug_page():
 @app.get("/test.html")
 def test_page():
     return FileResponse("frontend/test.html")
+
+@app.get("/companies.html")
+def companies_page():
+    return FileResponse("frontend/companies.html")

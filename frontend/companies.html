@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Companies</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f39c12; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Drug Manufacturers</h1>
+    <table id="data"></table>
+    <script>
+    async function load() {
+        const res = await fetch('/api/graph/edges?min_score=0');
+        const data = await res.json();
+        const mfg = data.edges.filter(e => e.type === 'manufactured_by');
+        
+        let html = '<tr><th>Drug</th><th>Manufacturer</th></tr>';
+        mfg.forEach(e => {
+            html += `<tr><td>${e.src_name}</td><td>${e.dst_name}</td></tr>`;
+        });
+        document.getElementById('data').innerHTML = html;
+    }
+    load();
+    </script>
+</body>
+</html>
