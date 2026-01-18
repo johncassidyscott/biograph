@@ -1,0 +1,348 @@
+BioGraph — Master Spec (Investor-Grade / MVP)
+
+Version: 8.2-MVP — 2026-01-18
+Audience: Institutional investors, strategy, BD, competitive intelligence
+Explicitly NOT: R&D discovery platform
+
+This document is the single execution contract for the BioGraph MVP.
+Anything not listed here is out of scope by default.
+
+================================================================
+0) One-line definition
+
+BioGraph is an index-anchored intelligence graph that explains why a life-sciences issuer is moving, with auditable evidence.
+
+================================================================
+1) Product positioning (LOCKED)
+
+FOR:
+- Buy-side analysts (public markets)
+- Strategy / BD / CI teams at biopharma and medtech
+- Corporate development
+
+NOT FOR:
+- Bench scientists
+- Bioinformatics teams
+- Clinical statisticians
+- IP lawyers
+
+WHAT USERS PAY FOR:
+- Issuer → DrugProgram → Target → Disease → Catalyst explanations
+- Evidence chains that can be audited
+- Time-aware answers ("what changed since last quarter?")
+- Deterministic joins; no speculative graph traversal
+
+================================================================
+2) Universe & issuer identity (LOCKED)
+
+INPUT:
+- Human-curated Universe CSV (Phase 0) — DONE
+
+ISSUER IDENTITY RULE (MVP):
+- Issuer is an internal, stable identifier (issuer_id)
+- CIK is an identifier, not the issuer itself
+- One issuer may have multiple CIKs over time
+- CIK changes, mergers, successor issuers handled manually in Phase 0
+- No automated or fuzzy org resolution
+
+CORE TABLES:
+
+issuer(issuer_id, primary_cik, created_at, notes)
+
+issuer_cik_history(
+  issuer_id,
+  cik,
+  start_date,
+  end_date,
+  source,
+  observed_at
+)
+
+universe_membership(
+  issuer_id,
+  universe_id,
+  start_date,
+  end_date,
+  notes
+)
+
+================================================================
+3) Scope gating (NON-NEGOTIABLE)
+
+There is NO free graph traversal in MVP.
+
+All product queries MUST conform to:
+
+Issuer
+  → DrugProgram
+    → Target
+      → Disease
+
+Anything outside this chain does not exist in MVP.
+
+================================================================
+4) Fixed explanation chain (FIRST-CLASS)
+
+The explanation chain is materialized and is the ONLY product query surface.
+
+explanation(
+  explanation_id,
+  issuer_id,
+  drug_program_id,
+  target_id,
+  disease_id,
+  as_of_date,
+  strength_score,
+  created_at
+)
+
+RULES:
+- UI and exports read ONLY from explanation objects
+- Raw graph traversal is admin/debug-only
+- Explanations are recomputed per as_of_date
+
+================================================================
+5) Canonical identity spine (LOCKED)
+
+Issuer:
+- Internal issuer_id
+- Tracked via CIK history
+
+Location:
+- GeoNames ID
+
+DrugProgram:
+- Issuer-scoped internal ID
+- Optional ChEMBL ID as attribute
+
+Target:
+- Open Targets stable ID
+
+Disease:
+- Open Targets stable ID
+
+RULES:
+- Missing required canonical ID → DISCARD
+- No fuzzy joins
+- All joins deterministic or curated
+
+================================================================
+6) Entity model (HARD-CAPPED)
+
+ENTITIES (DO NOT ADD):
+- Issuer
+- Filing
+- InsiderTransaction
+- Exhibit
+- Location
+- DrugProgram
+- Target
+- Disease
+- Evidence
+- Assertion
+- Explanation
+
+EXPLICIT EXCLUSIONS:
+- Pathways
+- Variants
+- Omics
+- Trial arms
+- Endpoints
+- Patent claims
+- Subsidiary-level legal entities
+
+================================================================
+7) DrugProgram definition (LOCKED)
+
+DEFINITION:
+A DrugProgram is an issuer-scoped therapeutic asset that satisfies at least ONE:
+- Has a ChEMBL molecule ID, OR
+- Is explicitly named in an SEC filing AND is linked to ≥1 Target and ≥1 Disease via evidence
+
+ID SCHEME:
+drug_program_id = "CIK:" + cik + ":PROG:" + slug
+
+CONSTRAINTS:
+- unique(issuer_id, slug)
+- Always mint internal ID
+- Cross-issuer program deduplication is OUT OF SCOPE for MVP
+
+================================================================
+8) Evidence-first data model (ENFORCED)
+
+CORE PRINCIPLE:
+No semantic relationship exists without evidence.
+
+TABLES:
+
+evidence(
+  evidence_id,
+  source_system,
+  source_record_id,
+  observed_at,
+  retrieved_at,
+  license,
+  uri,
+  checksum,
+  snippet,
+  confidence
+)
+
+assertion(
+  assertion_id,
+  subject_type,
+  subject_id,
+  predicate,
+  object_type,
+  object_id,
+  asserted_at,
+  retracted_at
+)
+
+assertion_evidence(
+  assertion_id,
+  evidence_id,
+  weight,
+  notes
+)
+
+RULES:
+- Assertions REQUIRE ≥1 evidence record
+- Missing evidence → DISCARD
+- Graph edges are views over assertions (no direct edges)
+
+================================================================
+9) Data sources (COMMERCIAL-SAFE)
+
+CORPORATE:
+- SEC EDGAR (filings metadata, limited XBRL)
+- SEC Form 4
+- SEC Exhibit index (metadata only)
+
+BIOMEDICAL (CONTEXT ONLY):
+- Open Targets Platform (CC0)
+- ChEMBL (CC BY-SA 3.0; attribution tracked)
+
+ENRICHMENT:
+- Wikidata (CIK joins only)
+- GeoNames
+
+================================================================
+10) Open Targets scope lock (NON-NEGOTIABLE)
+
+ALLOWED:
+- Target identity
+- Disease identity
+- High-level target–disease associations
+- Optional modality / tractability (context only)
+
+DISALLOWED:
+- Genetics
+- Pathways
+- Variant networks
+- Propagated association scores
+
+================================================================
+11) Ingestion order (LOCKED)
+
+Phase 0 — Universe (manual, DONE)
+Phase 1 — Issuer + CIK lock
+Phase 2 — Corporate spine (EDGAR)
+Phase 3 — Enrichment (Wikidata, GeoNames)
+Phase 4 — Asset mapping (DrugPrograms, Targets, Diseases)
+Phase 5 — Evidence + Assertions
+Phase 6 — Explanation materialization
+
+INVARIANT:
+No entity may be created unless all required upstream canonical IDs exist.
+
+================================================================
+12) Time semantics (EXPLICIT)
+
+- Assertions are effective-dated:
+  - asserted_at
+  - optional retracted_at
+- Explanations are computed AS-OF a date
+- Enables "what changed since X?" queries
+
+================================================================
+13) Confidence scoring (DETERMINISTIC)
+
+confidence =
+  base_source_score
+  + log(1 + evidence_count)
+  + recency_bonus
+  + curator_delta
+
+All components are transparent and debuggable.
+
+================================================================
+14) Licensing gates (BUILD-BREAKER)
+
+- Every evidence record MUST declare license
+- Allowlist ONLY:
+  - US Government (public domain)
+  - CC0
+  - CC BY-SA 3.0 (with attribution tracking)
+- Missing or unknown license → DISCARD + ALERT
+
+================================================================
+15) Automation posture (BEST-IN-CLASS)
+
+FULLY AUTOMATED:
+- Exact CIK joins
+- EDGAR metadata ingestion
+- ChEMBL / Open Targets ID lookup
+- GeoNames resolution
+
+SEMI-AUTOMATED (ML SUGGESTS ONLY):
+- NER tagging of filings (spaCy)
+- Candidate DrugProgram mentions
+- Duplicate name detection (Dedupe)
+
+MANUAL (NON-NEGOTIABLE):
+- Issuer identity decisions
+- DrugProgram existence decisions
+- Evidence acceptance / rejection
+- Confidence overrides
+
+ML may suggest. Humans decide.
+
+================================================================
+16) Storage stack (MVP)
+
+SYSTEM OF RECORD:
+- PostgreSQL
+
+OPTIONAL (NOT MVP):
+- pgvector
+- Graph DBs (Neo4j) — only if traversal becomes necessary
+
+================================================================
+17) Quality gates (NON-NEGOTIABLE)
+
+METRICS:
+- ≥95% issuers have ≥1 DrugProgram
+- ≥90% DrugPrograms have Target + Disease
+- 100% assertions have evidence + license
+
+DISCARD RULES:
+- Out of universe
+- Missing canonical ID
+- Missing evidence
+- Missing license
+
+================================================================
+18) Commercial novelty (LOCKED)
+
+- Fixed explanation chains (no graph soup)
+- Evidence-first, audit-grade model
+- Index-anchored scope (investor-native)
+- Deterministic ingestion
+- Human-in-the-loop by design
+- No R&D noise
+
+This is Bloomberg-thinking applied to life sciences.
+
+================================================================
+END OF SPEC
