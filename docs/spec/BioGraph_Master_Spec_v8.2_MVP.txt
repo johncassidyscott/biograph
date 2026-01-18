@@ -429,4 +429,114 @@ News metadata may NEVER be the sole source of an assertion.
 It may only reinforce or contextualize an existing assertion.
 
 ================================================================
+22) Linkage Confidence (User-Facing) — LOCKED
+
+A) DEFINITION
+Linkage Confidence = probability that the LINK (assertion) is correctly
+resolved under BioGraph rules.
+
+It is NOT:
+- probability the biology is true
+- probability a drug works
+- investment recommendation confidence
+
+Linkage confidence measures the quality of ENTITY RESOLUTION and
+EVIDENCE-BACKED LINKAGE, not biological or clinical certainty.
+
+B) SCOPE
+- Confidence is shown ONLY for links surfaced in the explanation chain:
+  Issuer → DrugProgram → Target → Disease
+
+- Do NOT show confidence for unapproved candidates in the main product view.
+
+- Candidates may show separate "suggestion confidence" in the curation
+  queue only (different from linkage confidence).
+
+C) UI REQUIREMENTS
+Must show a confidence BAND for each link:
+- HIGH (green)
+- MEDIUM (yellow)
+- LOW (orange/red)
+
+Optionally expose numeric score in a details panel.
+
+Always display:
+- method: DETERMINISTIC | CURATED | ML_SUGGESTED_APPROVED
+- short rationale bullets (drivers)
+- evidence list (source + date + link)
+
+D) DETERMINISTIC SCORING MODEL (LOCKED)
+
+Score is computed deterministically from:
+1. Method baseline:
+   - DETERMINISTIC: 0.95
+   - CURATED: 0.90
+   - ML_SUGGESTED_APPROVED: 0.75
+
+2. Evidence count bonus:
+   - +0.01 per additional evidence source (capped)
+
+3. Source tier weights:
+   - SEC_EDGAR_FILING / SEC_EDGAR_EXHIBIT: up to +0.06
+   - OPENTARGETS / CHEMBL: up to +0.05
+   - NEWS_METADATA: up to +0.01 (never sole evidence)
+
+4. Evidence agreement:
+   - All evidence agrees: +0.02
+   - Conflicting evidence: penalty
+
+5. Small recency bonus (optional):
+   - Recent evidence: +0.01
+
+6. Curator delta (explicitly recorded, optional):
+   - Curator can adjust ±0.05 with justification
+
+CAPS (ENFORCED):
+- DETERMINISTIC max: 0.99
+- ML_SUGGESTED_APPROVED max: 0.85 (unless corroborated by deterministic ID match)
+
+BANDS (LOCKED):
+- HIGH: score >= 0.90
+- MEDIUM: 0.75 <= score < 0.90
+- LOW: score < 0.75
+
+E) GUARDRAILS (LOCKED)
+
+1. NEWS_METADATA can NEVER be the sole evidence for an assertion.
+
+2. Every assertion used in explanations MUST have:
+   - link_confidence_score (0.0 to 1.0)
+   - link_confidence_band ('HIGH', 'MEDIUM', 'LOW')
+   - link_method ('DETERMINISTIC', 'CURATED', 'ML_SUGGESTED_APPROVED')
+   - link_rationale_json (method, evidence counts, caps applied, curator_delta)
+
+3. Explanation materialization MUST validate confidence fields exist;
+   fail loudly if missing.
+
+4. Confidence is recomputed when:
+   - Evidence is added/removed from assertion
+   - Curator modifies confidence
+   - Assertion is updated
+
+F) RATIONALE JSON STRUCTURE
+
+{
+  "method": "DETERMINISTIC",
+  "evidence_count": 3,
+  "evidence_by_source": {
+    "sec_edgar": 2,
+    "opentargets": 1
+  },
+  "base_score": 0.95,
+  "evidence_bonus": 0.02,
+  "source_bonus": 0.06,
+  "agreement_bonus": 0.02,
+  "recency_bonus": 0.00,
+  "curator_delta": 0.00,
+  "caps_applied": ["deterministic_cap_0.99"],
+  "final_score": 0.99,
+  "band": "HIGH"
+}
+
+================================================================
 END OF ADDENDUM
