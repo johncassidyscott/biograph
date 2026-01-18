@@ -45,6 +45,8 @@ jobs:
         run: |
           psql $DATABASE_URL < db/migrations/001_complete_schema.sql
           psql $DATABASE_URL < db/migrations/002_schema_hardening.sql
+          psql $DATABASE_URL < db/migrations/003_linkage_confidence.sql
+          psql $DATABASE_URL < db/migrations/004_lookup_cache.sql
 
       - name: Run contract tests
         env:
@@ -97,6 +99,8 @@ jobs:
         run: |
           psql $DATABASE_URL < db/migrations/001_complete_schema.sql
           psql $DATABASE_URL < db/migrations/002_schema_hardening.sql
+          psql $DATABASE_URL < db/migrations/003_linkage_confidence.sql
+          psql $DATABASE_URL < db/migrations/004_lookup_cache.sql
 
       - name: Run all tests
         env:
@@ -133,6 +137,8 @@ jobs:
           echo "Running migrations..."
           psql $DATABASE_URL < db/migrations/001_complete_schema.sql
           psql $DATABASE_URL < db/migrations/002_schema_hardening.sql
+          psql $DATABASE_URL < db/migrations/003_linkage_confidence.sql
+          psql $DATABASE_URL < db/migrations/004_lookup_cache.sql
 
           echo "Validating schema..."
           psql $DATABASE_URL -c "\dt"  # List tables
@@ -140,9 +146,13 @@ jobs:
           psql $DATABASE_URL -c "SELECT * FROM license_allowlist"  # Check prepopulated data
           psql $DATABASE_URL -c "SELECT * FROM confidence_rubric"   # Check prepopulated data
           psql $DATABASE_URL -c "SELECT COUNT(*) FROM pg_indexes WHERE schemaname = 'public'"  # Count indexes
+          psql $DATABASE_URL -c "SELECT COUNT(*) FROM lookup_cache"  # Check lookup_cache exists
+          psql $DATABASE_URL -c "SELECT * FROM cache_stats()"  # Check cache functions work
 
           echo "Testing idempotency (re-run migrations)..."
           psql $DATABASE_URL < db/migrations/001_complete_schema.sql
           psql $DATABASE_URL < db/migrations/002_schema_hardening.sql
+          psql $DATABASE_URL < db/migrations/003_linkage_confidence.sql
+          psql $DATABASE_URL < db/migrations/004_lookup_cache.sql
 
           echo "✅ Migrations validated successfully"
