@@ -22,21 +22,6 @@ from datetime import datetime, date
 pytestmark = pytest.mark.contract
 
 
-@pytest.fixture
-def db_conn():
-    """Provide a test database connection."""
-    # This assumes DATABASE_URL is set in test environment
-    import os
-    db_url = os.getenv('DATABASE_URL', 'postgresql://localhost/biograph_test')
-
-    with psycopg.connect(db_url) as conn:
-        # Start transaction
-        conn.autocommit = False
-        yield conn
-        # Rollback after test
-        conn.rollback()
-
-
 class TestContractA_EvidenceLicenseRequired:
     """
     Contract A: Evidence license required (Section 14)
