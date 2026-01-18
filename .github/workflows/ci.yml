@@ -1,0 +1,142 @@
+name: BioGraph CI
+
+on:
+  push:
+    branches: [ main, claude/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  contract-tests:
+    name: Contract Tests (Non-Negotiable Invariants)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: biograph_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest psycopg
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/biograph_test
+        run: |
+          psql $DATABASE_URL < db/migrations/001_complete_schema.sql
+
+      - name: Run contract tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/biograph_test
+        run: |
+          pytest -v -m contract tests/contract/
+
+      - name: Contract test summary
+        if: always()
+        run: |
+          echo "## Contract Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "Contract tests enforce non-negotiable spec invariants." >> $GITHUB_STEP_SUMMARY
+          echo "Failures indicate spec violations that MUST be fixed." >> $GITHUB_STEP_SUMMARY
+
+  full-tests:
+    name: Full Test Suite
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: biograph_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest psycopg
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/biograph_test
+        run: |
+          psql $DATABASE_URL < db/migrations/001_complete_schema.sql
+
+      - name: Run all tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/biograph_test
+        run: |
+          pytest -v tests/
+
+  migration-validation:
+    name: Validate Migrations (Fresh DB)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: biograph_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Test migrations on fresh database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/biograph_test
+        run: |
+          echo "Running migrations..."
+          psql $DATABASE_URL < db/migrations/001_complete_schema.sql
+
+          echo "Validating schema..."
+          psql $DATABASE_URL -c "\dt"  # List tables
+          psql $DATABASE_URL -c "SELECT * FROM license_allowlist"  # Check prepopulated data
+          psql $DATABASE_URL -c "SELECT * FROM confidence_rubric"   # Check prepopulated data
+
+          echo "Testing idempotency (re-run migrations)..."
+          psql $DATABASE_URL < db/migrations/001_complete_schema.sql
+
+          echo "✅ Migrations validated successfully"

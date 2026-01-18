@@ -1,0 +1,21 @@
+# Development and testing dependencies for BioGraph MVP v8.2
+
+# Core
+psycopg>=3.1.0
+python-dotenv>=1.0.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# NER (for PR4)
+# spacy>=3.6.0
+# scispacy>=0.5.3
+
+# ER (for PR5)
+# dedupe>=2.0.0
+
+# Code quality
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
