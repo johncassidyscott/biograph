@@ -539,4 +539,247 @@ F) RATIONALE JSON STRUCTURE
 }
 
 ================================================================
+23) Data Retention & Resolution Posture (Thin Durable Core) — LOCKED
+
+A) PRINCIPLE
+
+Persist only what is required for:
+- Auditability (who, what, when, why)
+- Reproducibility / time-travel (historical queries)
+- Deterministic joins (stable IDs)
+- Fast, stable product queries (explanation table)
+
+Resolve everything else LIVE or via a small, disposable cache.
+
+This posture minimizes complexity, storage, and operational overhead while
+preserving investor-grade trust and audit trail.
+
+B) MUST PERSIST LOCALLY (TRUTH + AUDIT)
+
+The following tables are REQUIRED and constitute the durable core:
+
+1. **Universe / Issuer Identity**:
+   - issuer
+   - issuer_cik_history
+   - universe_membership
+   - company (SEC metadata)
+
+2. **Evidence** (metadata + bounded snippet):
+   - evidence (with snippet max ~1-2K characters)
+   - license_allowlist
+   - confidence_rubric
+
+3. **Assertions + Links**:
+   - assertion
+   - assertion_evidence
+   - Drug program entities (drug_program, drug_program_alias)
+
+4. **Explanations** (materialized query surface):
+   - explanation
+   - explanation_refresh_log
+
+5. **Operational NLP**:
+   - nlp_run
+   - mention
+   - candidate
+   - duplicate_suggestion (optional, within-issuer only)
+
+6. **Corporate Data** (EDGAR metadata):
+   - filing (metadata only)
+   - insider_transaction
+   - exhibit (metadata only, NOT full text)
+
+C) RESOLVE LIVE OR CACHE LIGHTLY (LABELS + ENRICHMENT)
+
+The following data is NOT stored in bulk. Instead, store stable IDs locally
+and resolve labels/enrichment on-demand:
+
+1. **OpenTargets**:
+   - Store target_id (Ensembl ID) in target table
+   - Store disease_id (EFO/MONDO ID) in disease table
+   - Resolve labels LIVE via GraphQL API:
+     - target name
+     - gene symbol
+     - disease name
+     - therapeutic area
+   - Cache results in lookup_cache (TTL: 30 days)
+
+2. **ChEMBL**:
+   - Store chembl_id as attribute in drug_program
+   - Resolve labels LIVE via REST API:
+     - preferred name
+     - molecule type
+   - Cache results in lookup_cache
+
+3. **GeoNames**:
+   - Store geonames_id in location references
+   - Resolve labels LIVE via API:
+     - place name
+     - country code
+   - Cache results in lookup_cache
+
+4. **Wikidata**:
+   - Minimal enrichment only (via CIK join)
+   - No bulk dumps
+   - Resolve via SPARQL if needed (rare)
+
+D) LOOKUP CACHE TABLE (REQUIRED)
+
+Define a lightweight, disposable cache for ID-to-label lookups:
+
+CREATE TABLE lookup_cache (
+    cache_key       TEXT PRIMARY KEY,      -- Format: "{source}:{id}"
+    source          TEXT NOT NULL,          -- 'opentargets', 'chembl', 'geonames', 'wikidata'
+    value_json      JSONB NOT NULL,         -- Cached data (label, metadata)
+    fetched_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at      TIMESTAMPTZ NOT NULL,   -- TTL enforcement
+    hit_count       INTEGER DEFAULT 0,
+    last_hit_at     TIMESTAMPTZ
+);
+
+Rules:
+- Cache is DISPOSABLE (can be dropped and rebuilt anytime)
+- Cache is NOT truth (truth is in assertions + evidence)
+- Default TTL: 30 days
+- Cache only ID → label style lookups, NOT bulk data
+- On cache miss: fetch live, cache result, return
+- On live fetch failure: return ID as fallback label
+
+E) EXPLICITLY FORBIDDEN BULK INGESTION
+
+The following are FORBIDDEN in MVP:
+
+1. OpenTargets full datasets:
+   - No bulk download of target catalogs
+   - No bulk download of disease ontologies
+   - No bulk download of associations
+
+2. ChEMBL synonym universes:
+   - No bulk download of compound tables
+   - No bulk download of synonym tables
+
+3. GeoNames dumps:
+   - No bulk download of place databases
+
+4. Wikidata dumps:
+   - No bulk download of entity dumps
+
+Rationale:
+- Minimizes storage (GB → MB)
+- Minimizes ingestion complexity
+- Reduces operational burden
+- Live resolution is fast enough for MVP scale
+
+F) EDGAR TEXT RETENTION POLICY (LOCKED)
+
+1. **Metadata** (ALWAYS PERSIST):
+   - filing table: accession_number, filing_date, form_type, items_8k, edgar_url
+   - exhibit table: exhibit_id, accession_number, exhibit_type, description, edgar_url
+
+2. **Text Snippets** (BOUNDED):
+   - Store in evidence.snippet (max ~1-2K characters)
+   - Purpose: human-readable context for assertions
+   - NOT full text extraction
+
+3. **FORBIDDEN**:
+   - Full contract text
+   - Full 10-K text
+   - Paywalled content
+   - Any text exceeding snippet bounds
+
+4. **ALWAYS STORE**:
+   - Canonical EDGAR URL (evidence.uri)
+   - Checksum (evidence.checksum) for verification
+
+Rationale:
+- Minimizes storage
+- Avoids copyright/license issues
+- Preserves auditability (URL + checksum)
+- Snippet sufficient for human review
+
+G) PIPELINE CONSOLIDATION (OPERATIONAL GUIDANCE)
+
+While the spec defines conceptual phases (0-6), implementation MAY consolidate
+these into operational commands for simplicity:
+
+Suggested Commands:
+1. `ingest-universe` — Phase 0 (universe membership)
+2. `ingest-edgar` — Phase 1-2 (CIK validation + filings + exhibits)
+3. `ingest-enrichment` — Phase 3 (Wikidata via CIK, minimal)
+4. `nlp-run` — Phase 4 (NER on filings/exhibits/news)
+5. `curate` — Phase 5 (accept/reject candidates → canonical)
+6. `materialize` — Phase 6 (explanations)
+
+Conceptual phases remain for reasoning. Operational complexity should be
+minimized.
+
+H) LIVE RESOLUTION BEHAVIOR (REQUIRED)
+
+1. **API Queries**:
+   - Query explanation table from Postgres (fast, local)
+   - Retrieve assertion IDs and entity IDs
+   - Resolve labels AFTER retrieval via resolvers
+   - Return to client
+
+2. **Resolver Functions** (biograph/integrations/):
+   - get_target_label(target_id) → cached or live
+   - get_disease_label(disease_id) → cached or live
+   - get_chembl_label(chembl_id) → cached or live
+   - get_geonames_label(geonames_id) → cached or live
+
+3. **Failure Handling**:
+   - If cache hit: return cached value
+   - If cache miss: fetch live, cache, return
+   - If live fetch fails: log warning, return ID as label (fallback)
+   - API MUST remain functional if live resolution fails
+
+4. **Linkage Confidence Isolation**:
+   - Linkage confidence is computed ONLY from:
+     - method (DETERMINISTIC, CURATED, ML_SUGGESTED_APPROVED)
+     - evidence (count, sources, tiers)
+     - assertions (structure)
+   - Live-resolved labels MUST NOT affect confidence scores or bands
+   - Live resolution is presentation layer ONLY, not truth layer
+
+I) TESTING REQUIREMENTS (ENFORCED)
+
+1. **No Bulk Ontology Tables**:
+   - Contract test: Assert no large OT/ChEMBL/GeoNames catalog tables exist
+   - Contract test: Assert target/disease tables only contain entities
+     referenced by assertions (not full catalogs)
+
+2. **Lookup Cache Functionality**:
+   - Test cache hit: Second resolver call uses cache
+   - Test cache miss: First call fetches live and caches
+   - Test cache expiry: Expired entries trigger refetch
+
+3. **API Stability Without Live Resolution**:
+   - Test: Explanation API returns successfully even if live resolver fails
+   - Test: Fallback to ID as label when live fetch fails
+
+4. **Confidence Isolation**:
+   - Test: Linkage confidence does not change when labels are resolved
+   - Test: Confidence computation does not call resolvers
+
+J) BENEFITS OF THIN DURABLE CORE
+
+1. **Storage**: GB → MB (10-100x reduction)
+2. **Complexity**: Fewer ingestion pipelines
+3. **Freshness**: Labels always up-to-date (no stale catalogs)
+4. **Operational**: Simpler backup/restore (smaller DB)
+5. **Auditability**: Unchanged (evidence + assertions remain)
+6. **Reproducibility**: Unchanged (stable IDs + time-travel)
+7. **Performance**: Faster for MVP scale (<1000 issuers)
+
+K) MIGRATION PATH (EXISTING DEPLOYMENTS)
+
+If bulk ontology tables exist from earlier versions:
+1. Identify entities referenced by assertions
+2. Populate lookup_cache from existing tables
+3. Drop bulk ontology tables
+4. Enable live resolution
+5. Verify API functionality
+6. Monitor cache hit rates
+
+================================================================
 END OF ADDENDUM
