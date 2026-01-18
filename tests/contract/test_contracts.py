@@ -432,6 +432,214 @@ class TestContractD_APIReadsExplanationsOnly:
         assert not has_assertion_query, "API must NOT query raw assertion table directly"
 
 
+class TestContractG_ThinDurableCore:
+    """
+    Contract G: Thin Durable Core (Section 23)
+
+    Storage Strategy:
+    - Persist ONLY truth + audit locally
+    - Resolve labels LIVE (cached, disposable)
+    - NO bulk ontology ingestion
+
+    Key Principles:
+    - No large catalog tables (OpenTargets, ChEMBL, GeoNames dumps)
+    - Target/disease tables only contain entities referenced by assertions
+    - Lookup cache is disposable (can be dropped anytime)
+    - Live resolution does NOT affect linkage confidence
+    """
+
+    def test_no_bulk_target_catalog(self, db_conn):
+        """
+        Target table should only contain targets referenced by assertions.
+
+        Per Section 23I.1: Assert no large OT/ChEMBL/GeoNames catalog tables exist.
+        """
+        with db_conn.cursor() as cur:
+            # Count unreferenced targets
+            cur.execute("""
+                SELECT COUNT(*) FROM target
+                WHERE target_id NOT IN (
+                    SELECT DISTINCT subject_id FROM assertion WHERE subject_type = 'target'
+                    UNION
+                    SELECT DISTINCT object_id FROM assertion WHERE object_type = 'target'
+                )
+            """)
+
+            unreferenced_count = cur.fetchone()[0]
+
+            # Allow small number of unreferenced targets (e.g., from testing)
+            # But should not have thousands (which would indicate bulk ingestion)
+            assert unreferenced_count < 100, (
+                f"Found {unreferenced_count} unreferenced targets. "
+                f"Thin Durable Core forbids bulk ontology ingestion (Section 23E). "
+                f"Target table should only contain targets referenced by assertions."
+            )
+
+    def test_no_bulk_disease_catalog(self, db_conn):
+        """
+        Disease table should only contain diseases referenced by assertions.
+
+        Per Section 23I.1: Assert target/disease tables only contain entities
+        referenced by assertions (not full catalogs).
+        """
+        with db_conn.cursor() as cur:
+            # Count unreferenced diseases
+            cur.execute("""
+                SELECT COUNT(*) FROM disease
+                WHERE disease_id NOT IN (
+                    SELECT DISTINCT object_id FROM assertion WHERE object_type = 'disease'
+                )
+            """)
+
+            unreferenced_count = cur.fetchone()[0]
+
+            # Allow small number of unreferenced diseases
+            assert unreferenced_count < 100, (
+                f"Found {unreferenced_count} unreferenced diseases. "
+                f"Thin Durable Core forbids bulk ontology ingestion (Section 23E). "
+                f"Disease table should only contain diseases referenced by assertions."
+            )
+
+    def test_lookup_cache_exists(self, db_conn):
+        """
+        Lookup cache table must exist.
+
+        Per Section 23D: Lookup cache is required for live resolution.
+        """
+        with db_conn.cursor() as cur:
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                    AND table_name = 'lookup_cache'
+                )
+            """)
+
+            exists = cur.fetchone()[0]
+
+            assert exists, (
+                "lookup_cache table not found. "
+                "Per Section 23D, lookup cache is required for Thin Durable Core."
+            )
+
+    def test_lookup_cache_is_small(self, db_conn):
+        """
+        Lookup cache should be small (<10K entries for MVP).
+
+        Per Section 23D: Cache is lightweight and disposable.
+        """
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM lookup_cache")
+
+            count = cur.fetchone()[0]
+
+            # Allow up to 10K cached entries for MVP scale
+            assert count < 10000, (
+                f"Lookup cache has {count} entries (expected <10K for MVP). "
+                f"Per Section 23D, cache should be lightweight. "
+                f"Large cache suggests bulk ingestion instead of live resolution."
+            )
+
+    def test_lookup_cache_has_ttl(self, db_conn):
+        """
+        Lookup cache entries must have TTL (expires_at).
+
+        Per Section 23D: Cache entries have TTL enforcement.
+        """
+        with db_conn.cursor() as cur:
+            # Insert test entry
+            cur.execute("""
+                INSERT INTO lookup_cache (
+                    cache_key, source, value_json, expires_at
+                ) VALUES (
+                    'test:contract_g', 'opentargets', '{"label":"test"}', NOW() + INTERVAL '30 days'
+                )
+                ON CONFLICT (cache_key) DO NOTHING
+            """)
+
+            # Verify expires_at is set
+            cur.execute("""
+                SELECT expires_at FROM lookup_cache WHERE cache_key = 'test:contract_g'
+            """)
+
+            row = cur.fetchone()
+
+            assert row is not None, "Cache entry not created"
+            assert row[0] is not None, "Cache entry must have expires_at (TTL)"
+
+    def test_cache_get_function_exists(self, db_conn):
+        """
+        Cache helper functions must exist.
+
+        Per Section 23D: cache_get, cache_set, etc. required.
+        """
+        with db_conn.cursor() as cur:
+            # Test cache_get function
+            cur.execute("SELECT cache_get('nonexistent:key')")
+
+            # Should return NULL for missing key (not error)
+            result = cur.fetchone()[0]
+            assert result is None, "cache_get should return NULL for missing key"
+
+    def test_thin_core_violations_view(self, db_conn):
+        """
+        Thin core violations view should be empty.
+
+        Per Section 23 (Section 5 in migration 004): View detects violations.
+        """
+        with db_conn.cursor() as cur:
+            cur.execute("SELECT * FROM thin_core_violations")
+
+            violations = cur.fetchall()
+
+            assert len(violations) == 0, (
+                f"Thin Durable Core violations detected: {violations}. "
+                f"Per Section 23, must not have bulk ontology tables or oversized cache."
+            )
+
+    def test_linkage_confidence_isolation(self, db_conn):
+        """
+        Linkage confidence must NOT depend on cached labels.
+
+        Per Section 23H.4: Linkage confidence is computed ONLY from:
+        - method (DETERMINISTIC, CURATED, ML_SUGGESTED_APPROVED)
+        - evidence (count, sources, tiers)
+        - assertions (structure)
+
+        Live-resolved labels MUST NOT affect confidence scores or bands.
+        """
+        from biograph.core.confidence import compute_link_confidence, LinkMethod, EvidenceInfo
+        from datetime import datetime
+
+        # Create test evidence
+        evidence = [
+            EvidenceInfo(1, 'sec_edgar', datetime.now()),
+            EvidenceInfo(2, 'opentargets', datetime.now())
+        ]
+
+        # Compute confidence
+        result = compute_link_confidence(
+            method=LinkMethod.CURATED,
+            evidence_list=evidence
+        )
+
+        # Verify confidence was computed without any cache or resolver calls
+        # (This test passes if no exceptions and score is deterministic)
+        assert result.score > 0
+        assert result.band is not None
+
+        # Recompute - should get same result (deterministic)
+        result2 = compute_link_confidence(
+            method=LinkMethod.CURATED,
+            evidence_list=evidence
+        )
+
+        assert result2.score == result.score, (
+            "Linkage confidence must be deterministic. "
+            "Per Section 23H.4, live-resolved labels must NOT affect confidence."
+        )
+
+
 # Pytest configuration
 def pytest_configure(config):
     """Register custom markers."""

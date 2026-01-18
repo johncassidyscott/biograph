@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest psycopg
+          pip install pytest psycopg requests
 
       - name: Run database migrations
         env:
@@ -91,7 +91,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest psycopg
+          pip install pytest psycopg requests
 
       - name: Run database migrations
         env:
