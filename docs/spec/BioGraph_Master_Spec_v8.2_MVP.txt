@@ -346,3 +346,87 @@ This is Bloomberg-thinking applied to life sciences.
 
 ================================================================
 END OF SPEC
+
+================================================================
+19) Artifact ingestion (EDGAR exhibits) — REQUIRED
+
+Artifacts are first-class evidence inputs and MUST flow through the same
+NER → mention → candidate → curation pipeline as filings.
+
+SUPPORTED ARTIFACT TYPES (MVP):
+- SEC EDGAR exhibits:
+  - EX-10 (material contracts)
+  - EX-99 (press releases attached to filings)
+  - EX-21 (subsidiaries — metadata only)
+
+NER SCOPE FOR ARTIFACTS:
+- Run NER on:
+  - exhibit title
+  - exhibit description
+  - publicly available exhibit text when exposed via EDGAR
+- Generate:
+  - evidence records
+  - mentions
+  - candidates (DrugProgram / Target / Disease)
+
+ARTIFACT LINKAGE:
+- Each artifact MUST link to:
+  - issuer_id
+  - parent filing_id
+- Evidence.source_system = "SEC_EDGAR_EXHIBIT"
+
+GUARDRAILS:
+- Do NOT ingest full private contract text.
+- Do NOT infer contractual terms or obligations.
+- Only extract explicitly named entities.
+
+================================================================
+20) News metadata ingestion (MVP-safe)
+
+News ingestion is METADATA-ONLY. This is NOT a news NLP product.
+
+ALLOWED INPUTS:
+- Publisher
+- Headline
+- Publication date
+- URL
+- Short snippet (ONLY if license permits)
+
+DISALLOWED:
+- Full article text
+- Paywalled content
+- Redistributed news bodies
+
+NER SCOPE FOR NEWS:
+- Run NER ONLY on:
+  - headlines
+  - permitted snippets
+- Purpose:
+  - candidate DrugProgram mentions
+  - candidate issuer mentions (display only, NOT identity)
+  - narrative correlation signals
+
+EVIDENCE RULES:
+- News evidence MAY NOT create assertions by itself.
+- News may ONLY:
+  - reinforce an assertion grounded in filings / Open Targets / ChEMBL
+  - adjust confidence or recency signals
+
+SOURCE HANDLING:
+- Evidence.source_system = "NEWS_METADATA"
+- License MUST be recorded.
+- Unknown or incompatible license → DISCARD.
+
+================================================================
+21) Assertion priority rule (LOCKED)
+
+Assertions may ONLY be created from:
+1) SEC filings and EDGAR exhibits
+2) Open Targets
+3) ChEMBL
+
+News metadata may NEVER be the sole source of an assertion.
+It may only reinforce or contextualize an existing assertion.
+
+================================================================
+END OF ADDENDUM
