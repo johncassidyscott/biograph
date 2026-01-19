@@ -52,21 +52,37 @@ def fetch_mesh_live(mesh_id: str) -> Optional[Dict[str, Any]]:
     Returns:
         Dict with MeSH data, or None on failure
     """
+    import re
+
     # MeSH IDs can be:
     # - Descriptor IDs (D######)
     # - Supplementary Concept IDs (C######)
     # - Tree numbers (e.g., C04.557.470)
 
-    # If it's a tree number, we can't fetch it directly
-    # Return a minimal entry
-    if not mesh_id.startswith('D') and not mesh_id.startswith('C'):
-        # Assume it's a tree number
+    # Check if it's a tree number (letter + 2 digits + optional .### segments)
+    # Tree numbers: A01, C04, C04.557, C04.557.470
+    # NOT tree numbers: D009369 (6 digits), C000656388 (7+ digits)
+    is_tree_number = bool(re.match(r'^[A-Z]\d{2}(\.\d{3})*$', mesh_id))
+
+    if is_tree_number:
+        # Tree numbers can't be fetched via API - return minimal entry
         return {
             "id": mesh_id,
             "label": mesh_id,  # Fallback to ID
             "tree_numbers": [mesh_id],
             "source": "mesh",
             "is_tree_number": True
+        }
+
+    # Only fetch via API for descriptor IDs (D######) and supplementary concept IDs (C######)
+    if not mesh_id.startswith('D') and not (mesh_id.startswith('C') and mesh_id[1:].isdigit()):
+        # Unknown format - return as-is
+        return {
+            "id": mesh_id,
+            "label": mesh_id,
+            "tree_numbers": [],
+            "source": "mesh",
+            "is_fallback": True
         }
 
     try:
@@ -250,8 +266,8 @@ def extract_tree_prefix(tree_number: str, max_levels: int = 2) -> str:
     """
     parts = tree_number.split('.')
 
-    # Take up to max_levels parts
-    prefix_parts = parts[:min(max_levels + 1, len(parts))]
+    # Take up to max_levels parts (level 1 = first part only, level 2 = first two parts)
+    prefix_parts = parts[:min(max_levels, len(parts))]
 
     return '.'.join(prefix_parts)
 

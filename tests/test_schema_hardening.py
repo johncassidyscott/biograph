@@ -320,23 +320,24 @@ class TestConstraints:
         """Test that version_id must be > 0."""
         drug_id = f'CIK:0000999999:PROG:negative_version'
 
+        # Test version_id = 0
         with db_conn.cursor() as cur:
-            # Try to create with version_id = 0
             with pytest.raises(psycopg.errors.CheckViolation):
                 cur.execute("""
                     INSERT INTO drug_program (
                         drug_program_id, issuer_id, slug, name, version_id
                     ) VALUES (%s, %s, %s, %s, %s)
                 """, (drug_id, test_issuer, 'negative_version', 'Test', 0))
+        db_conn.rollback()
 
-            # Try to create with version_id = -1
+        # Test version_id = -1 (separate transaction)
+        with db_conn.cursor() as cur:
             with pytest.raises(psycopg.errors.CheckViolation):
                 cur.execute("""
                     INSERT INTO drug_program (
                         drug_program_id, issuer_id, slug, name, version_id
                     ) VALUES (%s, %s, %s, %s, %s)
                 """, (drug_id, test_issuer, 'negative_version', 'Test', -1))
-
         db_conn.rollback()
 
     def test_valid_date_range_must_be_valid(self, db_conn: Any, test_issuer: str):

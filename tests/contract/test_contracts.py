@@ -35,14 +35,16 @@ class TestContractA_EvidenceLicenseRequired:
     """
 
     def test_cannot_insert_evidence_without_license(self, db_conn):
-        """Evidence without license should fail."""
+        """Evidence without license should fail (trigger enforces before NOT NULL)."""
         with db_conn.cursor() as cur:
-            with pytest.raises(psycopg.errors.NotNullViolation):
+            # The validate_evidence_license trigger fires first, before NOT NULL constraint
+            with pytest.raises(psycopg.errors.RaiseException) as exc_info:
                 cur.execute("""
                     INSERT INTO evidence
                     (source_system, source_record_id, observed_at, license, uri)
                     VALUES ('test', 'test_001', NOW(), NULL, 'http://test.com')
                 """)
+            assert 'not in commercial-safe allowlist' in str(exc_info.value)
 
     def test_cannot_insert_evidence_with_unknown_license(self, db_conn):
         """Evidence with unknown license should fail (trigger enforced)."""

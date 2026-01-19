@@ -199,6 +199,12 @@ class TestPubMedResolver:
 
         cursor = db_conn.cursor()
 
+        # Create batch_operation first (required FK)
+        cursor.execute("""
+            INSERT INTO batch_operation (batch_id, operation_type, status)
+            VALUES ('test_batch', 'pubmed_import', 'running')
+        """)
+
         evidence_id = create_pubmed_evidence(
             cursor=cursor,
             pmid='12345678',
