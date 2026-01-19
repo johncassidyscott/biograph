@@ -1747,15 +1747,21 @@ SciSpacy/UMLS/ML models are OPTIONAL and MUST be:
 - Human-approved (no auto canonical creation)
 - Auditable (all suggestions logged)
 
-D) FORBIDDEN
+D) IMPLEMENTATION STATUS
 
-The following is FORBIDDEN:
+✅ COMPLETED (MVP v8.3)
+
+NER/ER implementation complete with rules-first approach:
+- run_ner_on_text(): Creates nlp_run, mention, candidate, evidence records
+- extract_mentions(): Regex + dictionary extraction (drug names, targets, diseases)
+- find_duplicates_for_issuer(): Within-issuer duplicate suggestions (Levenshtein + token overlap)
+- Contract tests enforce guardrails (no canonical creation, no assertions, within-issuer only)
+
+FORBIDDEN:
 ```python
 # WRONG: Stub implementation
 def run_ner_on_text(cursor, source_type, source_id, text, issuer_id):
-    # Stub implementation for PR0
-    # Full implementation in PR4
-    pass
+    pass  # Empty stub is forbidden
 ```
 
 NER/ER MUST produce auditable candidate outputs.

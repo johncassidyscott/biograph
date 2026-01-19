@@ -1486,3 +1486,93 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "contract: mark test as a contract test (non-negotiable invariant)"
     )
+
+
+class TestContractK_NerErCompleteness:
+    """
+    Contract K: NER/ER Completeness (Section 32)
+
+    Critical invariants:
+    1. NER produces candidates ONLY (no canonical entity creation)
+    2. NER never creates assertions
+    3. ER within issuer ONLY
+    4. ER never auto-merges
+    5. Candidate rows link to mention + nlp_run + evidence
+    6. Evidence has license + observed_at always
+    """
+
+    def test_ner_produces_candidates_only(self, db_conn):
+        """NER must produce candidates ONLY (no canonical entity creation)."""
+        from biograph.nlp.ner_runner import run_ner_on_text
+
+        with db_conn.cursor() as cur:
+            cur.execute("INSERT INTO issuer (issuer_id, primary_cik) VALUES ('ISS_TEST_NER', '0000000099') ON CONFLICT DO NOTHING")
+            
+            cur.execute("SELECT COUNT(*) FROM drug_program WHERE issuer_id = 'ISS_TEST_NER'")
+            drug_count_before = cur.fetchone()[0]
+
+            run_ner_on_text(cur, 'filing', 99999, "KEYTRUDA is a Phase 3 candidate targeting PD-1 for melanoma.", 'ISS_TEST_NER')
+
+            cur.execute("SELECT COUNT(*) FROM drug_program WHERE issuer_id = 'ISS_TEST_NER'")
+            drug_count_after = cur.fetchone()[0]
+
+            assert drug_count_after == drug_count_before, "NER created canonical entities (FORBIDDEN)"
+            
+            cur.execute("SELECT COUNT(*) FROM candidate WHERE issuer_id = 'ISS_TEST_NER'")
+            assert cur.fetchone()[0] > 0, "NER must produce candidates"
+
+        db_conn.rollback()
+
+    def test_ner_never_creates_assertions(self, db_conn):
+        """NER must NEVER create assertions."""
+        from biograph.nlp.ner_runner import run_ner_on_text
+
+        with db_conn.cursor() as cur:
+            cur.execute("INSERT INTO issuer (issuer_id, primary_cik) VALUES ('ISS_TEST_NER2', '0000000098') ON CONFLICT DO NOTHING")
+            
+            cur.execute("SELECT COUNT(*) FROM assertion")
+            count_before = cur.fetchone()[0]
+
+            run_ner_on_text(cur, 'filing', 99998, "OPDIVO targets PD-1 for lung cancer.", 'ISS_TEST_NER2')
+
+            cur.execute("SELECT COUNT(*) FROM assertion")
+            count_after = cur.fetchone()[0]
+
+            assert count_after == count_before, "NER created assertions (FORBIDDEN)"
+
+        db_conn.rollback()
+
+    def test_er_within_issuer_only(self, db_conn):
+        """ER must operate within issuer ONLY."""
+        from biograph.er.dedupe_runner import find_duplicates_for_issuer
+
+        with db_conn.cursor() as cur:
+            cur.execute("INSERT INTO issuer (issuer_id, primary_cik) VALUES ('ISS_ER1', '0000000097'), ('ISS_ER2', '0000000096') ON CONFLICT DO NOTHING")
+            cur.execute("INSERT INTO drug_program (drug_program_id, issuer_id, slug, name) VALUES ('CIK:0000000097:PROG:t1', 'ISS_ER1', 't1', 'KEYTRUDA'), ('CIK:0000000096:PROG:t2', 'ISS_ER2', 't2', 'Keytruda') ON CONFLICT DO NOTHING")
+
+            find_duplicates_for_issuer(cur, 'ISS_ER1')
+
+            cur.execute("SELECT COUNT(*) FROM duplicate_suggestion WHERE (entity1_id = 'CIK:0000000097:PROG:t1' AND entity2_id = 'CIK:0000000096:PROG:t2') OR (entity1_id = 'CIK:0000000096:PROG:t2' AND entity2_id = 'CIK:0000000097:PROG:t1')")
+            
+            assert cur.fetchone()[0] == 0, "ER crossed issuer boundary (FORBIDDEN)"
+
+        db_conn.rollback()
+
+    def test_candidate_links_to_evidence(self, db_conn):
+        """Candidate rows must link to evidence."""
+        from biograph.nlp.ner_runner import run_ner_on_text
+
+        with db_conn.cursor() as cur:
+            cur.execute("INSERT INTO issuer (issuer_id, primary_cik) VALUES ('ISS_LINK', '0000000095') ON CONFLICT DO NOTHING")
+
+            run_ner_on_text(cur, 'filing', 99997, "TECENTRIQ targets PD-L1.", 'ISS_LINK')
+
+            cur.execute("SELECT COUNT(*) FROM evidence WHERE source_record_id = 'filing_99997'")
+            assert cur.fetchone()[0] > 0, "NER must create evidence for provenance"
+
+            cur.execute("SELECT mention_ids FROM candidate WHERE issuer_id = 'ISS_LINK' LIMIT 1")
+            row = cur.fetchone()
+            if row:
+                assert row[0] is not None and len(row[0]) > 0, "Candidate must link to mentions"
+
+        db_conn.rollback()
