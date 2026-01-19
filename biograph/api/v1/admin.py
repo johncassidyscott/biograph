@@ -29,10 +29,9 @@ class AssertionSummary(BaseModel):
     predicate: str
     object_id: str
     object_type: str
-    confidence_band: str
-    link_method: str
+    computed_confidence: float
     evidence_count: int
-    valid_from: str
+    asserted_at: datetime
     created_at: datetime
 
 
@@ -82,15 +81,15 @@ async def list_assertions(
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT a.assertion_id, a.subject_id, a.subject_type, a.predicate,
-                           a.object_id, a.object_type, a.confidence_band, a.link_method,
-                           a.valid_from, a.created_at,
+                           a.object_id, a.object_type, a.computed_confidence,
+                           a.asserted_at, a.created_at,
                            COUNT(ae.evidence_id) AS evidence_count
                     FROM assertion a
                     LEFT JOIN assertion_evidence ae ON a.assertion_id = ae.assertion_id
                     WHERE a.retracted_at IS NULL
                     GROUP BY a.assertion_id, a.subject_id, a.subject_type, a.predicate,
-                             a.object_id, a.object_type, a.confidence_band, a.link_method,
-                             a.valid_from, a.created_at
+                             a.object_id, a.object_type, a.computed_confidence,
+                             a.asserted_at, a.created_at
                     ORDER BY a.created_at DESC
                     LIMIT 100
                 """)
@@ -105,11 +104,10 @@ async def list_assertions(
                 predicate=row[3],
                 object_id=row[4],
                 object_type=row[5],
-                confidence_band=row[6],
-                link_method=row[7],
-                valid_from=str(row[8]),
-                created_at=row[9],
-                evidence_count=row[10]
+                computed_confidence=row[6],
+                asserted_at=row[7],
+                created_at=row[8],
+                evidence_count=row[9]
             )
             for row in rows
         ]

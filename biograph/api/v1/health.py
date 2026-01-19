@@ -69,9 +69,8 @@ async def health_check():
     if cache_result.status == "down":
         overall_status = "degraded"
 
-    # TODO: Check Neo4j if GRAPH_BACKEND=neo4j
-    # neo4j_result = await check_neo4j()
-    # checks["neo4j"] = neo4j_result
+    # Note: Neo4j health check not implemented (Neo4j backend not implemented)
+    # If Neo4j support is added in the future, check here when GRAPH_BACKEND=neo4j
 
     response = HealthResponse(
         status=overall_status,

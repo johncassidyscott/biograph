@@ -83,10 +83,12 @@ class PostgresExplanationStore(ExplanationStore):
             nodes = []
             edges = []
 
-            # Get issuer node
+            # Get issuer node with company name
             self.cursor.execute("""
-                SELECT issuer_id FROM issuer
-                WHERE issuer_id = %s
+                SELECT i.issuer_id, c.name
+                FROM issuer i
+                LEFT JOIN company c ON i.primary_cik = c.cik
+                WHERE i.issuer_id = %s
             """, (issuer_id,))
 
             issuer_row = self.cursor.fetchone()
@@ -94,10 +96,12 @@ class PostgresExplanationStore(ExplanationStore):
                 logger.warning(f"Issuer {issuer_id} not found")
                 return None
 
+            issuer_name = issuer_row[1] if issuer_row[1] else issuer_id
+
             nodes.append(Node(
                 node_id=issuer_id,
                 node_type='issuer',
-                label=issuer_id,  # TODO: Resolve label
+                label=issuer_name,
                 as_of_date=as_of_date
             ))
 
@@ -136,35 +140,34 @@ class PostgresExplanationStore(ExplanationStore):
                     assertion_ids=[]
                 ))
 
-                # Get targets for drug program
+                # Get targets for drug program with target names
                 self.cursor.execute("""
                     SELECT DISTINCT a.object_id, a.assertion_id,
-                           a.confidence_band, a.confidence_score, a.link_method
+                           a.computed_confidence, t.name
                     FROM assertion a
+                    LEFT JOIN target t ON a.object_id = t.target_id
                     WHERE a.subject_id = %s
                     AND a.subject_type = 'drug_program'
                     AND a.predicate = 'targets'
                     AND a.object_type = 'target'
-                    AND a.valid_from <= %s
-                    AND (a.valid_until IS NULL OR a.valid_until >= %s)
-                    AND a.deleted_at IS NULL
-                """, (drug_program_id, as_of_date, as_of_date))
+                    AND a.asserted_at <= %s
+                    AND a.retracted_at IS NULL
+                """, (drug_program_id, as_of_date))
 
                 target_assertions = self.cursor.fetchall()
 
                 for target_row in target_assertions:
                     target_id = target_row[0]
                     assertion_id = target_row[1]
-                    conf_band = target_row[2]
-                    conf_score = target_row[3]
-                    link_meth = target_row[4]
+                    computed_conf = target_row[2]
+                    target_name = target_row[3] if target_row[3] else target_id
 
                     # Add Target node (if not already added)
                     if not any(n.node_id == target_id for n in nodes):
                         nodes.append(Node(
                             node_id=target_id,
                             node_type='target',
-                            label=target_id,  # TODO: Resolve label
+                            label=target_name,
                             as_of_date=as_of_date
                         ))
 
@@ -181,42 +184,41 @@ class PostgresExplanationStore(ExplanationStore):
                         source_id=drug_program_id,
                         target_id=target_id,
                         as_of_date=as_of_date,
-                        confidence_band=ConfidenceBand(conf_band),
-                        confidence_score=conf_score,
-                        link_method=LinkMethod(link_meth),
+                        confidence_band=ConfidenceBand.MEDIUM if computed_conf and computed_conf >= 0.5 else ConfidenceBand.LOW,
+                        confidence_score=computed_conf,
+                        link_method=LinkMethod.STRUCTURED_DATA,
                         evidence_count=evidence_count,
                         assertion_ids=[assertion_id]
                     ))
 
-                    # Get diseases for target
+                    # Get diseases for target with disease names
                     self.cursor.execute("""
                         SELECT DISTINCT a.object_id, a.assertion_id,
-                               a.confidence_band, a.confidence_score, a.link_method
+                               a.computed_confidence, d.name
                         FROM assertion a
+                        LEFT JOIN disease d ON a.object_id = d.disease_id
                         WHERE a.subject_id = %s
                         AND a.subject_type = 'target'
                         AND a.predicate = 'indicated_for'
                         AND a.object_type = 'disease'
-                        AND a.valid_from <= %s
-                        AND (a.valid_until IS NULL OR a.valid_until >= %s)
-                        AND a.deleted_at IS NULL
-                    """, (target_id, as_of_date, as_of_date))
+                        AND a.asserted_at <= %s
+                        AND a.retracted_at IS NULL
+                    """, (target_id, as_of_date))
 
                     disease_assertions = self.cursor.fetchall()
 
                     for disease_row in disease_assertions:
                         disease_id = disease_row[0]
                         disease_assertion_id = disease_row[1]
-                        disease_conf_band = disease_row[2]
-                        disease_conf_score = disease_row[3]
-                        disease_link_meth = disease_row[4]
+                        disease_computed_conf = disease_row[2]
+                        disease_name = disease_row[3] if disease_row[3] else disease_id
 
                         # Add Disease node (if not already added)
                         if not any(n.node_id == disease_id for n in nodes):
                             nodes.append(Node(
                                 node_id=disease_id,
                                 node_type='disease',
-                                label=disease_id,  # TODO: Resolve label
+                                label=disease_name,
                                 as_of_date=as_of_date
                             ))
 
@@ -233,9 +235,9 @@ class PostgresExplanationStore(ExplanationStore):
                             source_id=target_id,
                             target_id=disease_id,
                             as_of_date=as_of_date,
-                            confidence_band=ConfidenceBand(disease_conf_band),
-                            confidence_score=disease_conf_score,
-                            link_method=LinkMethod(disease_link_meth),
+                            confidence_band=ConfidenceBand.MEDIUM if disease_computed_conf and disease_computed_conf >= 0.5 else ConfidenceBand.LOW,
+                            confidence_score=disease_computed_conf,
+                            link_method=LinkMethod.STRUCTURED_DATA,
                             evidence_count=disease_evidence_count,
                             assertion_ids=[disease_assertion_id]
                         ))
