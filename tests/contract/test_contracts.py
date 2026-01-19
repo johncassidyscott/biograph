@@ -791,7 +791,7 @@ class TestContractH_LiteratureAndNewsEvidence:
 
             ta_codes = [row[0] for row in cur.fetchall()]
 
-            expected_tas = ['CVM', 'CNS', 'ID', 'IMM', 'ONC', 'RARE', 'REN', 'RES']
+            expected_tas = ['CNS', 'CVM', 'ID', 'IMM', 'ONC', 'RARE', 'REN', 'RES']
 
             assert ta_codes == expected_tas, (
                 f"TA taxonomy mismatch. Expected {expected_tas}, got {ta_codes}. "
@@ -808,7 +808,7 @@ class TestContractH_LiteratureAndNewsEvidence:
             # Create test news item
             cur.execute("""
                 INSERT INTO news_item (
-                    publisher, headline, publication_date, url, snippet
+                    publisher, headline, published_at, url, snippet
                 ) VALUES (
                     'Test Publisher',
                     'Test Headline',
@@ -847,7 +847,7 @@ class TestContractH_LiteratureAndNewsEvidence:
             with pytest.raises(psycopg.errors.CheckViolation):
                 cur.execute("""
                     INSERT INTO news_item (
-                        publisher, headline, publication_date, url, snippet
+                        publisher, headline, published_at, url, snippet
                     ) VALUES (
                         'Test', 'Test', '2023-01-15', 'https://example.com/long', %s
                     )
@@ -1198,7 +1198,7 @@ class TestContractI_StorageAndProjectionArchitecture:
                 FROM information_schema.columns
                 WHERE table_schema = 'public'
                 AND table_name = 'assertion'
-                AND column_name IN ('confidence_band', 'confidence_score')
+                AND column_name IN ('link_confidence_band', 'link_confidence_score')
                 ORDER BY column_name
             """)
 
@@ -1552,7 +1552,7 @@ class TestContractK_NerErCompleteness:
 
             find_duplicates_for_issuer(cur, 'ISS_ER1')
 
-            cur.execute("SELECT COUNT(*) FROM duplicate_suggestion WHERE (entity1_id = 'CIK:0000000097:PROG:t1' AND entity2_id = 'CIK:0000000096:PROG:t2') OR (entity1_id = 'CIK:0000000096:PROG:t2' AND entity2_id = 'CIK:0000000097:PROG:t1')")
+            cur.execute("SELECT COUNT(*) FROM duplicate_suggestion WHERE (entity_id_1 = 'CIK:0000000097:PROG:t1' AND entity_id_2 = 'CIK:0000000096:PROG:t2') OR (entity_id_1 = 'CIK:0000000096:PROG:t2' AND entity_id_2 = 'CIK:0000000097:PROG:t1')")
             
             assert cur.fetchone()[0] == 0, "ER crossed issuer boundary (FORBIDDEN)"
 

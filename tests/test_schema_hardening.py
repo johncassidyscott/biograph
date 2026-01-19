@@ -145,8 +145,9 @@ class TestEntityVersioning:
         db_conn.rollback()
 
     def test_create_new_version(self, db_conn: Any, test_issuer: str):
-        """Test creating a new version of an entity."""
-        drug_id = f'CIK:0000999999:PROG:version_test_002'
+        """Test creating a new version of an entity using supersedes pattern."""
+        drug_id_v1 = f'CIK:0000999999:PROG:version_test_v1'
+        drug_id_v2 = f'CIK:0000999999:PROG:version_test_v2'
 
         with db_conn.cursor() as cur:
             # Create v1
@@ -154,40 +155,40 @@ class TestEntityVersioning:
                 INSERT INTO drug_program (
                     drug_program_id, issuer_id, slug, name, version_id, is_current
                 ) VALUES (%s, %s, %s, %s, %s, %s)
-            """, (drug_id, test_issuer, 'version_test_002', 'Version Test v1', 1, True))
+            """, (drug_id_v1, test_issuer, 'version_test_v1', 'Version Test v1', 1, True))
 
-            # Mark v1 as not current
+            # Mark v1 as not current (valid_to must be > valid_from)
             cur.execute("""
                 UPDATE drug_program
-                SET is_current = FALSE, valid_to = NOW()
-                WHERE drug_program_id = %s AND version_id = 1
-            """, (drug_id,))
+                SET is_current = FALSE, valid_to = NOW() + INTERVAL '1 second'
+                WHERE drug_program_id = %s
+            """, (drug_id_v1,))
 
-            # Create v2
+            # Create v2 that supersedes v1
             cur.execute("""
                 INSERT INTO drug_program (
                     drug_program_id, issuer_id, slug, name,
                     version_id, supersedes_id, is_current
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
-                drug_id, test_issuer, 'version_test_002',
+                drug_id_v2, test_issuer, 'version_test_v2',
                 'Version Test v2 (Updated)',
-                2, drug_id, True
+                1, drug_id_v1, True
             ))
 
-            # Verify two versions exist
+            # Verify both versions exist
             cur.execute("""
                 SELECT COUNT(*) FROM drug_program
-                WHERE drug_program_id = %s
-            """, (drug_id,))
+                WHERE drug_program_id IN (%s, %s)
+            """, (drug_id_v1, drug_id_v2))
             assert cur.fetchone()[0] == 2
 
             # Verify only v2 is current
             cur.execute("""
-                SELECT version_id FROM drug_program
-                WHERE drug_program_id = %s AND is_current = TRUE
-            """, (drug_id,))
-            assert cur.fetchone()[0] == 2
+                SELECT drug_program_id FROM drug_program
+                WHERE drug_program_id IN (%s, %s) AND is_current = TRUE
+            """, (drug_id_v1, drug_id_v2))
+            assert cur.fetchone()[0] == drug_id_v2
 
         db_conn.rollback()
 
@@ -238,12 +239,13 @@ class TestSoftDeletes:
             """, (drug_id,))
             assert cur.fetchone()[0] == 1
 
-            # Soft delete it
+            # Soft delete it (must also set is_current=false per constraint)
             cur.execute("""
                 UPDATE drug_program
                 SET deleted_at = NOW(),
                     deleted_by = 'test_suite',
-                    deletion_reason = 'test_soft_delete'
+                    deletion_reason = 'test_soft_delete',
+                    is_current = false
                 WHERE drug_program_id = %s
             """, (drug_id,))
 
@@ -373,11 +375,11 @@ class TestViews:
                 ) VALUES (%s, %s, %s, %s)
             """, (drug_id_active, test_issuer, 'view_test_active', 'Active'))
 
-            # Create deleted drug program
+            # Create deleted drug program (must set is_current=false per constraint)
             cur.execute("""
                 INSERT INTO drug_program (
-                    drug_program_id, issuer_id, slug, name, deleted_at
-                ) VALUES (%s, %s, %s, %s, NOW())
+                    drug_program_id, issuer_id, slug, name, deleted_at, is_current
+                ) VALUES (%s, %s, %s, %s, NOW(), false)
             """, (drug_id_deleted, test_issuer, 'view_test_deleted', 'Deleted'))
 
             # Verify only active in view

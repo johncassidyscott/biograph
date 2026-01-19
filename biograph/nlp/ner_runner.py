@@ -124,7 +124,7 @@ def run_ner_on_text(
         # Insert mention
         cursor.execute("""
             INSERT INTO mention
-            (run_id, entity_type, span_text, start_offset, end_offset, confidence)
+            (run_id, entity_type, text, start_char, end_char, confidence)
             VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING mention_id
         """, (
@@ -159,8 +159,7 @@ def run_ner_on_text(
             VALUES (%s, %s, %s, %s, %s, %s, 'pending', 'ner_rules_first')
             ON CONFLICT (issuer_id, entity_type, normalized_name, source_type, source_id)
             DO UPDATE SET
-                mention_ids = candidate.mention_ids || EXCLUDED.mention_ids,
-                updated_at = NOW()
+                mention_ids = candidate.mention_ids || EXCLUDED.mention_ids
         """, (
             issuer_id,
             entity_type,

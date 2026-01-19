@@ -563,7 +563,7 @@ class TestLiteratureNewsIntegration:
 
         with pytest.raises(Exception):  # Should violate CHECK constraint
             cursor.execute("""
-                INSERT INTO news_item (publisher, headline, publication_date, url, snippet)
+                INSERT INTO news_item (publisher, headline, published_at, url, snippet)
                 VALUES (%s, %s, %s, %s, %s)
             """, ('Test Publisher', 'Test Headline', '2023-01-15', 'https://example.com/test', long_snippet))
 
@@ -573,7 +573,7 @@ class TestLiteratureNewsIntegration:
         valid_snippet = "A" * 200
 
         cursor.execute("""
-            INSERT INTO news_item (publisher, headline, publication_date, url, snippet)
+            INSERT INTO news_item (publisher, headline, published_at, url, snippet)
             VALUES (%s, %s, %s, %s, %s)
         """, ('Test Publisher', 'Test Headline', '2023-01-15', 'https://example.com/test2', valid_snippet))
 
