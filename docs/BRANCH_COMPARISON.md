@@ -195,7 +195,15 @@ AND a.retracted_at IS NULL
 ## Actions Taken
 
 1. [x] Created comparison report at `docs/BRANCH_COMPARISON.md`
-2. [ ] Created annotated tag `archive/claude-review-biograph-mvp-wqkvM`
-3. [ ] Pushed tag to remote
-4. [ ] Merged Ze3Y6 into canonical MVP branch
-5. [ ] Deleted losing branch from remote
+2. [x] Created annotated tag `archive/claude-review-biograph-mvp-wqkvM` (local only)
+3. [x] Pushed tag to remote (failed: HTTP 403 - tag naming restrictions)
+4. [x] Winner branch based on Ze3Y6 pushed to `claude/review-biograph-mvp-Baz03`
+5. [ ] Delete losing branch from remote (requires manual action - HTTP 403)
+
+**Note**: The archive tag exists locally. Remote operations for the losing branch failed due to
+permission restrictions. The canonical MVP state is preserved in `claude/review-biograph-mvp-Baz03`
+which is based on Ze3Y6's correct schema-aligned code.
+
+**Manual cleanup required**:
+- Delete remote branch: `git push origin --delete claude/review-biograph-mvp-wqkvM`
+- Or via GitHub UI: Delete branch `claude/review-biograph-mvp-wqkvM`
