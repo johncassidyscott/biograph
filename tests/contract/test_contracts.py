@@ -640,6 +640,313 @@ class TestContractG_ThinDurableCore:
         )
 
 
+class TestContractH_LiteratureAndNewsEvidence:
+    """
+    Contract H: Literature and News Evidence (Section 24)
+
+    Critical invariants:
+    1. PubMed: Metadata ONLY (no full text)
+    2. PubMed: Cannot be sole evidence for assertion
+    3. MeSH: Resolve live, no bulk ingestion
+    4. TA mapping: Deterministic
+    5. News: Metadata ONLY, never creates assertion
+    6. News: Snippet ≤ 200 chars
+    """
+
+    def test_pubmed_metadata_only(self, db_conn):
+        """
+        PubMed evidence must store ONLY metadata (no full text).
+
+        Per Section 24A.2: FORBIDDEN to store full text or abstracts.
+        Snippet max 200 chars.
+        """
+        with db_conn.cursor() as cur:
+            # Create test PubMed evidence
+            cur.execute("""
+                INSERT INTO evidence (
+                    source_system, source_record_id, observed_at, license, uri, snippet
+                ) VALUES (
+                    'pubmed', '12345678', '2023-01-15', 'NLM_PUBLIC',
+                    'https://pubmed.ncbi.nlm.nih.gov/12345678/',
+                    'Test article title'
+                )
+                RETURNING evidence_id
+            """)
+
+            evidence_id = cur.fetchone()[0]
+
+            # Verify evidence record
+            cur.execute("""
+                SELECT source_system, license, snippet
+                FROM evidence
+                WHERE evidence_id = %s
+            """, (evidence_id,))
+
+            row = cur.fetchone()
+
+            assert row[0] == 'pubmed', "Source system must be 'pubmed'"
+            assert row[1] == 'NLM_PUBLIC', "License must be 'NLM_PUBLIC'"
+            assert row[2] is not None, "Snippet must be present"
+            assert len(row[2]) <= 200, (
+                f"PubMed snippet is {len(row[2])} chars (max 200). "
+                f"Per Section 24A, no full text allowed."
+            )
+
+    def test_pubmed_not_sole_evidence(self, db_conn):
+        """
+        PubMed evidence CANNOT be the sole evidence for an assertion.
+
+        Per Section 24A.4: "PubMed evidence may SUPPORT assertions but may
+        NEVER be the sole evidence."
+
+        This is enforced by validation view: pubmed_sole_evidence_violations
+        """
+        with db_conn.cursor() as cur:
+            # Check if validation view exists
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.views
+                    WHERE table_schema = 'public'
+                    AND table_name = 'pubmed_sole_evidence_violations'
+                )
+            """)
+
+            view_exists = cur.fetchone()[0]
+
+            assert view_exists, (
+                "pubmed_sole_evidence_violations view not found. "
+                "Per Section 24A.4, must validate PubMed not sole evidence."
+            )
+
+            # Check for violations
+            cur.execute("SELECT * FROM pubmed_sole_evidence_violations")
+
+            violations = cur.fetchall()
+
+            assert len(violations) == 0, (
+                f"Found {len(violations)} assertions with PubMed as sole evidence. "
+                f"Per Section 24A.4, PubMed cannot be sole evidence. "
+                f"Violations: {violations}"
+            )
+
+    def test_mesh_no_bulk_ingestion(self, db_conn):
+        """
+        MeSH descriptors must NOT be bulk ingested.
+
+        Per Section 24B.2: Resolve live via NLM API, use lookup_cache.
+        No separate mesh_descriptor table allowed.
+        """
+        with db_conn.cursor() as cur:
+            # Check that mesh_descriptor table does NOT exist
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                    AND table_name = 'mesh_descriptor'
+                )
+            """)
+
+            mesh_table_exists = cur.fetchone()[0]
+
+            assert not mesh_table_exists, (
+                "Found mesh_descriptor table. "
+                "Per Section 24B.2, MeSH must be resolved live (no bulk ingestion). "
+                "Use lookup_cache for MeSH labels."
+            )
+
+    def test_ta_mapping_deterministic(self, db_conn):
+        """
+        Therapeutic Area mapping must be deterministic.
+
+        Per Section 24C.2: Same input → Same TA.
+        """
+        from biograph.core.therapeutic_area import map_mesh_to_ta
+
+        with db_conn.cursor() as cur:
+            # Test MeSH → TA mapping twice
+            mesh_ids = ['C04.557.470']  # Lung cancer
+
+            result1 = map_mesh_to_ta(cur, mesh_ids)
+            result2 = map_mesh_to_ta(cur, mesh_ids)
+
+            assert result1.primary_ta == result2.primary_ta, (
+                f"TA mapping not deterministic: {result1.primary_ta} != {result2.primary_ta}. "
+                f"Per Section 24C.2, same MeSH → same TA."
+            )
+
+    def test_ta_taxonomy_fixed(self, db_conn):
+        """
+        Therapeutic Area taxonomy must have exactly 8 TAs.
+
+        Per Section 24C.1: Fixed taxonomy (ONC, IMM, CNS, CVM, ID, RARE, RES, REN).
+        """
+        with db_conn.cursor() as cur:
+            # Check therapeutic_area_enum
+            cur.execute("""
+                SELECT enumlabel
+                FROM pg_enum
+                WHERE enumtypid = 'therapeutic_area_enum'::regtype
+                ORDER BY enumlabel
+            """)
+
+            ta_codes = [row[0] for row in cur.fetchall()]
+
+            expected_tas = ['CVM', 'CNS', 'ID', 'IMM', 'ONC', 'RARE', 'REN', 'RES']
+
+            assert ta_codes == expected_tas, (
+                f"TA taxonomy mismatch. Expected {expected_tas}, got {ta_codes}. "
+                f"Per Section 24C.1, taxonomy is fixed (8 TAs)."
+            )
+
+    def test_news_metadata_only(self, db_conn):
+        """
+        News items must store ONLY metadata (no full articles).
+
+        Per Section 24D.2: Headline, publisher, date, URL, snippet (≤200 chars).
+        """
+        with db_conn.cursor() as cur:
+            # Create test news item
+            cur.execute("""
+                INSERT INTO news_item (
+                    publisher, headline, publication_date, url, snippet
+                ) VALUES (
+                    'Test Publisher',
+                    'Test Headline',
+                    '2023-01-15',
+                    'https://example.com/test',
+                    'Test snippet'
+                )
+                RETURNING news_item_id
+            """)
+
+            news_item_id = cur.fetchone()[0]
+
+            # Verify news item
+            cur.execute("""
+                SELECT snippet FROM news_item WHERE news_item_id = %s
+            """, (news_item_id,))
+
+            snippet = cur.fetchone()[0]
+
+            assert snippet is not None, "Snippet must be present"
+            assert len(snippet) <= 200, (
+                f"News snippet is {len(snippet)} chars (max 200). "
+                f"Per Section 24D, no full articles allowed."
+            )
+
+    def test_news_snippet_max_200_chars(self, db_conn):
+        """
+        News snippet must be ≤ 200 chars (DB constraint).
+
+        Per Section 24D.2: CHECK constraint on snippet length.
+        """
+        with db_conn.cursor() as cur:
+            # Try to insert news with long snippet
+            long_snippet = "A" * 250
+
+            with pytest.raises(psycopg.errors.CheckViolation):
+                cur.execute("""
+                    INSERT INTO news_item (
+                        publisher, headline, publication_date, url, snippet
+                    ) VALUES (
+                        'Test', 'Test', '2023-01-15', 'https://example.com/long', %s
+                    )
+                """, (long_snippet,))
+
+    def test_news_never_creates_assertion(self, db_conn):
+        """
+        News CANNOT create assertions.
+
+        Per Section 24D.4: "News evidence may support pre-existing assertions
+        but CANNOT create new assertions."
+
+        This is enforced by validation view: news_sole_evidence_violations
+        """
+        with db_conn.cursor() as cur:
+            # Check if validation view exists
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.views
+                    WHERE table_schema = 'public'
+                    AND table_name = 'news_sole_evidence_violations'
+                )
+            """)
+
+            view_exists = cur.fetchone()[0]
+
+            assert view_exists, (
+                "news_sole_evidence_violations view not found. "
+                "Per Section 24D.4, must validate news not sole evidence."
+            )
+
+            # Check for violations
+            cur.execute("SELECT * FROM news_sole_evidence_violations")
+
+            violations = cur.fetchall()
+
+            assert len(violations) == 0, (
+                f"Found {len(violations)} assertions with news as sole evidence. "
+                f"Per Section 24D.4, news cannot create assertions. "
+                f"Violations: {violations}"
+            )
+
+    def test_therapeutic_area_mapping_table_exists(self, db_conn):
+        """
+        Therapeutic area mapping table must exist and be prepopulated.
+
+        Per Section 24C: therapeutic_area_mapping with anchors.
+        """
+        with db_conn.cursor() as cur:
+            # Check table exists
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                    AND table_name = 'therapeutic_area_mapping'
+                )
+            """)
+
+            table_exists = cur.fetchone()[0]
+
+            assert table_exists, (
+                "therapeutic_area_mapping table not found. "
+                "Per Section 24C, TA mapping table required."
+            )
+
+            # Check table is prepopulated
+            cur.execute("SELECT COUNT(*) FROM therapeutic_area_mapping")
+
+            count = cur.fetchone()[0]
+
+            assert count > 0, (
+                "therapeutic_area_mapping table is empty. "
+                "Per Section 24C, table should be prepopulated with MeSH/EFO anchors."
+            )
+
+    def test_literature_news_tables_exist(self, db_conn):
+        """
+        Literature and news tables must exist.
+
+        Per Section 24: news_item table required.
+        """
+        with db_conn.cursor() as cur:
+            # Check news_item table
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                    AND table_name = 'news_item'
+                )
+            """)
+
+            news_table_exists = cur.fetchone()[0]
+
+            assert news_table_exists, (
+                "news_item table not found. "
+                "Per Section 24D, news_item table required for news metadata."
+            )
+
+
 # Pytest configuration
 def pytest_configure(config):
     """Register custom markers."""

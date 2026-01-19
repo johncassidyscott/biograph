@@ -782,4 +782,266 @@ If bulk ontology tables exist from earlier versions:
 6. Monitor cache hit rates
 
 ================================================================
+24) Literature and News Evidence (Metadata-Only) — LOCKED
+
+A) PUBMED LITERATURE (REQUIRED)
+
+SCOPE:
+PubMed provides scientific literature evidence for drug-target-disease
+relationships. PubMed evidence is METADATA-ONLY to comply with copyright
+and Thin Durable Core principles.
+
+INGESTION RULES:
+Ingest PubMed METADATA ONLY:
+- PMID (PubMed ID)
+- title
+- journal
+- publication_date
+- MeSH IDs (Medical Subject Headings)
+- DOI (if present)
+- PubMed URL
+
+FORBIDDEN:
+- Full text extraction
+- PDF downloads
+- Abstract text (unless <200 chars snippet)
+- Author lists (optional: first author only)
+
+EVIDENCE CREATION:
+Create evidence records:
+- source_system = 'pubmed'
+- source_record_id = PMID (e.g., '12345678')
+- license = 'NLM_PUBLIC' (National Library of Medicine)
+- uri = PubMed URL (https://pubmed.ncbi.nlm.nih.gov/{PMID})
+- snippet = title (max 200 chars)
+
+ASSERTION SUPPORT RULE (LOCKED):
+PubMed evidence may SUPPORT assertions but may NEVER be the sole evidence.
+
+- Valid: SEC filing + PubMed = assertion ✓
+- Valid: OpenTargets + PubMed = assertion ✓
+- Invalid: PubMed alone = assertion ✗
+
+Rationale: Scientific literature describes research findings, not corporate
+commitments. Assertions must be grounded in authoritative sources (SEC,
+OpenTargets, ChEMBL).
+
+B) MeSH USAGE (LOCKED)
+
+PRINCIPLE:
+MeSH (Medical Subject Headings) provides disease classification.
+Use MeSH to map diseases to Therapeutic Areas (TAs).
+Do NOT bulk ingest MeSH hierarchy.
+
+STORAGE:
+- Store MeSH IDs as provided by PubMed (in evidence or separate linking table)
+- Do NOT store full MeSH tree or synonym catalogs
+- Resolve MeSH labels and tree positions via resolver + cache
+
+RESOLUTION:
+- Implement mesh resolver (biograph/integrations/mesh.py)
+- Fetch MeSH descriptor data from NLM API (or local allowlist)
+- Cache MeSH ID → {label, tree_numbers[]} in lookup_cache
+- TTL: 90 days (MeSH updates yearly)
+
+MESH TREE STRUCTURE:
+MeSH uses hierarchical tree codes (e.g., 'C04.557.470' = lung cancer).
+Tree prefixes map to disease categories:
+- C04 = Neoplasms
+- C10 = Nervous System Diseases
+- C14 = Cardiovascular Diseases
+- C20 = Immune System Diseases
+- etc.
+
+Use tree prefixes to map diseases to Therapeutic Areas.
+
+C) THERAPEUTIC AREA TAXONOMY (USER-FACING)
+
+DEFINITION:
+Therapeutic Area (TA) = high-level disease category for investor/user navigation.
+BioGraph uses a FIXED, small taxonomy of 8 TAs (locked):
+
+1. ONC (Oncology) — Cancer
+2. IMM (Immunology) — Autoimmune, inflammation
+3. CNS (Central Nervous System) — Neurology, psychiatry
+4. CVM (Cardiovascular/Metabolic) — Heart, diabetes, obesity
+5. ID (Infectious Disease) — Viral, bacterial, fungal
+6. RARE (Rare Disease) — Orphan diseases
+7. RES (Respiratory) — Lung, asthma, COPD
+8. REN (Renal) — Kidney diseases
+
+MAPPING RULES:
+Each disease maps to exactly ONE primary TA.
+Mapping is deterministic and auditable.
+
+TA Mapping Strategy:
+1. If disease has MeSH IDs from PubMed → use MeSH tree mapping
+2. If disease has EFO/MONDO ID from OpenTargets → use curated TA map
+3. If no metadata → default to 'UNKNOWN'
+
+TA mapping MUST be:
+- Deterministic (same input → same output)
+- Auditable (log mapping source)
+- Stable (changes require migration)
+
+MESH → TA MAPPING TABLE (CURATED):
+Define MeSH tree prefix anchors for each TA:
+
+ONC:
+- C04* (Neoplasms)
+
+IMM:
+- C20* (Immune System Diseases)
+- C17.300* (Autoimmune Diseases)
+
+CNS:
+- C10* (Nervous System Diseases)
+- F03* (Mental Disorders)
+
+CVM:
+- C14* (Cardiovascular Diseases)
+- C18.452* (Metabolic Diseases)
+- E11* (Diabetes Mellitus)
+
+ID:
+- C01* (Bacterial Infections)
+- C02* (Virus Diseases)
+- C03* (Parasitic Diseases)
+
+RARE:
+- (Curated list of rare disease MeSH/EFO IDs)
+
+RES:
+- C08* (Respiratory Tract Diseases)
+
+REN:
+- C12.777* (Kidney Diseases)
+- C13* (Urologic Diseases)
+
+MULTI-TA RESOLUTION:
+If disease maps to multiple TAs (e.g., inflammatory lung disease → IMM vs RES):
+- Choose MOST SPECIFIC TA based on tree depth
+- Record secondary TAs for reference
+- Primary TA is used for UI filtering
+
+D) NEWS METADATA (MVP-SAFE)
+
+SCOPE:
+News provides market context (press releases, media coverage).
+News is METADATA-ONLY and has ZERO assertion-creating power.
+
+INGESTION RULES:
+Ingest news METADATA ONLY:
+- publisher (e.g., 'Bloomberg', 'Reuters')
+- headline
+- publication_date
+- URL
+- optional: snippet (max 200 chars)
+
+FORBIDDEN:
+- Full article text
+- Paywalled content
+- Images/videos
+
+NER USAGE:
+NER may run on headline and snippet to extract:
+- Drug program mentions
+- Issuer mentions (display context only, NOT identity)
+- Disease mentions (narrative signals only)
+
+NER output creates CANDIDATES, never canonical entities.
+
+EVIDENCE CREATION:
+Create evidence records:
+- source_system = 'news_metadata'
+- source_record_id = URL hash or news_item_id
+- license = 'UNKNOWN' or publisher's terms
+- uri = news URL
+- snippet = headline (max 200 chars)
+
+ASSERTION SUPPORT RULE (LOCKED - UNCHANGED):
+News evidence may NEVER be the sole evidence for an assertion.
+News may ONLY:
+- Reinforce existing assertions grounded in SEC/OpenTargets/ChEMBL
+- Affect recency signals in confidence scoring
+- Provide narrative context for display
+
+News evidence:
+- Cannot create assertions
+- Cannot determine TA
+- Cannot validate drug programs
+- Cannot establish target-disease links
+
+E) IMPLEMENTATION REQUIREMENTS
+
+1) DATABASE SCHEMA:
+- news_item table (metadata storage)
+- pubmed_article table (optional, or use evidence.source_record_id)
+- therapeutic_area_mapping table (TA anchor definitions)
+
+2) RESOLVERS:
+- biograph/integrations/pubmed.py
+- biograph/integrations/mesh.py
+
+3) CORE LOGIC:
+- biograph/core/therapeutic_area.py (TA mapping)
+
+4) API SURFACING:
+- Surface TA per disease/drug program
+- Surface PubMed evidence as "Scientific context"
+- Surface news evidence as "Media coverage"
+- Do NOT surface raw MeSH codes to users (use labels)
+
+F) TESTING REQUIREMENTS (ENFORCED)
+
+1) PubMed Metadata Only:
+- Assert no full text stored
+- Assert snippet ≤ 200 chars
+
+2) PubMed Not Sole Evidence:
+- Assert assertions cannot rely only on PubMed
+- Contract test: PubMed-only assertion creation fails
+
+3) TA Mapping Deterministic:
+- Same MeSH input → same TA output
+- Test mapping for each TA category
+
+4) News Never Creates Assertion:
+- Contract test: News-only assertion creation fails
+- News can only reinforce existing assertions
+
+5) MeSH Thin Core:
+- Assert no bulk MeSH tree tables
+- Assert MeSH labels resolved via cache
+
+G) BENEFITS
+
+1) Scientific Context:
+- PubMed provides peer-reviewed evidence
+- Increases confidence in drug-target-disease links
+
+2) User Navigation:
+- Therapeutic Areas enable filtering by disease category
+- Investors can focus on specific therapeutic focus areas
+
+3) Market Context:
+- News provides real-time market signals
+- Track media coverage of programs
+
+4) Thin Durable Core Preserved:
+- No bulk MeSH ingestion (resolve live)
+- No full text storage (metadata only)
+- Storage remains minimal
+
+H) CONSTRAINTS (LOCKED)
+
+1) PubMed evidence alone CANNOT create assertions
+2) News evidence alone CANNOT create assertions
+3) MeSH bulk catalogs FORBIDDEN (resolve live)
+4) Full text ingestion FORBIDDEN
+5) TA taxonomy is FIXED (8 categories)
+6) TA mapping is DETERMINISTIC (auditable)
+7) News cannot determine TA or validate entities
+
+================================================================
 END OF ADDENDUM
