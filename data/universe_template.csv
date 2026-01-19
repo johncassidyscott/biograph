@@ -1,0 +1,4 @@
+company_name,ticker,exchange,cik,universe_id,start_date,notes
+Eli Lilly and Company,LLY,NYSE,0000059478,xbi,2024-01-01,Example company
+Novo Nordisk A/S,NVO,NYSE,0001120193,xbi,2024-01-01,Example company
+Pfizer Inc.,PFE,NYSE,0000078003,xbi,2024-01-01,Example company

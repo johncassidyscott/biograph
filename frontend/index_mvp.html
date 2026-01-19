@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioGraph MVP - Index-Anchored Intelligence Graph</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0a0e1a;
+            color: #e4e6eb;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            border-bottom: 1px solid #2d3748;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .tagline {
+            color: #a0aec0;
+            font-size: 16px;
+        }
+
+        .search-box {
+            background: #1a202c;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 12px 16px;
+            width: 100%;
+            max-width: 600px;
+            color: #e4e6eb;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #4299e1;
+        }
+
+        .company-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .company-card {
+            background: #1a202c;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .company-card:hover {
+            border-color: #4299e1;
+            transform: translateY(-2px);
+        }
+
+        .company-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .company-ticker {
+            display: inline-block;
+            background: #2d3748;
+            color: #4299e1;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .company-stats {
+            color: #a0aec0;
+            font-size: 14px;
+        }
+
+        .chain-view {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .chain-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            background: #2d3748;
+            border: none;
+            color: #e4e6eb;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            background: #4a5568;
+        }
+
+        .chain-card {
+            background: #1a202c;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .chain-flow {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .chain-node {
+            background: #2d3748;
+            padding: 12px 20px;
+            border-radius: 6px;
+            border-left: 3px solid;
+        }
+
+        .chain-node.company { border-color: #4299e1; }
+        .chain-node.drug { border-color: #48bb78; }
+        .chain-node.target { border-color: #ed8936; }
+        .chain-node.disease { border-color: #f56565; }
+
+        .chain-node-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #a0aec0;
+            margin-bottom: 4px;
+        }
+
+        .chain-node-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .chain-node-meta {
+            font-size: 13px;
+            color: #a0aec0;
+            margin-top: 4px;
+        }
+
+        .arrow {
+            color: #4a5568;
+            font-size: 24px;
+        }
+
+        .evidence-section {
+            background: #0f1419;
+            padding: 16px;
+            border-radius: 6px;
+            margin-top: 16px;
+        }
+
+        .evidence-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #a0aec0;
+            margin-bottom: 12px;
+        }
+
+        .evidence-item {
+            background: #1a202c;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .evidence-source {
+            color: #4299e1;
+            font-weight: 600;
+        }
+
+        .score-badge {
+            display: inline-block;
+            background: #2d3748;
+            color: #48bb78;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #a0aec0;
+        }
+
+        .error {
+            background: #742a2a;
+            color: #feb2b2;
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>BioGraph MVP</h1>
+            <p class="tagline">Index-anchored intelligence graph for life sciences</p>
+        </header>
+
+        <div id="company-list-view">
+            <input
+                type="text"
+                id="search"
+                class="search-box"
+                placeholder="Search companies, drugs, targets, or diseases..."
+            >
+
+            <div id="companies" class="company-grid"></div>
+        </div>
+
+        <div id="chain-view" class="chain-view">
+            <div class="chain-header">
+                <h2 id="chain-company-name"></h2>
+                <button class="back-btn" onclick="showCompanyList()">← Back to Companies</button>
+            </div>
+            <div id="chains"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // Load companies on page load
+        loadCompanies();
+
+        // Search functionality
+        document.getElementById('search').addEventListener('input', (e) => {
+            const query = e.target.value;
+            if (query.length >= 2) {
+                searchAll(query);
+            } else if (query.length === 0) {
+                loadCompanies();
+            }
+        });
+
+        async function loadCompanies() {
+            const container = document.getElementById('companies');
+            container.innerHTML = '<div class="loading">Loading companies...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/companies`);
+                const data = await response.json();
+
+                if (data.companies.length === 0) {
+                    container.innerHTML = '<div class="loading">No companies found. Load universe data first.</div>';
+                    return;
+                }
+
+                container.innerHTML = data.companies.map(company => `
+                    <div class="company-card" onclick="showCompanyChain('${company.cik}')">
+                        <div class="company-name">${company.sec_legal_name}</div>
+                        <div class="company-ticker">${company.ticker || 'N/A'}</div>
+                        <div class="company-stats">
+                            <div>Pipeline: ${company.drug_count || 0} programs</div>
+                            ${company.revenue_usd ? `<div>Revenue: $${(company.revenue_usd / 1e9).toFixed(1)}B</div>` : ''}
+                            ${company.employees ? `<div>Employees: ${company.employees.toLocaleString()}</div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error loading companies: ${error.message}</div>`;
+            }
+        }
+
+        async function showCompanyChain(cik) {
+            document.getElementById('company-list-view').style.display = 'none';
+            document.getElementById('chain-view').style.display = 'block';
+
+            const chainsContainer = document.getElementById('chains');
+            chainsContainer.innerHTML = '<div class="loading">Loading explanation chains...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/explanation-chain/${cik}`);
+                const data = await response.json();
+
+                if (data.chains.length === 0) {
+                    chainsContainer.innerHTML = '<div class="loading">No explanation chains found for this company.</div>';
+                    return;
+                }
+
+                // Update header
+                document.getElementById('chain-company-name').textContent =
+                    `${data.chains[0].company_name} (${data.chains[0].ticker || 'N/A'})`;
+
+                // Render chains
+                chainsContainer.innerHTML = data.chains.map(chain => `
+                    <div class="chain-card">
+                        <div class="chain-flow">
+                            <div class="chain-node company">
+                                <div class="chain-node-label">Company</div>
+                                <div class="chain-node-name">${chain.company_name}</div>
+                                <div class="chain-node-meta">${chain.ticker || 'N/A'}</div>
+                            </div>
+
+                            <div class="arrow">→</div>
+
+                            <div class="chain-node drug">
+                                <div class="chain-node-label">Drug Program</div>
+                                <div class="chain-node-name">${chain.drug_name}</div>
+                                <div class="chain-node-meta">${chain.development_stage || 'Unknown stage'}</div>
+                            </div>
+
+                            <div class="arrow">→</div>
+
+                            <div class="chain-node target">
+                                <div class="chain-node-label">Target</div>
+                                <div class="chain-node-name">${chain.gene_symbol}</div>
+                                <div class="chain-node-meta">${chain.target_name}</div>
+                            </div>
+
+                            <div class="arrow">→</div>
+
+                            <div class="chain-node disease">
+                                <div class="chain-node-label">Disease</div>
+                                <div class="chain-node-name">${chain.disease_name}</div>
+                                <div class="chain-node-meta">${chain.therapeutic_area || 'N/A'}</div>
+                            </div>
+
+                            <div class="score-badge">
+                                Score: ${(chain.association_score * 100).toFixed(0)}%
+                            </div>
+                        </div>
+
+                        ${chain.evidence ? `
+                            <div class="evidence-section">
+                                <div class="evidence-label">Evidence Chain</div>
+                                ${chain.evidence.map(e => `
+                                    <div class="evidence-item">
+                                        <span class="evidence-source">${e.source_system}</span>
+                                        • ${e.evidence_type} • Confidence: ${(e.confidence * 100).toFixed(0)}% •
+                                        License: ${e.license} •
+                                        <a href="${e.url}" target="_blank" style="color: #4299e1;">Source</a>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                chainsContainer.innerHTML = `<div class="error">Error loading chains: ${error.message}</div>`;
+            }
+        }
+
+        function showCompanyList() {
+            document.getElementById('chain-view').style.display = 'none';
+            document.getElementById('company-list-view').style.display = 'block';
+        }
+
+        async function searchAll(query) {
+            const container = document.getElementById('companies');
+            container.innerHTML = '<div class="loading">Searching...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                const allResults = [
+                    ...data.companies.map(c => ({
+                        type: 'company',
+                        name: c.sec_legal_name,
+                        ticker: c.ticker,
+                        cik: c.cik
+                    })),
+                    ...data.drugs.map(d => ({
+                        type: 'drug',
+                        name: d.name,
+                        stage: d.development_stage
+                    })),
+                    ...data.targets.map(t => ({
+                        type: 'target',
+                        name: t.name,
+                        symbol: t.gene_symbol
+                    })),
+                    ...data.diseases.map(d => ({
+                        type: 'disease',
+                        name: d.name,
+                        area: d.therapeutic_area
+                    }))
+                ];
+
+                if (allResults.length === 0) {
+                    container.innerHTML = '<div class="loading">No results found.</div>';
+                    return;
+                }
+
+                container.innerHTML = allResults.map(item => {
+                    if (item.type === 'company') {
+                        return `
+                            <div class="company-card" onclick="showCompanyChain('${item.cik}')">
+                                <div class="company-name">${item.name}</div>
+                                <div class="company-ticker">${item.ticker || 'N/A'}</div>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="company-card">
+                                <div class="company-name">${item.name}</div>
+                                <div class="company-stats">${item.type} ${item.symbol || item.stage || item.area || ''}</div>
+                            </div>
+                        `;
+                    }
+                }).join('');
+
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error searching: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
