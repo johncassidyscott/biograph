@@ -1,6 +1,26 @@
-Flask==2.3.3
-Flask-CORS==4.0.0
-psycopg[binary]==3.13.0
+# BioGraph MVP v8.3 - Production Dependencies
+# Per Section 33: Dependency Hygiene & Reproducible Builds (LOCKED)
+
+# API Framework (Section 27: FastAPI is sole supported runtime)
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+
+# Database (Section 29: Connection pooling required)
+psycopg[binary,pool]==3.1.17
+
+# HTTP Clients (for integrations: OpenTargets, ChEMBL, PubMed, MeSH, GeoNames)
+httpx==0.26.0
+requests==2.31.0
+
+# Validation (Pydantic models for request/response)
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Logging (Section 30: Structured logging required)
+structlog==24.1.0
+
+# Configuration
 python-dotenv==1.0.0
+
+# Production Server
 gunicorn==21.2.0
-Werkzeug==2.3.7
