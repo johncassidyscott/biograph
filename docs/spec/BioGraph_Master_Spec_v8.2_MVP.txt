@@ -1,6 +1,6 @@
 BioGraph — Master Spec (Investor-Grade / MVP)
 
-Version: 8.2-MVP — 2026-01-18
+Version: 8.3-MVP — 2026-01-19
 Audience: Institutional investors, strategy, BD, competitive intelligence
 Explicitly NOT: R&D discovery platform
 
@@ -1042,6 +1042,242 @@ H) CONSTRAINTS (LOCKED)
 5) TA taxonomy is FIXED (8 categories)
 6) TA mapping is DETERMINISTIC (auditable)
 7) News cannot determine TA or validate entities
+
+================================================================
+25) Storage & Projection Architecture (DUAL-LAYER) — LOCKED
+
+RATIONALE:
+- Prior implementations showed Postgres too slow for relationship-heavy explanation queries
+- Neo4j provides significant performance gains for graph traversal at scale
+- Fixed-chain constraint preserves product semantics and prevents graph drift
+- This is an intentional, MVP-safe optimization that does NOT relax auditability
+
+A) SYSTEM OF RECORD (AUTHORITATIVE)
+
+Postgres (Neon) is the SOLE SOURCE OF TRUTH.
+
+ALL canonical data lives ONLY in Postgres:
+- universe / issuer identity
+- canonical entities (target, disease, molecule, location)
+- evidence records (source_system, source_record_id, license, uri, snippet)
+- assertions (subject, predicate, object) + assertion_evidence
+- curation decisions and queues
+- explanation materializations
+- linkage confidence computations
+- licensing metadata
+- audit logs and time-travel queries
+
+POSTGRES RESPONSIBILITIES:
+1. Write path: ALL writes go to Postgres first
+2. Auditability: Evidence chains and provenance queries
+3. Time-travel: Historical queries (as_of_date)
+4. Licensing: Evidence license verification
+5. Confidence: Linkage confidence computation
+6. Curation: Entity resolution, assertion approval
+7. Source of truth: Canonical entity IDs and relationships
+
+POSTGRES IS NEVER OPTIONAL.
+
+B) GRAPH PROJECTION LAYER (NON-AUTHORITATIVE)
+
+Neo4j (Aura) is used as a READ-OPTIMIZED PROJECTION.
+
+Neo4j stores DERIVED data only.
+Neo4j may be dropped and rebuilt at any time without data loss.
+
+WHAT IS PROJECTED TO NEO4J (MVP-SAFE):
+
+Nodes (by canonical ID only):
+- Issuer (issuer_id)
+- DrugProgram (drug_program_id)
+- Target (target_id)
+- Disease (disease_id)
+
+Relationships (fixed shape only):
+- (Issuer)-[:HAS_PROGRAM]->(DrugProgram)
+- (DrugProgram)-[:TARGETS]->(Target)
+- (Target)-[:INDICATED_FOR]->(Disease)
+
+Node properties (metadata only):
+- canonical ID (primary key)
+- label (resolved live or cached, not authoritative)
+- as_of_date (temporal context)
+
+Relationship properties (summary only):
+- as_of_date
+- confidence_band (HIGH, MEDIUM, LOW)
+- confidence_score (optional, for sorting)
+- link_method (DETERMINISTIC, CURATED, ML_SUGGESTED_APPROVED)
+- evidence_count (integer count only, not text)
+- assertion_ids (array of assertion IDs for Postgres lookup)
+
+NEO4J RESPONSIBILITIES:
+1. Fast path: Optimized graph queries for explanation retrieval
+2. Learning: Performance experimentation and query optimization
+3. Projection: Derived view of Postgres data
+4. Disposable: Can be rebuilt from Postgres at any time
+
+C) EXPLICITLY FORBIDDEN IN NEO4J
+
+Neo4j NEVER:
+1. Creates assertions
+2. Resolves entities (ER/NER)
+3. Stores evidence text or snippets
+4. Stores licensing data
+5. Stores curation queues
+6. Computes linkage confidence
+7. Acts as write-back to Postgres
+8. Enables free traversal beyond fixed explanation paths
+9. Stores any data not derivable from Postgres
+
+WRITE-BACK RULE (LOCKED):
+Neo4j mutations NEVER propagate back to Postgres.
+Neo4j is READ-ONLY from application perspective.
+
+D) QUERY ROUTING RULES
+
+UI / API MAY read explanation edges from Neo4j for speed:
+- Issuer → DrugProgram → Target → Disease traversal
+- Filtering by confidence band, as_of_date, link method
+- Sorting by confidence score
+
+Evidence, provenance, and audit details MUST be fetched from Postgres by ID:
+- Evidence text, snippets, URIs
+- Source system, license information
+- Full assertion details
+- Historical queries (time-travel)
+- Curation decisions
+
+FALLBACK RULE (REQUIRED):
+If Neo4j is unavailable, API MUST transparently fall back to Postgres.
+System remains fully functional with Postgres-only path.
+
+E) PROJECTION STRATEGY (ONE-WAY)
+
+Postgres → Neo4j projection is ONE-WAY.
+
+Projector reads from:
+- explanation table (materialized view in Postgres)
+- assertion + assertion_evidence (for confidence metadata)
+
+Projector writes to:
+- Neo4j nodes (Issuer, DrugProgram, Target, Disease)
+- Neo4j relationships (HAS_PROGRAM, TARGETS, INDICATED_FOR)
+
+Projection trigger:
+- MVP: Manual rebuild command (per issuer or per as_of_date)
+- Future: Event-driven incremental updates (not required for MVP)
+
+Projection lag:
+- Logged but does not block writes
+- API falls back to Postgres if projection is stale
+
+Idempotency:
+- Projector may be run multiple times safely
+- Upsert semantics (MERGE in Neo4j)
+
+F) CONFIGURATION
+
+Required environment variables:
+- GRAPH_BACKEND=postgres|neo4j (default: postgres)
+- NEO4J_URI (e.g., neo4j+s://xxx.databases.neo4j.io)
+- NEO4J_USER
+- NEO4J_PASSWORD
+
+Safe mode:
+- GRAPH_BACKEND=postgres (default)
+- System runs entirely on Postgres
+- Neo4j is opt-in performance optimization
+
+G) ABSTRACTION LAYER
+
+ExplanationStore interface (abstract):
+- get_explanation(issuer_id, as_of_date) → explanation graph
+- get_assertion_details(assertion_id) → assertion + evidence
+- get_evidence(evidence_id) → evidence record
+
+Implementations:
+1. PostgresExplanationStore (authoritative, always available)
+2. Neo4jExplanationStore (fast path, optional)
+
+API query flow:
+1. Try Neo4j (if enabled) → get explanation graph
+2. Fall back to Postgres (if Neo4j unavailable)
+3. Fetch evidence details from Postgres by ID (always)
+
+H) CONSTRAINTS (LOCKED)
+
+1) Postgres is the ONLY source of truth
+2) Neo4j stores DERIVED data only (can be rebuilt)
+3) Neo4j NEVER writes back to Postgres
+4) Evidence text NEVER stored in Neo4j
+5) Licensing data NEVER stored in Neo4j
+6) Confidence computation ONLY in Postgres
+7) Free traversal beyond fixed paths FORBIDDEN
+8) API MUST work with Postgres-only (Neo4j optional)
+9) Projection is ONE-WAY (Postgres → Neo4j)
+10) Projection lag does NOT block writes
+
+I) TESTING REQUIREMENTS
+
+Contract tests (non-negotiable):
+1. test_postgres_is_source_of_truth:
+   - Assertions/evidence exist in Postgres regardless of Neo4j state
+2. test_neo4j_projection_matches_postgres:
+   - Explanation edge counts and IDs match for known issuer/as_of_date
+3. test_no_write_back_from_neo4j:
+   - Neo4j mutations never affect Postgres
+4. test_fallback_to_postgres:
+   - API works when Neo4j is disabled (GRAPH_BACKEND=postgres)
+5. test_evidence_only_in_postgres:
+   - Evidence text/licensing NEVER in Neo4j
+6. test_confidence_only_in_postgres:
+   - Confidence scores computed in Postgres, projected to Neo4j
+
+J) RATIONALE (WHY DUAL-LAYER)
+
+Performance necessity:
+- Postgres relationship queries too slow for explanation retrieval at scale
+- Neo4j provides 10-100x speedup for graph traversal
+- User experience requires sub-second response times
+
+Safety preserved:
+- Fixed-chain constraint prevents graph drift
+- Postgres remains source of truth
+- Neo4j is disposable (can be rebuilt)
+- Auditability unaffected (evidence always in Postgres)
+
+MVP-safe:
+- Start with Postgres-only (safe default)
+- Add Neo4j when performance needed
+- Fallback ensures system always works
+- No write-back prevents data inconsistency
+
+Learning layer:
+- Neo4j enables query optimization experiments
+- Performance tuning without affecting Postgres
+- Projection strategy can evolve (manual → incremental → event-driven)
+
+K) IMPLEMENTATION PHASES
+
+Phase 1 (PR1): Spec + Abstraction + Postgres Path
+- Update spec to v8.3
+- Create ExplanationStore interface
+- Implement PostgresExplanationStore
+- Add GRAPH_BACKEND configuration
+- Contract tests for Postgres-only path
+
+Phase 2 (PR2): Neo4j Schema + Projector
+- Define Neo4j schema (nodes, relationships, properties)
+- Implement Neo4jProjector (Postgres → Neo4j)
+- Implement rebuild command (per issuer / per as_of_date)
+- Contract tests for projection correctness
+
+Phase 3 (PR3): API Fast-Path + Fallback
+- Implement Neo4jExplanationStore
+- Add query routing (Neo4j → Postgres fallback)
+- Add projection lag monitoring
+- Contract tests for fallback behavior
 
 ================================================================
 END OF ADDENDUM

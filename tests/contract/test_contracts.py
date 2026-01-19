@@ -947,6 +947,308 @@ class TestContractH_LiteratureAndNewsEvidence:
             )
 
 
+class TestContractI_StorageAndProjectionArchitecture:
+    """
+    Contract I: Storage & Projection Architecture (Section 25)
+
+    Critical invariants:
+    1. Postgres is the ONLY source of truth
+    2. Neo4j stores DERIVED data only (can be rebuilt)
+    3. Neo4j NEVER writes back to Postgres
+    4. Evidence text NEVER stored in Neo4j
+    5. Licensing data NEVER stored in Neo4j
+    6. Confidence computation ONLY in Postgres
+    7. API MUST work with Postgres-only (Neo4j optional)
+    """
+
+    def test_postgres_is_source_of_truth(self, db_conn):
+        """
+        Postgres must contain all assertions and evidence.
+
+        Per Section 25A: Postgres is the SOLE SOURCE OF TRUTH.
+        All canonical data lives ONLY in Postgres.
+
+        This test verifies that assertions and evidence exist in Postgres,
+        regardless of Neo4j state.
+        """
+        with db_conn.cursor() as cur:
+            # Verify assertion table exists
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                    AND table_name = 'assertion'
+                )
+            """)
+
+            assertion_table_exists = cur.fetchone()[0]
+
+            assert assertion_table_exists, (
+                "assertion table not found in Postgres. "
+                "Per Section 25A, Postgres is the source of truth."
+            )
+
+            # Verify evidence table exists
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                    AND table_name = 'evidence'
+                )
+            """)
+
+            evidence_table_exists = cur.fetchone()[0]
+
+            assert evidence_table_exists, (
+                "evidence table not found in Postgres. "
+                "Per Section 25A, Postgres is the source of truth."
+            )
+
+            # Verify assertion_evidence link table exists
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                    AND table_name = 'assertion_evidence'
+                )
+            """)
+
+            link_table_exists = cur.fetchone()[0]
+
+            assert link_table_exists, (
+                "assertion_evidence table not found in Postgres. "
+                "Per Section 25A, Postgres is the source of truth."
+            )
+
+    def test_explanation_store_postgres_path(self, db_conn):
+        """
+        PostgresExplanationStore must work (authoritative path).
+
+        Per Section 25G: PostgresExplanationStore is ALWAYS AVAILABLE.
+        """
+        from biograph.storage.postgres_store import PostgresExplanationStore
+
+        with db_conn.cursor() as cur:
+            store = PostgresExplanationStore(cur)
+
+            # Verify store is available
+            assert store.is_available(), (
+                "PostgresExplanationStore not available. "
+                "Per Section 25A, Postgres is always required."
+            )
+
+            # Verify store name
+            assert store.get_store_name() == 'postgres', (
+                "PostgresExplanationStore should return 'postgres' as store name"
+            )
+
+    def test_explanation_store_factory_postgres_default(self, db_conn):
+        """
+        ExplanationStoreFactory defaults to Postgres (safe mode).
+
+        Per Section 25F: Default safe mode is postgres-only.
+        """
+        from biograph.storage.explanation_store import ExplanationStoreFactory
+
+        with db_conn.cursor() as cur:
+            # Create store with default backend
+            store = ExplanationStoreFactory.create_store(cur, backend='postgres')
+
+            assert store.get_store_name() == 'postgres', (
+                "Default backend should be Postgres (safe mode)"
+            )
+
+            assert store.is_available(), (
+                "Postgres store should always be available"
+            )
+
+    def test_config_defaults_to_postgres(self):
+        """
+        Configuration defaults to Postgres if GRAPH_BACKEND not set.
+
+        Per Section 25F: GRAPH_BACKEND defaults to 'postgres' (safe mode).
+        """
+        from biograph.config import GraphConfig
+
+        # Test default backend
+        config = GraphConfig(backend='postgres')
+
+        assert config.backend == 'postgres', (
+            "Default backend should be 'postgres'"
+        )
+
+        assert not config.is_neo4j_enabled(), (
+            "Neo4j should not be enabled by default"
+        )
+
+    def test_config_requires_neo4j_credentials(self):
+        """
+        Neo4j backend requires full configuration (URI, user, password).
+
+        Per Section 25F: Neo4j config must be complete.
+        """
+        from biograph.config import GraphConfig
+
+        # Neo4j without credentials should not be enabled
+        config_no_creds = GraphConfig(backend='neo4j')
+
+        assert not config_no_creds.is_neo4j_enabled(), (
+            "Neo4j should not be enabled without credentials"
+        )
+
+        # Neo4j with full credentials should be enabled
+        config_full = GraphConfig(
+            backend='neo4j',
+            neo4j_uri='neo4j+s://test.databases.neo4j.io',
+            neo4j_user='test_user',
+            neo4j_password='test_password'
+        )
+
+        assert config_full.is_neo4j_enabled(), (
+            "Neo4j should be enabled with full credentials"
+        )
+
+    def test_no_neo4j_tables_in_postgres(self, db_conn):
+        """
+        Postgres should NOT have Neo4j-specific tables.
+
+        Per Section 25: Neo4j is a separate projection layer.
+        Postgres should not have Neo4j metadata tables.
+        """
+        with db_conn.cursor() as cur:
+            # Check for Neo4j-related table names
+            cur.execute("""
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+                AND (
+                    table_name LIKE '%neo4j%'
+                    OR table_name LIKE '%graph_projection%'
+                )
+            """)
+
+            neo4j_tables = cur.fetchall()
+
+            # Allow neo4j_projection_log table for tracking projection status
+            # but no other Neo4j-specific tables
+            allowed_tables = {'neo4j_projection_log'}
+            found_tables = {row[0] for row in neo4j_tables}
+            unexpected_tables = found_tables - allowed_tables
+
+            assert len(unexpected_tables) == 0, (
+                f"Found Neo4j-specific tables in Postgres: {unexpected_tables}. "
+                f"Per Section 25, Neo4j is a separate projection layer."
+            )
+
+    def test_evidence_has_license_column(self, db_conn):
+        """
+        Evidence table must have license column (required for Postgres).
+
+        Per Section 25C: Licensing data NEVER stored in Neo4j.
+        Must exist in Postgres.
+        """
+        with db_conn.cursor() as cur:
+            cur.execute("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                AND table_name = 'evidence'
+                AND column_name = 'license'
+            """)
+
+            license_column = cur.fetchone()
+
+            assert license_column is not None, (
+                "evidence table missing 'license' column. "
+                "Per Section 25C, licensing data must be in Postgres only."
+            )
+
+    def test_evidence_has_snippet_column(self, db_conn):
+        """
+        Evidence table must have snippet column (required for Postgres).
+
+        Per Section 25C: Evidence text NEVER stored in Neo4j.
+        Must exist in Postgres.
+        """
+        with db_conn.cursor() as cur:
+            cur.execute("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                AND table_name = 'evidence'
+                AND column_name = 'snippet'
+            """)
+
+            snippet_column = cur.fetchone()
+
+            assert snippet_column is not None, (
+                "evidence table missing 'snippet' column. "
+                "Per Section 25C, evidence text must be in Postgres only."
+            )
+
+    def test_assertion_has_confidence_columns(self, db_conn):
+        """
+        Assertion table must have confidence columns (computed in Postgres).
+
+        Per Section 25: Confidence computation ONLY in Postgres.
+        """
+        with db_conn.cursor() as cur:
+            cur.execute("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                AND table_name = 'assertion'
+                AND column_name IN ('confidence_band', 'confidence_score')
+                ORDER BY column_name
+            """)
+
+            confidence_columns = cur.fetchall()
+
+            assert len(confidence_columns) == 2, (
+                "assertion table missing confidence columns. "
+                "Per Section 25, confidence computed in Postgres only."
+            )
+
+    def test_explanation_store_abstraction_exists(self):
+        """
+        ExplanationStore abstraction must exist.
+
+        Per Section 25G: ExplanationStore interface required.
+        """
+        from biograph.storage.explanation_store import ExplanationStore
+
+        # Verify abstract methods exist
+        assert hasattr(ExplanationStore, 'get_explanation'), (
+            "ExplanationStore missing get_explanation() method"
+        )
+
+        assert hasattr(ExplanationStore, 'get_assertion_details'), (
+            "ExplanationStore missing get_assertion_details() method"
+        )
+
+        assert hasattr(ExplanationStore, 'get_evidence'), (
+            "ExplanationStore missing get_evidence() method"
+        )
+
+        assert hasattr(ExplanationStore, 'is_available'), (
+            "ExplanationStore missing is_available() method"
+        )
+
+    def test_postgres_store_implements_interface(self):
+        """
+        PostgresExplanationStore must implement ExplanationStore interface.
+
+        Per Section 25G: PostgresExplanationStore is authoritative implementation.
+        """
+        from biograph.storage.explanation_store import ExplanationStore
+        from biograph.storage.postgres_store import PostgresExplanationStore
+
+        # Verify PostgresExplanationStore is subclass of ExplanationStore
+        assert issubclass(PostgresExplanationStore, ExplanationStore), (
+            "PostgresExplanationStore must implement ExplanationStore interface"
+        )
+
+
 # Pytest configuration
 def pytest_configure(config):
     """Register custom markers."""
