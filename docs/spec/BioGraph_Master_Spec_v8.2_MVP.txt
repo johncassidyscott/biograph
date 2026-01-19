@@ -1280,4 +1280,688 @@ Phase 3 (PR3): API Fast-Path + Fallback
 - Contract tests for fallback behavior
 
 ================================================================
+26) Execution Layer (Not Research-Grade) — LOCKED
+
+CRITICAL REQUIREMENT:
+BioGraph MVP must be deployable as a hosted service with production-grade execution.
+
+This is NOT:
+- A notebook-driven prototype
+- A collection of alternate apps/frameworks
+- An R&D pipeline demo
+- A multi-framework experiment
+- A research codebase
+
+This IS:
+- An investor-grade intelligence product
+- A commercially-viable hosted POC
+- A deterministic, reproducible system
+- A secure-by-default application
+
+A) DEPLOYMENT REQUIREMENTS
+
+BioGraph MVP must be deployable as a hosted service with:
+1. Single API entry point (no ambiguity about which server to run)
+2. Deterministic behavior (same inputs → same outputs)
+3. Reproducible builds (locked dependencies, versioned migrations)
+4. Security controls (API key auth, no public admin endpoints)
+5. Robust error handling (no stack traces to clients)
+6. Performance safeguards (connection pooling, timeouts)
+7. Contract tests as non-negotiable gates (CI must be green)
+
+B) OPERATIONAL STANDARDS
+
+The system must demonstrate:
+- Health monitoring (/healthz endpoint required)
+- Structured logging (JSON logs with request_id)
+- Database connection pooling (no per-request TCP connections)
+- Error sanitization (no internal details exposed)
+- API versioning (clear /api/v1/ namespace)
+- Dependency hygiene (no unused imports, no missing requirements)
+
+C) ACCEPTANCE CRITERIA
+
+The MVP is NOT shippable until:
+- Exactly ONE API entrypoint exists and is deployed
+- CI is green (migrations + contract tests + full test suite)
+- Admin/curation endpoints are API-key gated
+- Connection pooling is enabled
+- Errors are sanitized and structured
+- /healthz endpoint works and verifies dependencies
+- NER/ER are not stubs (minimum viable implementations exist)
+
+================================================================
+27) Single API Runtime — LOCKED
+
+REQUIREMENT:
+BioGraph MVP must have exactly ONE production API runtime.
+
+A) FRAMEWORK LOCK
+
+FastAPI is the SOLE supported API runtime in MVP.
+
+Rationale:
+- Type safety (Pydantic request/response validation)
+- Auto-generated OpenAPI documentation (/docs, /openapi.json)
+- Async support (better performance than Flask)
+- Modern Python idioms (async/await, type hints)
+
+Flask, Django, or other frameworks are FORBIDDEN in production code.
+
+B) SINGLE ENTRY POINT
+
+Exactly ONE runnable server module exists:
+- biograph/api/main.py (production entrypoint)
+
+Legacy entrypoints MUST be:
+- Deleted (preferred), OR
+- Quarantined (moved to /legacy/ directory, not imported, not runnable, not referenced by deploy config)
+
+C) URL VERSIONING
+
+All endpoints are under /api/v1/*
+
+Examples:
+- GET /api/v1/issuers
+- GET /api/v1/explanation/{issuer_id}
+- GET /api/v1/search
+
+Forbidden:
+- /api/v8_* naming (internal spec version does NOT dictate URL versioning)
+- Unversioned paths like /api/issuers (no /v1/ prefix)
+- Multiple version namespaces (/v1/ and /v2/ simultaneously in MVP)
+
+D) OPENAPI DOCUMENTATION
+
+Must expose:
+- GET /docs (Swagger UI)
+- GET /openapi.json (OpenAPI schema)
+
+Access control:
+- In non-production: Public access to /docs
+- In production: API-key gated OR disabled via environment variable
+
+E) REMOVE AMBIGUITY
+
+The following files MUST NOT exist or be importable:
+- /app.py (Flask minimal app)
+- /app_mvp.py (FastAPI alternate)
+- /backend/app/main.py (FastAPI alternate)
+- /backend/app/main_mvp.py (unknown purpose)
+- /backend/app/api_mvp.py (unknown purpose)
+
+Only ONE of these survives:
+- /biograph/api/main.py (recommended)
+
+Deployment config (render.yaml, Dockerfile) MUST reference only the canonical entrypoint.
+
+================================================================
+28) Access Control (POC-Grade, Required) — LOCKED
+
+CRITICAL REQUIREMENT:
+This MVP MUST NOT expose admin or raw data endpoints publicly.
+
+A) MINIMUM AUTHENTICATION
+
+API key authentication using header: X-API-Key
+
+Required for:
+- Any admin endpoints (/api/v1/admin/*)
+- Any curation endpoints (/api/v1/curation/*)
+- Any endpoint returning raw assertions (assertion table rows)
+- Any endpoint returning raw evidence bodies
+- Any endpoint returning operational tables (nlp_run, candidate, etc.)
+
+Optional (configurable) for read endpoints:
+- If hosted publicly: ALL endpoints require API key
+- If demo mode: Read endpoints MAY be public BUT must exclude:
+  - Raw assertion/evidence bodies (unless API key present)
+  - Admin/curation data
+  - Internal operational tables
+
+B) API KEY IMPLEMENTATION
+
+Simple API key verification:
+1. API keys stored in environment variable or database table
+2. Header validation: X-API-Key must match known key
+3. Return 401 Unauthorized if missing or invalid
+4. Return 403 Forbidden if valid but insufficient permissions
+
+Example implementation:
+```python
+from fastapi import Header, HTTPException
+
+async def verify_api_key(x_api_key: str = Header(None)):
+    if not x_api_key:
+        raise HTTPException(status_code=401, detail="API key required")
+    if x_api_key not in VALID_API_KEYS:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    return x_api_key
+
+@router.get("/api/v1/admin/assertions")
+async def list_assertions(api_key = Depends(verify_api_key)):
+    # Protected endpoint
+    ...
+```
+
+C) OUT OF SCOPE FOR MVP
+
+The following are NOT required for MVP but system must be structured to add later:
+- User registration/login UI
+- JWT token generation/refresh
+- Password hashing and user accounts
+- Multi-tenant RBAC (role-based access control)
+- OAuth integration
+- Session management
+
+D) FUTURE-PROOFING
+
+Auth layer must be designed such that:
+- Adding user accounts later does NOT require schema refactor
+- API key → JWT migration is straightforward
+- RBAC can be layered on top of API keys
+
+E) DEPLOYMENT MODES
+
+Environment variable: AUTH_MODE
+- "api_key" (default): Require X-API-Key header
+- "demo" (unsafe): Read endpoints public, admin endpoints still require key
+- "disabled" (local dev only): No auth (NEVER use in hosted deployment)
+
+================================================================
+29) Database Connection Management — LOCKED
+
+REQUIREMENT:
+Use connection pooling. No per-request TCP connections.
+
+A) CONNECTION POOLING REQUIRED
+
+Use psycopg_pool (or equivalent) to manage database connections.
+
+Pool is created ONCE at application startup.
+Requests MUST reuse pooled connections.
+
+B) IMPLEMENTATION
+
+```python
+from psycopg_pool import ConnectionPool
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: create pool
+    app.state.pool = ConnectionPool(
+        conninfo=DATABASE_URL,
+        min_size=5,
+        max_size=20,
+        timeout=10.0
+    )
+    yield
+    # Shutdown: close pool
+    app.state.pool.close()
+
+app = FastAPI(lifespan=lifespan)
+
+async def get_db():
+    """Dependency to get DB connection from pool."""
+    with app.state.pool.connection() as conn:
+        yield conn
+```
+
+C) POOL CONFIGURATION
+
+Pool size MUST be configurable via environment variables:
+- DB_POOL_MIN_SIZE (default: 5)
+- DB_POOL_MAX_SIZE (default: 20)
+- DB_POOL_TIMEOUT (default: 10.0 seconds)
+
+D) HEALTH CHECKS
+
+Pool health MUST be checked:
+- On startup (fail fast if DB unreachable)
+- In /healthz endpoint (report pool status)
+
+E) FORBIDDEN PATTERNS
+
+The following pattern is FORBIDDEN:
+```python
+# WRONG: Creates new connection on every request
+@contextmanager
+def get_conn():
+    conn = Connection.connect(DATABASE_URL)
+    try:
+        yield conn
+    finally:
+        conn.close()
+```
+
+This will exhaust database connections under concurrent load.
+
+================================================================
+30) Error Handling & Safe Responses — LOCKED
+
+REQUIREMENT:
+API must NEVER return raw stack traces to clients.
+
+A) STRUCTURED ERROR FORMAT
+
+All errors MUST return JSON in this format:
+```json
+{
+  "error": {
+    "code": "database_unavailable",
+    "message": "Service temporarily unavailable",
+    "request_id": "req_abc123"
+  }
+}
+```
+
+B) STATUS CODES
+
+Use proper HTTP status codes:
+- 400 Bad Request: Validation errors (bad input)
+- 401 Unauthorized: Missing or invalid API key
+- 403 Forbidden: Valid API key but insufficient permissions
+- 404 Not Found: Resource not found
+- 429 Too Many Requests: Rate limit exceeded (if enabled)
+- 503 Service Unavailable: Dependency outages (DB down, Neo4j down)
+- 500 Internal Server Error: Unexpected errors (no internals exposed)
+
+C) ERROR HANDLING MIDDLEWARE
+
+All endpoints MUST be wrapped in error handling:
+```python
+from fastapi import Request, HTTPException
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    request_id = request.headers.get("X-Request-ID", "unknown")
+
+    # Log with full context
+    logger.error(
+        "Unhandled exception",
+        exc_info=exc,
+        request_id=request_id,
+        path=request.url.path
+    )
+
+    # Return sanitized error to client
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": {
+                "code": "internal_error",
+                "message": "An unexpected error occurred",
+                "request_id": request_id
+            }
+        }
+    )
+```
+
+D) LOGGING
+
+Structured logs (JSON) with context:
+- request_id (for tracing)
+- endpoint name
+- user_id (if authenticated)
+- error details (in logs only, NOT in response)
+
+Example:
+```python
+logger.error(
+    "database.connection.failed",
+    request_id=request_id,
+    endpoint="list_issuers",
+    user_id=user_id,
+    exc_info=e
+)
+```
+
+E) FORBIDDEN
+
+The following is FORBIDDEN:
+```python
+# WRONG: Exposes stack trace to client
+@router.get("/api/v1/issuers")
+async def list_issuers():
+    cur.execute(query)  # If fails: 500 with full traceback
+    return cur.fetchall()
+```
+
+All endpoints MUST have try/except blocks.
+
+================================================================
+31) Required Operational Endpoints — LOCKED
+
+REQUIREMENT:
+The API MUST expose operational health endpoints.
+
+A) HEALTH CHECK (REQUIRED)
+
+GET /healthz
+
+Returns status of:
+- Postgres connectivity (REQUIRED)
+- Neo4j connectivity (if GRAPH_BACKEND=neo4j)
+- Lookup cache readiness (REQUIRED)
+
+Response format:
+```json
+{
+  "status": "healthy",
+  "checks": {
+    "postgres": {
+      "status": "up",
+      "latency_ms": 5
+    },
+    "neo4j": {
+      "status": "up",
+      "latency_ms": 12
+    },
+    "cache": {
+      "status": "up",
+      "entry_count": 1234
+    }
+  },
+  "version": "8.3.0"
+}
+```
+
+Status codes:
+- 200 OK: All required checks pass
+- 503 Service Unavailable: Any required check fails
+
+B) METRICS (OPTIONAL, RECOMMENDED)
+
+GET /metrics (Prometheus format)
+
+May be deferred, but /healthz is REQUIRED for MVP.
+
+C) READINESS VS LIVENESS
+
+For Kubernetes deployments:
+- /healthz → liveness probe (is app running?)
+- /readyz → readiness probe (is app ready to serve traffic?)
+
+MVP may use /healthz for both.
+
+================================================================
+32) NER/ER Completeness (No Stubs) — LOCKED
+
+REQUIREMENT:
+NER/ER modules MUST NOT be stubs if referenced as core features.
+
+A) MINIMUM VIABLE NER
+
+Dictionary + rules-first candidate extraction:
+
+1. Issuer Program Registry Matches:
+   - Exact match against known drug_program.name within issuer
+   - Example: "KEYTRUDA" → existing drug_program_id
+
+2. Open Targets Target/Disease Dictionaries:
+   - ID-resolving exact matches only
+   - Example: "EGFR" → ENSG00000146648 (via OpenTargets API)
+   - Example: "breast cancer" → EFO_0000305 (via OpenTargets API)
+
+3. Regex Heuristics:
+   - Drug name patterns: [A-Z]{3,} (all caps, 3+ letters)
+   - Target gene patterns: [A-Z]{2,}[0-9]* (EGFR, TP53)
+   - Disease patterns: common disease terms dictionary
+
+Outputs:
+- nlp_run record (model_name, model_version, status)
+- mention records (NER spans with offsets)
+- candidate records (normalized suggestions, status='pending')
+- evidence records (for provenance)
+
+Guardrails (unchanged):
+- NO canonical entity creation (drug_program, target, disease)
+- NO auto-assertions
+- Humans approve via curation workflow
+
+B) MINIMUM VIABLE ER
+
+Within-issuer-only duplicate suggestions:
+
+1. DrugProgram Aliasing:
+   - Find similar names within same issuer
+   - Example: "Keytruda" vs "KEYTRUDA" vs "pembrolizumab"
+   - Suggest merge candidates (status='pending')
+
+2. No Automatic Merges:
+   - ER only creates suggestions
+   - Humans decide via curation workflow
+
+3. Algorithm:
+   - Exact match (case-insensitive)
+   - Levenshtein distance < 3
+   - Token overlap > 70%
+
+C) ADVANCED MODELS (OPTIONAL, GATED)
+
+SciSpacy/UMLS/ML models are OPTIONAL and MUST be:
+- Behind feature flags (ENABLE_SCISPACY=true)
+- License-checked (must pass license_allowlist)
+- Human-approved (no auto canonical creation)
+- Auditable (all suggestions logged)
+
+D) FORBIDDEN
+
+The following is FORBIDDEN:
+```python
+# WRONG: Stub implementation
+def run_ner_on_text(cursor, source_type, source_id, text, issuer_id):
+    # Stub implementation for PR0
+    # Full implementation in PR4
+    pass
+```
+
+NER/ER MUST produce auditable candidate outputs.
+
+================================================================
+33) Dependency Hygiene & Reproducible Builds — LOCKED
+
+REQUIREMENT:
+The deployed app must run from a single locked dependency file.
+
+A) REQUIREMENTS FILE
+
+Create requirements.txt (production dependencies):
+```
+# API framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+
+# Database
+psycopg[binary,pool]==3.1.17
+
+# Authentication
+python-jose[cryptography]==3.3.0
+
+# Validation
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# HTTP clients (for integrations)
+httpx==0.26.0
+
+# Logging
+structlog==24.1.0
+
+# Configuration
+python-dotenv==1.0.0
+```
+
+B) REQUIREMENTS VALIDATION
+
+CI must validate:
+1. Fresh install from requirements.txt
+2. Fresh DB migrations (on empty database)
+3. Contract tests pass
+4. Full test suite passes
+5. Server starts without errors
+
+C) NO MISSING IMPORTS
+
+All imports used by production entrypoint MUST be in requirements.txt.
+
+Forbidden:
+- Importing FastAPI but not listing it in requirements.txt
+- Importing requests but not listing it
+- Commenting out dependencies ("# requests>=2.31.0 # for PR4")
+
+D) LOCK FILE (OPTIONAL, RECOMMENDED)
+
+For reproducible builds:
+- pip freeze > requirements.lock
+- Deploy from requirements.lock (not requirements.txt)
+
+E) DEVELOPMENT DEPENDENCIES
+
+Separate file: requirements-dev.txt
+```
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Code quality
+black>=23.0.0
+ruff>=0.1.0
+mypy>=1.5.0
+
+# NER/ER (if implemented)
+spacy>=3.6.0
+scispacy>=0.5.3
+```
+
+================================================================
+34) Rate Limiting — SCOPED
+
+RECOMMENDATION:
+Enable rate limiting if hosted publicly.
+
+A) SCOPE
+
+If hosted publicly (no API key):
+- Enable basic per-IP rate limiting
+- Example: 100 requests/minute per IP
+
+If hosted privately (API-key gated):
+- Rate limiting MAY be deferred to later
+- API keys themselves provide usage control
+
+B) IMPLEMENTATION (OPTIONAL)
+
+```python
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+@router.get("/api/v1/search")
+@limiter.limit("10/minute")
+async def search(query: str):
+    ...
+```
+
+C) DEFERRED FOR MVP
+
+Rate limiting is RECOMMENDED but NOT REQUIRED for MVP if:
+- API is API-key gated (usage controlled via keys)
+- Hosted privately (not public internet)
+
+May be added in future iterations.
+
+================================================================
+35) Acceptance Criteria (Done Means) — LOCKED
+
+DEFINITION:
+BioGraph MVP is considered commercial-grade hosted POC ONLY when ALL criteria met.
+
+A) API RUNTIME
+
+✅ Exactly ONE API entrypoint is deployed
+- /biograph/api/main.py (FastAPI)
+- All legacy apps deleted or quarantined
+- render.yaml references single entrypoint
+- No ambiguity about which server to run
+
+B) CI VALIDATION
+
+✅ CI is green:
+- Fresh database migrations (on empty DB)
+- Contract tests pass (all 11+ contracts)
+- Full test suite passes (unit + integration)
+- No import errors
+- Server starts without errors
+
+C) SECURITY
+
+✅ Admin/curation/raw endpoints are API-key gated
+- /api/v1/admin/* requires X-API-Key
+- /api/v1/curation/* requires X-API-Key
+- Raw assertion/evidence bodies require X-API-Key
+- 401 Unauthorized if missing/invalid key
+
+D) INFRASTRUCTURE
+
+✅ Connection pooling is enabled
+- psycopg_pool in use
+- Pool created at startup
+- No per-request TCP connections
+- Pool health checked in /healthz
+
+E) ERROR HANDLING
+
+✅ Errors are sanitized and structured
+- No stack traces to clients
+- JSON error format with request_id
+- Proper HTTP status codes
+- Structured logging (JSON logs)
+
+F) OPERATIONAL
+
+✅ /healthz endpoint works
+- GET /healthz returns 200 or 503
+- Verifies Postgres connectivity (required)
+- Verifies Neo4j connectivity (if GRAPH_BACKEND=neo4j)
+- Reports cache readiness
+
+G) FEATURE COMPLETENESS
+
+✅ NER/ER are not stubs
+- Minimum viable NER produces candidates
+- Minimum viable ER suggests duplicates
+- Auditable outputs (nlp_run, mention, candidate records)
+- Guardrails enforced (no auto canonical creation)
+
+H) DEPENDENCY HYGIENE
+
+✅ requirements.txt matches runtime imports
+- All production imports listed
+- No commented-out dependencies
+- CI validates fresh install works
+- No missing modules at runtime
+
+I) DEPLOYMENT
+
+✅ Hosted POC is running
+- Deployed to Render (or equivalent)
+- Environment variables configured
+- Database migrations applied
+- API accessible via HTTPS
+- /healthz returns 200
+
+J) DOCUMENTATION
+
+✅ OpenAPI documentation available
+- GET /docs (Swagger UI)
+- GET /openapi.json (schema)
+- All endpoints documented with examples
+
+================================================================
 END OF ADDENDUM

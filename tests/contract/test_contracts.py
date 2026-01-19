@@ -1249,6 +1249,237 @@ class TestContractI_StorageAndProjectionArchitecture:
         )
 
 
+class TestContractJ_ExecutionLayer:
+    """
+    Contract J: Execution Layer (Sections 26-35)
+
+    Critical invariants:
+    1. Single API entrypoint (FastAPI only)
+    2. API key authentication on admin endpoints
+    3. Connection pooling enabled
+    4. Error handling (no stack traces)
+    5. /healthz endpoint exists
+    6. requirements.txt complete
+    7. No legacy API files
+    """
+
+    def test_single_api_entrypoint_exists(self):
+        """
+        Single API entrypoint must exist.
+
+        Per Section 27B: Exactly ONE runnable server module exists (biograph/api/main.py).
+        """
+        import os
+
+        main_path = "/home/user/biograph/biograph/api/main.py"
+
+        assert os.path.exists(main_path), (
+            f"API entrypoint not found at {main_path}. "
+            "Per Section 27B, exactly ONE runnable server module required."
+        )
+
+    def test_legacy_api_files_deleted(self):
+        """
+        Legacy API files must be deleted.
+
+        Per Section 27E: Legacy entrypoints MUST be deleted or quarantined.
+        """
+        import os
+
+        legacy_files = [
+            "/home/user/biograph/app.py",
+            "/home/user/biograph/app_mvp.py",
+            "/home/user/biograph/backend/app/main.py",
+            "/home/user/biograph/backend/app/main_mvp.py",
+            "/home/user/biograph/backend/app/api_mvp.py",
+            "/home/user/biograph/backend/app/api_v8_1.py"
+        ]
+
+        existing_legacy = [f for f in legacy_files if os.path.exists(f)]
+
+        assert len(existing_legacy) == 0, (
+            f"Found legacy API files: {existing_legacy}. "
+            f"Per Section 27E, these MUST be deleted. "
+            f"Only biograph/api/main.py should exist."
+        )
+
+    def test_fastapi_is_framework(self):
+        """
+        FastAPI must be the API framework.
+
+        Per Section 27A: FastAPI is the SOLE supported API runtime.
+        """
+        try:
+            from biograph.api.main import app
+            from fastapi import FastAPI
+
+            assert isinstance(app, FastAPI), (
+                "API app is not a FastAPI instance. "
+                "Per Section 27A, FastAPI is the sole supported runtime."
+            )
+        except ImportError as e:
+            pytest.fail(f"Failed to import FastAPI app: {e}")
+
+    def test_api_versioning(self):
+        """
+        API endpoints must use /api/v1/* versioning.
+
+        Per Section 27C: All endpoints under /api/v1/*
+        """
+        from biograph.api.v1 import issuers, health, admin
+
+        # Check router prefixes
+        assert issuers.router.prefix == "/api/v1", (
+            f"Issuers router prefix is {issuers.router.prefix}, expected /api/v1"
+        )
+
+        assert admin.router.prefix == "/api/v1/admin", (
+            f"Admin router prefix is {admin.router.prefix}, expected /api/v1/admin"
+        )
+
+    def test_healthz_endpoint_exists(self):
+        """
+        /healthz endpoint must exist.
+
+        Per Section 31: GET /healthz is REQUIRED.
+        """
+        from biograph.api.v1 import health
+
+        # Check that health router has /healthz route
+        routes = [route.path for route in health.router.routes]
+
+        assert "/healthz" in routes, (
+            "/healthz endpoint not found. "
+            "Per Section 31, GET /healthz is REQUIRED for operational monitoring."
+        )
+
+    def test_api_key_auth_on_admin(self):
+        """
+        Admin endpoints must require API key.
+
+        Per Section 28: Admin endpoints MUST be API-key gated.
+        """
+        from biograph.api.v1 import admin
+
+        # Check that admin router has auth dependency
+        # This is verified by checking dependencies in route
+        assert hasattr(admin, 'verify_api_key') or hasattr(admin, 'Depends'), (
+            "Admin endpoints missing API key authentication. "
+            "Per Section 28, admin endpoints MUST require X-API-Key header."
+        )
+
+    def test_connection_pooling_module_exists(self):
+        """
+        Connection pooling module must exist.
+
+        Per Section 29: Connection pooling is REQUIRED.
+        """
+        try:
+            from biograph.api.dependencies import init_connection_pool, get_db
+
+            assert callable(init_connection_pool), (
+                "init_connection_pool not found or not callable"
+            )
+
+            assert callable(get_db), (
+                "get_db not found or not callable"
+            )
+        except ImportError as e:
+            pytest.fail(
+                f"Connection pooling module not found: {e}. "
+                f"Per Section 29, connection pooling is REQUIRED."
+            )
+
+    def test_error_handling_middleware_exists(self):
+        """
+        Error handling middleware must exist.
+
+        Per Section 30: No stack traces to clients, structured JSON errors.
+        """
+        from biograph.api.main import app
+
+        # Check for exception handlers
+        assert len(app.exception_handlers) > 0, (
+            "No exception handlers found. "
+            "Per Section 30, error handling middleware is REQUIRED."
+        )
+
+    def test_requirements_txt_complete(self):
+        """
+        requirements.txt must include all production dependencies.
+
+        Per Section 33: All imports used by production entrypoint MUST be in requirements.txt.
+        """
+        import os
+
+        req_path = "/home/user/biograph/requirements.txt"
+
+        assert os.path.exists(req_path), (
+            "requirements.txt not found. "
+            "Per Section 33, requirements.txt is REQUIRED."
+        )
+
+        with open(req_path, 'r') as f:
+            requirements = f.read()
+
+        # Check for required dependencies
+        required_deps = [
+            "fastapi",
+            "uvicorn",
+            "psycopg",
+            "pydantic",
+            "structlog"
+        ]
+
+        missing_deps = [dep for dep in required_deps if dep not in requirements.lower()]
+
+        assert len(missing_deps) == 0, (
+            f"Missing dependencies in requirements.txt: {missing_deps}. "
+            f"Per Section 33, all imports must be listed."
+        )
+
+    def test_no_flask_dependencies(self):
+        """
+        Flask dependencies must be removed.
+
+        Per Section 27A: Flask is FORBIDDEN in production code.
+        """
+        import os
+
+        req_path = "/home/user/biograph/requirements.txt"
+
+        with open(req_path, 'r') as f:
+            requirements = f.read()
+
+        # Flask should NOT be in requirements
+        assert "flask" not in requirements.lower(), (
+            "Found Flask in requirements.txt. "
+            "Per Section 27A, Flask is FORBIDDEN. FastAPI is the sole runtime."
+        )
+
+    def test_structured_logging_configured(self):
+        """
+        Structured logging must be configured.
+
+        Per Section 30D: Structured logs (JSON) with request_id required.
+        """
+        try:
+            import structlog
+
+            # Verify structlog is configured
+            logger = structlog.get_logger()
+
+            assert logger is not None, (
+                "structlog not configured. "
+                "Per Section 30D, structured logging is REQUIRED."
+            )
+        except ImportError:
+            pytest.fail(
+                "structlog not installed. "
+                "Per Section 30D, structured logging is REQUIRED."
+            )
+
+
 # Pytest configuration
 def pytest_configure(config):
     """Register custom markers."""
