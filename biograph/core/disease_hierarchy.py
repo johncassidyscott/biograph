@@ -1,450 +1,907 @@
 """
-BioGraph MVP v8.2 - MeSH Disease Hierarchy
+BioGraph MVP v8.3 - Therapeutic Area Disease Taxonomy
 
-This module provides granular disease categorization based on MeSH tree structure.
+This module provides a business-aligned disease categorization using MeSH Descriptor UIDs.
 
 Hierarchy Levels:
-- Level 1: Therapeutic Area (ONC, CNS, etc.)
-- Level 2: Disease Class (Solid Tumors, Neurodegenerative)
-- Level 3: Specific Disease (Lung Cancer, Alzheimer's)
+- Level 1: Therapeutic Area (Oncology, Neuroscience, etc.)
+- Level 2: Segment (Solid Tumors, Neurology, etc.)
+- Level 3: Market Driver Anchor (specific diseases with MeSH Descriptor UIDs)
 
-MeSH Tree Structure Mapping:
-C (Diseases)
-├── C04 (Neoplasms) → ONC
-│   ├── C04.557 (Neoplasms by Site) → Solid Tumors
-│   │   ├── C04.557.470 (Lung Neoplasms) → Lung Cancer
-│   │   ├── C04.557.337 (Breast Neoplasms) → Breast Cancer
-│   │   └── C04.557.580 (Colorectal Neoplasms) → Colorectal Cancer
-│   └── C04.588 (Leukemia/Lymphoma) → Hematologic
-├── C10 (Nervous System) → CNS
-│   ├── C10.574 (Neurodegenerative) → Neurodegenerative
-│   │   ├── C10.574.062 (Alzheimer) → Alzheimer's Disease
-│   │   └── C10.574.382 (Parkinson) → Parkinson's Disease
-│   └── C10.228 (CNS Diseases)
-│       └── C10.228.140.079 (Alzheimer) → Alzheimer's Disease
-└── etc.
+Key Design Decisions:
+1. Uses MeSH Descriptor UIDs (D######) NOT tree numbers
+2. Single canonical location per disease (no polyhierarchy)
+3. Business/market aligned naming conventions
+4. Presentation layer ONLY - does NOT affect linkage confidence
 
-This is presentation layer ONLY - does NOT affect linkage confidence.
+MeSH Descriptor UIDs are stable identifiers that don't change when
+the MeSH tree structure is reorganized.
 """
 
 from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
-import re
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class DiseaseCategory(str, Enum):
-    """Disease categories (Level 2)."""
-    # Oncology subcategories
-    SOLID_TUMORS = "SOLID_TUMORS"
-    HEMATOLOGIC_MALIGNANCIES = "HEMATOLOGIC_MALIGNANCIES"
+# ============================================================================
+# LEVEL 1: THERAPEUTIC AREAS
+# ============================================================================
 
-    # CNS subcategories
-    NEURODEGENERATIVE = "NEURODEGENERATIVE"
-    PSYCHIATRIC = "PSYCHIATRIC"
-    MOVEMENT_DISORDERS = "MOVEMENT_DISORDERS"
+class TherapeuticArea(str, Enum):
+    """Level 1 - Therapeutic Areas (business-aligned)."""
+    ONCOLOGY = "Oncology"
+    IMMUNOLOGY_INFLAMMATION = "Immunology & Inflammation"
+    CARDIOMETABOLIC_RENAL = "Cardiometabolic & Renal"
+    NEUROSCIENCE = "Neuroscience"
+    INFECTIOUS_DISEASES = "Infectious Diseases"
+    RARE_GENETIC = "Rare & Genetic Medicine"
+    OPHTHALMOLOGY = "Ophthalmology"
+    SPECIALTY_OTHER = "Specialty & Other"
 
-    # Immunology subcategories
-    AUTOIMMUNE = "AUTOIMMUNE"
-    INFLAMMATORY = "INFLAMMATORY"
 
-    # CVM subcategories
-    CARDIOVASCULAR = "CARDIOVASCULAR"
-    METABOLIC = "METABOLIC"
+# ============================================================================
+# LEVEL 2: SEGMENTS
+# ============================================================================
 
-    # ID subcategories
-    VIRAL = "VIRAL"
-    BACTERIAL = "BACTERIAL"
+class Segment(str, Enum):
+    """Level 2 - Segments within Therapeutic Areas."""
+    # Oncology segments
+    SOLID_TUMORS = "Solid Tumors"
+    HEMATOLOGIC_MALIGNANCIES = "Hematologic Malignancies"
 
-    # General
-    OTHER = "OTHER"
-    UNKNOWN = "UNKNOWN"
+    # Immunology & Inflammation segments
+    RHEUMATOLOGY = "Rheumatology"
+    BARRIER_INFLAMMATION = "Barrier Inflammation"
 
+    # Cardiometabolic & Renal segments
+    METABOLIC_OBESITY = "Metabolic & Obesity"
+    CV_RENAL = "CV & Renal"
+
+    # Neuroscience segments
+    NEUROLOGY = "Neurology"
+    PSYCHIATRY = "Psychiatry"
+
+    # Infectious Diseases segments
+    VIRAL_VACCINES = "Viral & Vaccines"
+    BACTERIAL_FUNGAL = "Bacterial & Fungal"
+
+    # Rare & Genetic segments
+    MONOGENIC_RARE = "Monogenic Rare"
+
+    # Ophthalmology segments
+    RETINAL_DISEASE = "Retinal Disease"
+
+    # Specialty & Other segments
+    WOMENS_HEALTH = "Women's Health"
+    RESPIRATORY = "Respiratory"
+    OTHER = "Other"
+
+
+# ============================================================================
+# SEGMENT TO THERAPEUTIC AREA MAPPING
+# ============================================================================
+
+SEGMENT_TO_TA: Dict[Segment, TherapeuticArea] = {
+    # Oncology
+    Segment.SOLID_TUMORS: TherapeuticArea.ONCOLOGY,
+    Segment.HEMATOLOGIC_MALIGNANCIES: TherapeuticArea.ONCOLOGY,
+
+    # Immunology & Inflammation
+    Segment.RHEUMATOLOGY: TherapeuticArea.IMMUNOLOGY_INFLAMMATION,
+    Segment.BARRIER_INFLAMMATION: TherapeuticArea.IMMUNOLOGY_INFLAMMATION,
+
+    # Cardiometabolic & Renal
+    Segment.METABOLIC_OBESITY: TherapeuticArea.CARDIOMETABOLIC_RENAL,
+    Segment.CV_RENAL: TherapeuticArea.CARDIOMETABOLIC_RENAL,
+
+    # Neuroscience
+    Segment.NEUROLOGY: TherapeuticArea.NEUROSCIENCE,
+    Segment.PSYCHIATRY: TherapeuticArea.NEUROSCIENCE,
+
+    # Infectious Diseases
+    Segment.VIRAL_VACCINES: TherapeuticArea.INFECTIOUS_DISEASES,
+    Segment.BACTERIAL_FUNGAL: TherapeuticArea.INFECTIOUS_DISEASES,
+
+    # Rare & Genetic
+    Segment.MONOGENIC_RARE: TherapeuticArea.RARE_GENETIC,
+
+    # Ophthalmology
+    Segment.RETINAL_DISEASE: TherapeuticArea.OPHTHALMOLOGY,
+
+    # Specialty & Other
+    Segment.WOMENS_HEALTH: TherapeuticArea.SPECIALTY_OTHER,
+    Segment.RESPIRATORY: TherapeuticArea.SPECIALTY_OTHER,
+    Segment.OTHER: TherapeuticArea.SPECIALTY_OTHER,
+}
+
+
+# ============================================================================
+# LEVEL 3: DISEASE TAXONOMY (MeSH Descriptor UID based)
+# ============================================================================
 
 @dataclass
-class DiseaseHierarchy:
-    """Hierarchical disease classification."""
-    mesh_tree_number: str
-    mesh_descriptor_id: Optional[str]
-    disease_name: str
+class DiseaseEntry:
+    """A disease in the taxonomy with its MeSH Descriptor UID."""
+    mesh_descriptor_uid: str  # D###### format
+    name: str                 # Display name (Market Driver Anchor)
+    segment: Segment          # L2 classification
+    synonyms: List[str] = field(default_factory=list)
 
-    # Hierarchy levels
-    therapeutic_area: str  # Level 1 (ONC, CNS, etc.)
-    disease_category: str  # Level 2 (SOLID_TUMORS, NEURODEGENERATIVE)
-    specific_disease: str  # Level 3 (Lung Cancer, Alzheimer's)
-
-    # Full path for display
-    hierarchy_path: List[str] = field(default_factory=list)
-
-    # MeSH tree depth
-    tree_depth: int = 0
+    @property
+    def therapeutic_area(self) -> TherapeuticArea:
+        """Get L1 therapeutic area from segment."""
+        return SEGMENT_TO_TA[self.segment]
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            "mesh_tree_number": self.mesh_tree_number,
-            "mesh_descriptor_id": self.mesh_descriptor_id,
-            "disease_name": self.disease_name,
-            "therapeutic_area": self.therapeutic_area,
-            "disease_category": self.disease_category,
-            "specific_disease": self.specific_disease,
-            "hierarchy_path": self.hierarchy_path,
-            "tree_depth": self.tree_depth
+            "mesh_descriptor_uid": self.mesh_descriptor_uid,
+            "name": self.name,
+            "segment": self.segment.value,
+            "therapeutic_area": self.therapeutic_area.value,
+            "synonyms": self.synonyms,
         }
 
 
 # ============================================================================
-# MeSH TREE MAPPINGS
+# DISEASE TAXONOMY DATABASE
+# Single canonical location per disease - no polyhierarchy
 # ============================================================================
 
-# Level 1: Top-level MeSH categories to Therapeutic Areas
-MESH_L1_TO_TA = {
-    "C01": "ID",      # Bacterial Infections and Mycoses
-    "C02": "ID",      # Virus Diseases
-    "C03": "ID",      # Parasitic Diseases
-    "C04": "ONC",     # Neoplasms
-    "C05": "RES",     # Musculoskeletal Diseases (shared with IMM)
-    "C06": "CVM",     # Digestive System Diseases
-    "C07": "OTHER",   # Stomatognathic Diseases
-    "C08": "RES",     # Respiratory Tract Diseases
-    "C09": "OTHER",   # Otorhinolaryngologic Diseases
-    "C10": "CNS",     # Nervous System Diseases
-    "C11": "OTHER",   # Eye Diseases
-    "C12": "REN",     # Male Urogenital Diseases
-    "C13": "OTHER",   # Female Urogenital Diseases
-    "C14": "CVM",     # Cardiovascular Diseases
-    "C15": "RARE",    # Hemic and Lymphatic Diseases
-    "C16": "RARE",    # Congenital, Hereditary Diseases
-    "C17": "IMM",     # Skin and Connective Tissue Diseases
-    "C18": "CVM",     # Nutritional and Metabolic Diseases
-    "C19": "CVM",     # Endocrine System Diseases
-    "C20": "IMM",     # Immune System Diseases
-    "C23": "OTHER",   # Pathological Conditions, Signs and Symptoms
-    "C25": "OTHER",   # Chemically-Induced Disorders
-    "C26": "OTHER",   # Wounds and Injuries
+DISEASE_TAXONOMY: Dict[str, DiseaseEntry] = {
+    # ==========================================================================
+    # ONCOLOGY - SOLID TUMORS
+    # ==========================================================================
+    "D008175": DiseaseEntry(
+        mesh_descriptor_uid="D008175",
+        name="Lung Cancer",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["Lung Neoplasms", "Pulmonary Cancer"],
+    ),
+    "D002289": DiseaseEntry(
+        mesh_descriptor_uid="D002289",
+        name="NSCLC",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["Non-Small Cell Lung Cancer", "Carcinoma, Non-Small-Cell Lung"],
+    ),
+    "D055752": DiseaseEntry(
+        mesh_descriptor_uid="D055752",
+        name="Small Cell Lung Cancer",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["SCLC", "Carcinoma, Small Cell Lung"],
+    ),
+    "D001943": DiseaseEntry(
+        mesh_descriptor_uid="D001943",
+        name="Breast Cancer",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["Breast Neoplasms", "Mammary Cancer"],
+    ),
+    "D064726": DiseaseEntry(
+        mesh_descriptor_uid="D064726",
+        name="Triple-Negative Breast Cancer",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["TNBC"],
+    ),
+    "D015179": DiseaseEntry(
+        mesh_descriptor_uid="D015179",
+        name="Colorectal Cancer",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["Colorectal Neoplasms", "CRC"],
+    ),
+    "D010190": DiseaseEntry(
+        mesh_descriptor_uid="D010190",
+        name="Pancreatic Cancer",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["Pancreatic Neoplasms", "Pancreatic Ductal Adenocarcinoma", "PDAC"],
+    ),
+    "D011471": DiseaseEntry(
+        mesh_descriptor_uid="D011471",
+        name="Prostate Cancer",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["Prostatic Neoplasms"],
+    ),
+    "D010051": DiseaseEntry(
+        mesh_descriptor_uid="D010051",
+        name="Ovarian Cancer",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["Ovarian Neoplasms"],
+    ),
+    "D006528": DiseaseEntry(
+        mesh_descriptor_uid="D006528",
+        name="Hepatocellular Carcinoma",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["HCC", "Liver Cancer", "Carcinoma, Hepatocellular"],
+    ),
+    "D002292": DiseaseEntry(
+        mesh_descriptor_uid="D002292",
+        name="Renal Cell Carcinoma",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["RCC", "Kidney Cancer", "Carcinoma, Renal Cell"],
+    ),
+    "D008545": DiseaseEntry(
+        mesh_descriptor_uid="D008545",
+        name="Melanoma",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["Malignant Melanoma"],
+    ),
+    "D005909": DiseaseEntry(
+        mesh_descriptor_uid="D005909",
+        name="Glioblastoma",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["GBM", "Glioblastoma Multiforme"],
+    ),
+    "D006258": DiseaseEntry(
+        mesh_descriptor_uid="D006258",
+        name="Head and Neck Cancer",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["Head and Neck Neoplasms", "HNSCC"],
+    ),
+    "D001661": DiseaseEntry(
+        mesh_descriptor_uid="D001661",
+        name="Bladder Cancer",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["Urinary Bladder Neoplasms"],
+    ),
+    "D013274": DiseaseEntry(
+        mesh_descriptor_uid="D013274",
+        name="Gastric Cancer",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["Stomach Neoplasms", "Stomach Cancer"],
+    ),
+    "D004938": DiseaseEntry(
+        mesh_descriptor_uid="D004938",
+        name="Esophageal Cancer",
+        segment=Segment.SOLID_TUMORS,
+        synonyms=["Esophageal Neoplasms"],
+    ),
+
+    # ==========================================================================
+    # ONCOLOGY - HEMATOLOGIC MALIGNANCIES
+    # ==========================================================================
+    "D009101": DiseaseEntry(
+        mesh_descriptor_uid="D009101",
+        name="Multiple Myeloma",
+        segment=Segment.HEMATOLOGIC_MALIGNANCIES,
+        synonyms=["MM", "Plasma Cell Myeloma"],
+    ),
+    "D008228": DiseaseEntry(
+        mesh_descriptor_uid="D008228",
+        name="Lymphoma",
+        segment=Segment.HEMATOLOGIC_MALIGNANCIES,
+        synonyms=["Lymphomas"],
+    ),
+    "D008223": DiseaseEntry(
+        mesh_descriptor_uid="D008223",
+        name="Non-Hodgkin Lymphoma",
+        segment=Segment.HEMATOLOGIC_MALIGNANCIES,
+        synonyms=["NHL", "Lymphoma, Non-Hodgkin"],
+    ),
+    "D006689": DiseaseEntry(
+        mesh_descriptor_uid="D006689",
+        name="Hodgkin Lymphoma",
+        segment=Segment.HEMATOLOGIC_MALIGNANCIES,
+        synonyms=["Hodgkin Disease"],
+    ),
+    "D016403": DiseaseEntry(
+        mesh_descriptor_uid="D016403",
+        name="Diffuse Large B-Cell Lymphoma",
+        segment=Segment.HEMATOLOGIC_MALIGNANCIES,
+        synonyms=["DLBCL"],
+    ),
+    "D015464": DiseaseEntry(
+        mesh_descriptor_uid="D015464",
+        name="Acute Myeloid Leukemia",
+        segment=Segment.HEMATOLOGIC_MALIGNANCIES,
+        synonyms=["AML", "Leukemia, Myeloid, Acute"],
+    ),
+    "D015451": DiseaseEntry(
+        mesh_descriptor_uid="D015451",
+        name="Chronic Lymphocytic Leukemia",
+        segment=Segment.HEMATOLOGIC_MALIGNANCIES,
+        synonyms=["CLL", "Leukemia, Lymphocytic, Chronic, B-Cell"],
+    ),
+    "D015470": DiseaseEntry(
+        mesh_descriptor_uid="D015470",
+        name="Chronic Myeloid Leukemia",
+        segment=Segment.HEMATOLOGIC_MALIGNANCIES,
+        synonyms=["CML", "Leukemia, Myelogenous, Chronic, BCR-ABL Positive"],
+    ),
+    "D054198": DiseaseEntry(
+        mesh_descriptor_uid="D054198",
+        name="Acute Lymphoblastic Leukemia",
+        segment=Segment.HEMATOLOGIC_MALIGNANCIES,
+        synonyms=["ALL", "Precursor Cell Lymphoblastic Leukemia-Lymphoma"],
+    ),
+    "D009190": DiseaseEntry(
+        mesh_descriptor_uid="D009190",
+        name="Myelodysplastic Syndromes",
+        segment=Segment.HEMATOLOGIC_MALIGNANCIES,
+        synonyms=["MDS"],
+    ),
+
+    # ==========================================================================
+    # IMMUNOLOGY & INFLAMMATION - RHEUMATOLOGY
+    # ==========================================================================
+    "D001172": DiseaseEntry(
+        mesh_descriptor_uid="D001172",
+        name="Rheumatoid Arthritis",
+        segment=Segment.RHEUMATOLOGY,
+        synonyms=["RA", "Arthritis, Rheumatoid"],
+    ),
+    "D008180": DiseaseEntry(
+        mesh_descriptor_uid="D008180",
+        name="Systemic Lupus Erythematosus",
+        segment=Segment.RHEUMATOLOGY,
+        synonyms=["SLE", "Lupus"],
+    ),
+    "D013167": DiseaseEntry(
+        mesh_descriptor_uid="D013167",
+        name="Ankylosing Spondylitis",
+        segment=Segment.RHEUMATOLOGY,
+        synonyms=["Spondylitis, Ankylosing", "AS"],
+    ),
+    "D015535": DiseaseEntry(
+        mesh_descriptor_uid="D015535",
+        name="Psoriatic Arthritis",
+        segment=Segment.RHEUMATOLOGY,
+        synonyms=["Arthritis, Psoriatic", "PsA"],
+    ),
+    "D012859": DiseaseEntry(
+        mesh_descriptor_uid="D012859",
+        name="Sjogren Syndrome",
+        segment=Segment.RHEUMATOLOGY,
+        synonyms=["Sjogren's Syndrome"],
+    ),
+    "D013586": DiseaseEntry(
+        mesh_descriptor_uid="D013586",
+        name="Systemic Sclerosis",
+        segment=Segment.RHEUMATOLOGY,
+        synonyms=["Scleroderma, Systemic", "SSc"],
+    ),
+
+    # ==========================================================================
+    # IMMUNOLOGY & INFLAMMATION - BARRIER INFLAMMATION
+    # ==========================================================================
+    "D011565": DiseaseEntry(
+        mesh_descriptor_uid="D011565",
+        name="Psoriasis",
+        segment=Segment.BARRIER_INFLAMMATION,
+        synonyms=[],
+    ),
+    "D003424": DiseaseEntry(
+        mesh_descriptor_uid="D003424",
+        name="Crohn Disease",
+        segment=Segment.BARRIER_INFLAMMATION,
+        synonyms=["Crohn's Disease", "Regional Enteritis"],
+    ),
+    "D003093": DiseaseEntry(
+        mesh_descriptor_uid="D003093",
+        name="Ulcerative Colitis",
+        segment=Segment.BARRIER_INFLAMMATION,
+        synonyms=["Colitis, Ulcerative", "UC"],
+    ),
+    "D015212": DiseaseEntry(
+        mesh_descriptor_uid="D015212",
+        name="Inflammatory Bowel Disease",
+        segment=Segment.BARRIER_INFLAMMATION,
+        synonyms=["IBD", "Inflammatory Bowel Diseases"],
+    ),
+    "D003876": DiseaseEntry(
+        mesh_descriptor_uid="D003876",
+        name="Atopic Dermatitis",
+        segment=Segment.BARRIER_INFLAMMATION,
+        synonyms=["Dermatitis, Atopic", "Eczema"],
+    ),
+    "D000080909": DiseaseEntry(
+        mesh_descriptor_uid="D000080909",
+        name="Hidradenitis Suppurativa",
+        segment=Segment.BARRIER_INFLAMMATION,
+        synonyms=["HS"],
+    ),
+
+    # ==========================================================================
+    # CARDIOMETABOLIC & RENAL - METABOLIC & OBESITY
+    # ==========================================================================
+    "D003924": DiseaseEntry(
+        mesh_descriptor_uid="D003924",
+        name="Type 2 Diabetes",
+        segment=Segment.METABOLIC_OBESITY,
+        synonyms=["T2D", "Diabetes Mellitus, Type 2", "Type 2 Diabetes Mellitus"],
+    ),
+    "D003922": DiseaseEntry(
+        mesh_descriptor_uid="D003922",
+        name="Type 1 Diabetes",
+        segment=Segment.METABOLIC_OBESITY,
+        synonyms=["T1D", "Diabetes Mellitus, Type 1", "Type 1 Diabetes Mellitus"],
+    ),
+    "D009765": DiseaseEntry(
+        mesh_descriptor_uid="D009765",
+        name="Obesity",
+        segment=Segment.METABOLIC_OBESITY,
+        synonyms=[],
+    ),
+    "D065626": DiseaseEntry(
+        mesh_descriptor_uid="D065626",
+        name="NAFLD",
+        segment=Segment.METABOLIC_OBESITY,
+        synonyms=["Non-alcoholic Fatty Liver Disease", "Fatty Liver Disease"],
+    ),
+    "D000071683": DiseaseEntry(
+        mesh_descriptor_uid="D000071683",
+        name="NASH",
+        segment=Segment.METABOLIC_OBESITY,
+        synonyms=["Non-alcoholic Steatohepatitis", "MASH", "Metabolic Steatohepatitis"],
+    ),
+    "D024821": DiseaseEntry(
+        mesh_descriptor_uid="D024821",
+        name="Metabolic Syndrome",
+        segment=Segment.METABOLIC_OBESITY,
+        synonyms=["Metabolic Syndrome X"],
+    ),
+
+    # ==========================================================================
+    # CARDIOMETABOLIC & RENAL - CV & RENAL
+    # ==========================================================================
+    "D006333": DiseaseEntry(
+        mesh_descriptor_uid="D006333",
+        name="Heart Failure",
+        segment=Segment.CV_RENAL,
+        synonyms=["Cardiac Failure", "Congestive Heart Failure", "CHF"],
+    ),
+    "D006973": DiseaseEntry(
+        mesh_descriptor_uid="D006973",
+        name="Hypertension",
+        segment=Segment.CV_RENAL,
+        synonyms=["High Blood Pressure"],
+    ),
+    "D050197": DiseaseEntry(
+        mesh_descriptor_uid="D050197",
+        name="Atherosclerosis",
+        segment=Segment.CV_RENAL,
+        synonyms=[],
+    ),
+    "D009203": DiseaseEntry(
+        mesh_descriptor_uid="D009203",
+        name="Myocardial Infarction",
+        segment=Segment.CV_RENAL,
+        synonyms=["MI", "Heart Attack"],
+    ),
+    "D001281": DiseaseEntry(
+        mesh_descriptor_uid="D001281",
+        name="Atrial Fibrillation",
+        segment=Segment.CV_RENAL,
+        synonyms=["AFib", "AF"],
+    ),
+    "D051436": DiseaseEntry(
+        mesh_descriptor_uid="D051436",
+        name="Chronic Kidney Disease",
+        segment=Segment.CV_RENAL,
+        synonyms=["CKD", "Renal Insufficiency, Chronic"],
+    ),
+    "D003928": DiseaseEntry(
+        mesh_descriptor_uid="D003928",
+        name="Diabetic Nephropathy",
+        segment=Segment.CV_RENAL,
+        synonyms=["Diabetic Kidney Disease", "DKD"],
+    ),
+
+    # ==========================================================================
+    # NEUROSCIENCE - NEUROLOGY
+    # ==========================================================================
+    "D000544": DiseaseEntry(
+        mesh_descriptor_uid="D000544",
+        name="Alzheimer Disease",
+        segment=Segment.NEUROLOGY,
+        synonyms=["Alzheimer's Disease", "AD"],
+    ),
+    "D010300": DiseaseEntry(
+        mesh_descriptor_uid="D010300",
+        name="Parkinson Disease",
+        segment=Segment.NEUROLOGY,
+        synonyms=["Parkinson's Disease", "PD"],
+    ),
+    "D009103": DiseaseEntry(
+        mesh_descriptor_uid="D009103",
+        name="Multiple Sclerosis",
+        segment=Segment.NEUROLOGY,
+        synonyms=["MS"],
+    ),
+    "D000690": DiseaseEntry(
+        mesh_descriptor_uid="D000690",
+        name="Amyotrophic Lateral Sclerosis",
+        segment=Segment.NEUROLOGY,
+        synonyms=["ALS", "Lou Gehrig Disease"],
+    ),
+    "D006816": DiseaseEntry(
+        mesh_descriptor_uid="D006816",
+        name="Huntington Disease",
+        segment=Segment.NEUROLOGY,
+        synonyms=["Huntington's Disease", "HD"],
+    ),
+    "D004827": DiseaseEntry(
+        mesh_descriptor_uid="D004827",
+        name="Epilepsy",
+        segment=Segment.NEUROLOGY,
+        synonyms=["Seizure Disorder"],
+    ),
+    "D008881": DiseaseEntry(
+        mesh_descriptor_uid="D008881",
+        name="Migraine",
+        segment=Segment.NEUROLOGY,
+        synonyms=["Migraine Disorders"],
+    ),
+    "D057180": DiseaseEntry(
+        mesh_descriptor_uid="D057180",
+        name="Frontotemporal Dementia",
+        segment=Segment.NEUROLOGY,
+        synonyms=["FTD"],
+    ),
+
+    # ==========================================================================
+    # NEUROSCIENCE - PSYCHIATRY
+    # ==========================================================================
+    "D003865": DiseaseEntry(
+        mesh_descriptor_uid="D003865",
+        name="Major Depressive Disorder",
+        segment=Segment.PSYCHIATRY,
+        synonyms=["MDD", "Depression", "Clinical Depression"],
+    ),
+    "D012559": DiseaseEntry(
+        mesh_descriptor_uid="D012559",
+        name="Schizophrenia",
+        segment=Segment.PSYCHIATRY,
+        synonyms=[],
+    ),
+    "D001714": DiseaseEntry(
+        mesh_descriptor_uid="D001714",
+        name="Bipolar Disorder",
+        segment=Segment.PSYCHIATRY,
+        synonyms=["Manic-Depressive Disorder"],
+    ),
+    "D001008": DiseaseEntry(
+        mesh_descriptor_uid="D001008",
+        name="Anxiety Disorders",
+        segment=Segment.PSYCHIATRY,
+        synonyms=["Generalized Anxiety Disorder", "GAD"],
+    ),
+    "D013313": DiseaseEntry(
+        mesh_descriptor_uid="D013313",
+        name="PTSD",
+        segment=Segment.PSYCHIATRY,
+        synonyms=["Post-Traumatic Stress Disorder", "Stress Disorders, Post-Traumatic"],
+    ),
+    "D000067877": DiseaseEntry(
+        mesh_descriptor_uid="D000067877",
+        name="Autism Spectrum Disorder",
+        segment=Segment.PSYCHIATRY,
+        synonyms=["ASD", "Autism"],
+    ),
+    "D001289": DiseaseEntry(
+        mesh_descriptor_uid="D001289",
+        name="ADHD",
+        segment=Segment.PSYCHIATRY,
+        synonyms=["Attention Deficit Hyperactivity Disorder"],
+    ),
+
+    # ==========================================================================
+    # INFECTIOUS DISEASES - VIRAL & VACCINES
+    # ==========================================================================
+    "D015658": DiseaseEntry(
+        mesh_descriptor_uid="D015658",
+        name="HIV/AIDS",
+        segment=Segment.VIRAL_VACCINES,
+        synonyms=["HIV Infections", "Acquired Immunodeficiency Syndrome"],
+    ),
+    "D006509": DiseaseEntry(
+        mesh_descriptor_uid="D006509",
+        name="Hepatitis B",
+        segment=Segment.VIRAL_VACCINES,
+        synonyms=["HBV", "Hepatitis B, Chronic"],
+    ),
+    "D006526": DiseaseEntry(
+        mesh_descriptor_uid="D006526",
+        name="Hepatitis C",
+        segment=Segment.VIRAL_VACCINES,
+        synonyms=["HCV", "Hepatitis C, Chronic"],
+    ),
+    "D000086382": DiseaseEntry(
+        mesh_descriptor_uid="D000086382",
+        name="COVID-19",
+        segment=Segment.VIRAL_VACCINES,
+        synonyms=["SARS-CoV-2 Infection", "Coronavirus Disease 2019"],
+    ),
+    "D007251": DiseaseEntry(
+        mesh_descriptor_uid="D007251",
+        name="Influenza",
+        segment=Segment.VIRAL_VACCINES,
+        synonyms=["Flu", "Influenza, Human"],
+    ),
+    "D018357": DiseaseEntry(
+        mesh_descriptor_uid="D018357",
+        name="RSV Infection",
+        segment=Segment.VIRAL_VACCINES,
+        synonyms=["Respiratory Syncytial Virus Infections"],
+    ),
+    "D006562": DiseaseEntry(
+        mesh_descriptor_uid="D006562",
+        name="Herpes Zoster",
+        segment=Segment.VIRAL_VACCINES,
+        synonyms=["Shingles"],
+    ),
+
+    # ==========================================================================
+    # INFECTIOUS DISEASES - BACTERIAL & FUNGAL
+    # ==========================================================================
+    "D014376": DiseaseEntry(
+        mesh_descriptor_uid="D014376",
+        name="Tuberculosis",
+        segment=Segment.BACTERIAL_FUNGAL,
+        synonyms=["TB"],
+    ),
+    "D001424": DiseaseEntry(
+        mesh_descriptor_uid="D001424",
+        name="Bacterial Infections",
+        segment=Segment.BACTERIAL_FUNGAL,
+        synonyms=[],
+    ),
+    "D009181": DiseaseEntry(
+        mesh_descriptor_uid="D009181",
+        name="Fungal Infections",
+        segment=Segment.BACTERIAL_FUNGAL,
+        synonyms=["Mycoses"],
+    ),
+
+    # ==========================================================================
+    # RARE & GENETIC - MONOGENIC RARE
+    # ==========================================================================
+    "D003550": DiseaseEntry(
+        mesh_descriptor_uid="D003550",
+        name="Cystic Fibrosis",
+        segment=Segment.MONOGENIC_RARE,
+        synonyms=["CF"],
+    ),
+    "D020388": DiseaseEntry(
+        mesh_descriptor_uid="D020388",
+        name="Duchenne Muscular Dystrophy",
+        segment=Segment.MONOGENIC_RARE,
+        synonyms=["DMD", "Muscular Dystrophy, Duchenne"],
+    ),
+    "D006467": DiseaseEntry(
+        mesh_descriptor_uid="D006467",
+        name="Hemophilia A",
+        segment=Segment.MONOGENIC_RARE,
+        synonyms=["Factor VIII Deficiency"],
+    ),
+    "D002836": DiseaseEntry(
+        mesh_descriptor_uid="D002836",
+        name="Hemophilia B",
+        segment=Segment.MONOGENIC_RARE,
+        synonyms=["Factor IX Deficiency", "Christmas Disease"],
+    ),
+    "D000755": DiseaseEntry(
+        mesh_descriptor_uid="D000755",
+        name="Sickle Cell Disease",
+        segment=Segment.MONOGENIC_RARE,
+        synonyms=["Sickle Cell Anemia", "Anemia, Sickle Cell"],
+    ),
+    "D013087": DiseaseEntry(
+        mesh_descriptor_uid="D013087",
+        name="Spinal Muscular Atrophy",
+        segment=Segment.MONOGENIC_RARE,
+        synonyms=["SMA"],
+    ),
+    "D006432": DiseaseEntry(
+        mesh_descriptor_uid="D006432",
+        name="Hereditary Hemochromatosis",
+        segment=Segment.MONOGENIC_RARE,
+        synonyms=["Hemochromatosis"],
+    ),
+    "D016464": DiseaseEntry(
+        mesh_descriptor_uid="D016464",
+        name="Fabry Disease",
+        segment=Segment.MONOGENIC_RARE,
+        synonyms=["Alpha-Galactosidase A Deficiency"],
+    ),
+    "D005776": DiseaseEntry(
+        mesh_descriptor_uid="D005776",
+        name="Gaucher Disease",
+        segment=Segment.MONOGENIC_RARE,
+        synonyms=[],
+    ),
+
+    # ==========================================================================
+    # OPHTHALMOLOGY - RETINAL DISEASE
+    # ==========================================================================
+    "D008268": DiseaseEntry(
+        mesh_descriptor_uid="D008268",
+        name="Age-Related Macular Degeneration",
+        segment=Segment.RETINAL_DISEASE,
+        synonyms=["AMD", "Macular Degeneration"],
+    ),
+    "D003930": DiseaseEntry(
+        mesh_descriptor_uid="D003930",
+        name="Diabetic Retinopathy",
+        segment=Segment.RETINAL_DISEASE,
+        synonyms=["DR"],
+    ),
+    "D005901": DiseaseEntry(
+        mesh_descriptor_uid="D005901",
+        name="Glaucoma",
+        segment=Segment.RETINAL_DISEASE,
+        synonyms=[],
+    ),
+    "D012173": DiseaseEntry(
+        mesh_descriptor_uid="D012173",
+        name="Retinitis Pigmentosa",
+        segment=Segment.RETINAL_DISEASE,
+        synonyms=["RP"],
+    ),
+    "D058499": DiseaseEntry(
+        mesh_descriptor_uid="D058499",
+        name="Diabetic Macular Edema",
+        segment=Segment.RETINAL_DISEASE,
+        synonyms=["DME"],
+    ),
+
+    # ==========================================================================
+    # SPECIALTY & OTHER - RESPIRATORY
+    # ==========================================================================
+    "D001249": DiseaseEntry(
+        mesh_descriptor_uid="D001249",
+        name="Asthma",
+        segment=Segment.RESPIRATORY,
+        synonyms=[],
+    ),
+    "D029424": DiseaseEntry(
+        mesh_descriptor_uid="D029424",
+        name="COPD",
+        segment=Segment.RESPIRATORY,
+        synonyms=["Chronic Obstructive Pulmonary Disease", "Pulmonary Disease, Chronic Obstructive"],
+    ),
+    "D054990": DiseaseEntry(
+        mesh_descriptor_uid="D054990",
+        name="Idiopathic Pulmonary Fibrosis",
+        segment=Segment.RESPIRATORY,
+        synonyms=["IPF"],
+    ),
+
+    # ==========================================================================
+    # SPECIALTY & OTHER - WOMEN'S HEALTH
+    # ==========================================================================
+    "D004715": DiseaseEntry(
+        mesh_descriptor_uid="D004715",
+        name="Endometriosis",
+        segment=Segment.WOMENS_HEALTH,
+        synonyms=[],
+    ),
+    "D007247": DiseaseEntry(
+        mesh_descriptor_uid="D007247",
+        name="Infertility",
+        segment=Segment.WOMENS_HEALTH,
+        synonyms=["Infertility, Female"],
+    ),
+    "D011085": DiseaseEntry(
+        mesh_descriptor_uid="D011085",
+        name="Polycystic Ovary Syndrome",
+        segment=Segment.WOMENS_HEALTH,
+        synonyms=["PCOS"],
+    ),
 }
 
-# Level 2: Disease categories with specific tree prefixes
-MESH_L2_CATEGORIES = {
-    # Oncology subcategories
-    "C04.557": ("ONC", "SOLID_TUMORS", "Solid Tumors"),  # Neoplasms by Site
-    "C04.588": ("ONC", "HEMATOLOGIC_MALIGNANCIES", "Hematologic Malignancies"),  # Neoplasms by Histologic Type
-    "C04.697": ("ONC", "HEMATOLOGIC_MALIGNANCIES", "Leukemia"),  # Leukemias
 
-    # CNS subcategories
-    "C10.574": ("CNS", "NEURODEGENERATIVE", "Neurodegenerative Diseases"),
-    "C10.228": ("CNS", "OTHER", "Central Nervous System Diseases"),
-    "C10.597": ("CNS", "PSYCHIATRIC", "Mental Disorders"),
-    "C10.720": ("CNS", "MOVEMENT_DISORDERS", "Movement Disorders"),
+# ============================================================================
+# HIERARCHY DATA CLASS
+# ============================================================================
 
-    # Immunology subcategories
-    "C20.111": ("IMM", "AUTOIMMUNE", "Autoimmune Diseases"),
-    "C17.300": ("IMM", "INFLAMMATORY", "Inflammatory Skin Diseases"),
+@dataclass
+class DiseaseHierarchy:
+    """Complete hierarchical disease classification."""
+    mesh_descriptor_uid: str
+    disease_name: str
+    therapeutic_area: str   # L1
+    segment: str            # L2
+    market_driver_anchor: str  # L3 (same as disease_name)
+    hierarchy_path: List[str] = field(default_factory=list)
+    synonyms: List[str] = field(default_factory=list)
 
-    # Cardiovascular subcategories
-    "C14.280": ("CVM", "CARDIOVASCULAR", "Heart Diseases"),
-    "C14.907": ("CVM", "CARDIOVASCULAR", "Vascular Diseases"),
-
-    # Metabolic subcategories
-    "C18.452": ("CVM", "METABOLIC", "Metabolic Diseases"),
-    "C19.246": ("CVM", "METABOLIC", "Diabetes Mellitus"),
-
-    # Respiratory
-    "C08.127": ("RES", "OTHER", "Bronchial Diseases"),
-    "C08.381": ("RES", "OTHER", "Lung Diseases"),
-
-    # Infectious Disease subcategories
-    "C01.539": ("ID", "BACTERIAL", "Bacterial Infections"),
-    "C02.782": ("ID", "VIRAL", "RNA Virus Infections"),
-    "C02.256": ("ID", "VIRAL", "DNA Virus Infections"),
-}
-
-# Level 3: Specific diseases with tree numbers
-MESH_L3_DISEASES = {
-    # Oncology - Solid Tumors
-    "C04.557.470": ("ONC", "SOLID_TUMORS", "Lung Cancer"),
-    "C04.557.470.200": ("ONC", "SOLID_TUMORS", "Lung Adenocarcinoma"),
-    "C04.557.470.700": ("ONC", "SOLID_TUMORS", "Small Cell Lung Cancer"),
-    "C04.557.337": ("ONC", "SOLID_TUMORS", "Breast Cancer"),
-    "C04.557.337.249": ("ONC", "SOLID_TUMORS", "Triple-Negative Breast Cancer"),
-    "C04.557.580": ("ONC", "SOLID_TUMORS", "Colorectal Cancer"),
-    "C04.557.580.625": ("ONC", "SOLID_TUMORS", "Rectal Cancer"),
-    "C04.557.465": ("ONC", "SOLID_TUMORS", "Liver Cancer"),
-    "C04.557.465.625": ("ONC", "SOLID_TUMORS", "Hepatocellular Carcinoma"),
-    "C04.557.695": ("ONC", "SOLID_TUMORS", "Pancreatic Cancer"),
-    "C04.557.450": ("ONC", "SOLID_TUMORS", "Kidney Cancer"),
-    "C04.557.450.795": ("ONC", "SOLID_TUMORS", "Renal Cell Carcinoma"),
-    "C04.557.645": ("ONC", "SOLID_TUMORS", "Ovarian Cancer"),
-    "C04.557.773": ("ONC", "SOLID_TUMORS", "Prostate Cancer"),
-    "C04.557.350": ("ONC", "SOLID_TUMORS", "Head and Neck Cancer"),
-    "C04.557.337.600": ("ONC", "SOLID_TUMORS", "HER2-Positive Breast Cancer"),
-
-    # Oncology - Brain Tumors
-    "C04.557.470.035": ("ONC", "SOLID_TUMORS", "Brain Metastases"),
-    "C04.588.149.828": ("ONC", "SOLID_TUMORS", "Glioblastoma"),
-
-    # Oncology - Hematologic
-    "C04.588.364": ("ONC", "HEMATOLOGIC_MALIGNANCIES", "Lymphoma"),
-    "C04.588.364.640": ("ONC", "HEMATOLOGIC_MALIGNANCIES", "Non-Hodgkin Lymphoma"),
-    "C04.588.364.360": ("ONC", "HEMATOLOGIC_MALIGNANCIES", "Hodgkin Lymphoma"),
-    "C04.588.448": ("ONC", "HEMATOLOGIC_MALIGNANCIES", "Multiple Myeloma"),
-    "C04.557.227": ("ONC", "HEMATOLOGIC_MALIGNANCIES", "Acute Myeloid Leukemia"),
-    "C04.557.291": ("ONC", "HEMATOLOGIC_MALIGNANCIES", "Chronic Lymphocytic Leukemia"),
-
-    # CNS - Neurodegenerative
-    "C10.574.062": ("CNS", "NEURODEGENERATIVE", "Alzheimer's Disease"),
-    "C10.228.140.079": ("CNS", "NEURODEGENERATIVE", "Alzheimer's Disease"),  # Alternate tree
-    "C10.574.382": ("CNS", "NEURODEGENERATIVE", "Huntington Disease"),
-    "C10.574.500": ("CNS", "NEURODEGENERATIVE", "Amyotrophic Lateral Sclerosis"),
-    "C10.574.812": ("CNS", "NEURODEGENERATIVE", "Parkinson Disease"),
-    "C10.720.655": ("CNS", "MOVEMENT_DISORDERS", "Parkinson Disease"),  # Alternate tree
-    "C10.574.945": ("CNS", "NEURODEGENERATIVE", "Frontotemporal Dementia"),
-    "C10.574.281": ("CNS", "NEURODEGENERATIVE", "Dementia"),
-
-    # CNS - Psychiatric
-    "C10.597.350": ("CNS", "PSYCHIATRIC", "Depression"),
-    "C10.597.350.400": ("CNS", "PSYCHIATRIC", "Major Depressive Disorder"),
-    "C10.597.350.150": ("CNS", "PSYCHIATRIC", "Bipolar Disorder"),
-    "C10.597.751": ("CNS", "PSYCHIATRIC", "Schizophrenia"),
-    "C10.597.606": ("CNS", "PSYCHIATRIC", "Anxiety Disorders"),
-    "C10.597.606.643": ("CNS", "PSYCHIATRIC", "PTSD"),
-
-    # Immunology - Autoimmune
-    "C20.111.198": ("IMM", "AUTOIMMUNE", "Rheumatoid Arthritis"),
-    "C20.111.590": ("IMM", "AUTOIMMUNE", "Multiple Sclerosis"),
-    "C20.111.730": ("IMM", "AUTOIMMUNE", "Lupus"),
-    "C20.111.430": ("IMM", "AUTOIMMUNE", "Inflammatory Bowel Disease"),
-    "C20.111.430.500": ("IMM", "AUTOIMMUNE", "Crohn's Disease"),
-    "C20.111.430.500.600": ("IMM", "AUTOIMMUNE", "Ulcerative Colitis"),
-    "C20.111.682": ("IMM", "AUTOIMMUNE", "Psoriasis"),
-
-    # Cardiovascular
-    "C14.280.238": ("CVM", "CARDIOVASCULAR", "Cardiomyopathy"),
-    "C14.280.434": ("CVM", "CARDIOVASCULAR", "Heart Failure"),
-    "C14.280.647": ("CVM", "CARDIOVASCULAR", "Myocardial Infarction"),
-    "C14.280.067": ("CVM", "CARDIOVASCULAR", "Arrhythmias"),
-    "C14.907.137": ("CVM", "CARDIOVASCULAR", "Atherosclerosis"),
-    "C14.907.489": ("CVM", "CARDIOVASCULAR", "Hypertension"),
-
-    # Metabolic
-    "C18.452.394.750": ("CVM", "METABOLIC", "Type 2 Diabetes"),
-    "C18.452.394.750.149": ("CVM", "METABOLIC", "Type 1 Diabetes"),
-    "C18.452.625": ("CVM", "METABOLIC", "Obesity"),
-    "C18.452.584": ("CVM", "METABOLIC", "NAFLD"),
-    "C18.452.584.625": ("CVM", "METABOLIC", "NASH"),
-    "C18.452.394.952": ("CVM", "METABOLIC", "Metabolic Syndrome"),
-
-    # Respiratory
-    "C08.127.108": ("RES", "OTHER", "Asthma"),
-    "C08.381.495.389": ("RES", "OTHER", "COPD"),
-    "C08.381.520": ("RES", "OTHER", "Pulmonary Fibrosis"),
-    "C08.381.472": ("RES", "OTHER", "Cystic Fibrosis"),
-
-    # Infectious Disease
-    "C02.782.815.616": ("ID", "VIRAL", "HIV/AIDS"),
-    "C02.256.466": ("ID", "VIRAL", "Hepatitis B"),
-    "C02.440.440": ("ID", "VIRAL", "Hepatitis C"),
-    "C02.782.600.550": ("ID", "VIRAL", "COVID-19"),
-    "C02.782.580": ("ID", "VIRAL", "Influenza"),
-    "C02.782.815.200": ("ID", "VIRAL", "RSV Infection"),
-    "C01.539.463": ("ID", "BACTERIAL", "Tuberculosis"),
-
-    # Renal
-    "C12.777.419": ("REN", "OTHER", "Chronic Kidney Disease"),
-    "C12.777.419.155": ("REN", "OTHER", "Diabetic Nephropathy"),
-    "C12.777.419.570": ("REN", "OTHER", "Glomerulonephritis"),
-
-    # Rare Diseases
-    "C16.320.565": ("RARE", "OTHER", "Cystic Fibrosis"),
-    "C16.320.322": ("RARE", "OTHER", "Duchenne Muscular Dystrophy"),
-    "C16.320.400": ("RARE", "OTHER", "Hemophilia"),
-    "C16.320.840": ("RARE", "OTHER", "Sickle Cell Disease"),
-}
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "mesh_descriptor_uid": self.mesh_descriptor_uid,
+            "disease_name": self.disease_name,
+            "therapeutic_area": self.therapeutic_area,
+            "segment": self.segment,
+            "market_driver_anchor": self.market_driver_anchor,
+            "hierarchy_path": self.hierarchy_path,
+            "synonyms": self.synonyms,
+        }
 
 
-def get_mesh_hierarchy(mesh_tree_number: str) -> DiseaseHierarchy:
+# ============================================================================
+# LOOKUP FUNCTIONS
+# ============================================================================
+
+def get_disease_by_mesh_uid(mesh_uid: str) -> Optional[DiseaseHierarchy]:
     """
-    Get disease hierarchy for a MeSH tree number.
+    Get disease hierarchy by MeSH Descriptor UID.
 
     Args:
-        mesh_tree_number: MeSH tree number (e.g., 'C04.557.470')
+        mesh_uid: MeSH Descriptor UID (D######)
 
     Returns:
-        DiseaseHierarchy with all classification levels
+        DiseaseHierarchy or None if not found
     """
-    # Validate format
-    if not re.match(r'^[A-Z]\d{2}(\.\d{3})*$', mesh_tree_number):
-        logger.warning(f"Invalid MeSH tree number format: {mesh_tree_number}")
-        return DiseaseHierarchy(
-            mesh_tree_number=mesh_tree_number,
-            mesh_descriptor_id=None,
-            disease_name=mesh_tree_number,
-            therapeutic_area="UNKNOWN",
-            disease_category="UNKNOWN",
-            specific_disease=mesh_tree_number,
-            hierarchy_path=[mesh_tree_number],
-            tree_depth=0
-        )
+    # Normalize UID format
+    if not mesh_uid.startswith("D"):
+        mesh_uid = f"D{mesh_uid}"
 
-    # Calculate tree depth
-    parts = mesh_tree_number.split('.')
-    tree_depth = len(parts)
-
-    # Extract L1 category
-    l1_prefix = mesh_tree_number[:3]  # e.g., "C04"
-    therapeutic_area = MESH_L1_TO_TA.get(l1_prefix, "UNKNOWN")
-
-    # Build hierarchy path
-    hierarchy_path = []
-
-    # Check for specific disease match (L3) first
-    specific_disease = mesh_tree_number
-    disease_category = "OTHER"
-    disease_name = mesh_tree_number
-
-    # Try exact match in L3
-    if mesh_tree_number in MESH_L3_DISEASES:
-        ta, cat, name = MESH_L3_DISEASES[mesh_tree_number]
-        therapeutic_area = ta
-        disease_category = cat
-        specific_disease = name
-        disease_name = name
-    else:
-        # Try progressively shorter prefixes for L3
-        current = mesh_tree_number
-        while '.' in current:
-            if current in MESH_L3_DISEASES:
-                ta, cat, name = MESH_L3_DISEASES[current]
-                therapeutic_area = ta
-                disease_category = cat
-                specific_disease = name
-                break
-            current = current.rsplit('.', 1)[0]
-
-        # If no L3 match, try L2
-        current = mesh_tree_number
-        while '.' in current:
-            if current in MESH_L2_CATEGORIES:
-                ta, cat, name = MESH_L2_CATEGORIES[current]
-                therapeutic_area = ta
-                disease_category = cat
-                disease_name = name
-                break
-            current = current.rsplit('.', 1)[0]
-
-    # Build hierarchy path
-    if therapeutic_area != "UNKNOWN":
-        hierarchy_path.append(get_ta_display_name(therapeutic_area))
-    if disease_category != "OTHER" and disease_category != "UNKNOWN":
-        hierarchy_path.append(get_category_display_name(disease_category))
-    hierarchy_path.append(specific_disease)
+    entry = DISEASE_TAXONOMY.get(mesh_uid)
+    if not entry:
+        logger.debug(f"MeSH UID {mesh_uid} not found in taxonomy")
+        return None
 
     return DiseaseHierarchy(
-        mesh_tree_number=mesh_tree_number,
-        mesh_descriptor_id=None,
-        disease_name=disease_name,
-        therapeutic_area=therapeutic_area,
-        disease_category=disease_category,
-        specific_disease=specific_disease,
-        hierarchy_path=hierarchy_path,
-        tree_depth=tree_depth
+        mesh_descriptor_uid=entry.mesh_descriptor_uid,
+        disease_name=entry.name,
+        therapeutic_area=entry.therapeutic_area.value,
+        segment=entry.segment.value,
+        market_driver_anchor=entry.name,
+        hierarchy_path=[
+            entry.therapeutic_area.value,
+            entry.segment.value,
+            entry.name
+        ],
+        synonyms=entry.synonyms,
     )
 
 
-def get_ta_display_name(ta_code: str) -> str:
-    """Get display name for therapeutic area code."""
-    display_names = {
-        "ONC": "Oncology",
-        "CNS": "Central Nervous System",
-        "IMM": "Immunology",
-        "CVM": "Cardiovascular & Metabolic",
-        "ID": "Infectious Disease",
-        "RARE": "Rare Disease",
-        "RES": "Respiratory",
-        "REN": "Renal",
-        "OTHER": "Other",
-        "UNKNOWN": "Unknown"
-    }
-    return display_names.get(ta_code, ta_code)
-
-
-def get_category_display_name(category: str) -> str:
-    """Get display name for disease category."""
-    display_names = {
-        "SOLID_TUMORS": "Solid Tumors",
-        "HEMATOLOGIC_MALIGNANCIES": "Hematologic Malignancies",
-        "NEURODEGENERATIVE": "Neurodegenerative Diseases",
-        "PSYCHIATRIC": "Psychiatric Disorders",
-        "MOVEMENT_DISORDERS": "Movement Disorders",
-        "AUTOIMMUNE": "Autoimmune Diseases",
-        "INFLAMMATORY": "Inflammatory Diseases",
-        "CARDIOVASCULAR": "Cardiovascular Diseases",
-        "METABOLIC": "Metabolic Diseases",
-        "VIRAL": "Viral Infections",
-        "BACTERIAL": "Bacterial Infections",
-        "OTHER": "Other",
-        "UNKNOWN": "Unknown"
-    }
-    return display_names.get(category, category)
-
-
-def get_diseases_by_category(category: str) -> List[Tuple[str, str]]:
+def get_diseases_by_segment(segment: Segment) -> List[DiseaseHierarchy]:
     """
-    Get all diseases in a category.
+    Get all diseases in a segment.
 
     Args:
-        category: Disease category (e.g., 'SOLID_TUMORS')
+        segment: Segment enum value
 
     Returns:
-        List of (tree_number, disease_name) tuples
+        List of DiseaseHierarchy objects
     """
     results = []
-    for tree_number, (ta, cat, name) in MESH_L3_DISEASES.items():
-        if cat == category:
-            results.append((tree_number, name))
-    return sorted(results, key=lambda x: x[1])
+    for entry in DISEASE_TAXONOMY.values():
+        if entry.segment == segment:
+            hierarchy = get_disease_by_mesh_uid(entry.mesh_descriptor_uid)
+            if hierarchy:
+                results.append(hierarchy)
+    return sorted(results, key=lambda h: h.disease_name)
 
 
-def get_diseases_by_ta(therapeutic_area: str) -> List[Tuple[str, str, str]]:
+def get_diseases_by_therapeutic_area(ta: TherapeuticArea) -> List[DiseaseHierarchy]:
     """
     Get all diseases in a therapeutic area.
 
     Args:
-        therapeutic_area: TA code (e.g., 'ONC')
+        ta: TherapeuticArea enum value
 
     Returns:
-        List of (tree_number, category, disease_name) tuples
+        List of DiseaseHierarchy objects
     """
     results = []
-    for tree_number, (ta, cat, name) in MESH_L3_DISEASES.items():
-        if ta == therapeutic_area:
-            results.append((tree_number, cat, name))
-    return sorted(results, key=lambda x: (x[1], x[2]))
-
-
-def get_hierarchy_path(mesh_tree_number: str) -> str:
-    """
-    Get human-readable hierarchy path.
-
-    Args:
-        mesh_tree_number: MeSH tree number
-
-    Returns:
-        String like "Oncology > Solid Tumors > Lung Cancer"
-    """
-    hierarchy = get_mesh_hierarchy(mesh_tree_number)
-    return " > ".join(hierarchy.hierarchy_path)
+    for entry in DISEASE_TAXONOMY.values():
+        if entry.therapeutic_area == ta:
+            hierarchy = get_disease_by_mesh_uid(entry.mesh_descriptor_uid)
+            if hierarchy:
+                results.append(hierarchy)
+    return sorted(results, key=lambda h: (h.segment, h.disease_name))
 
 
 def search_diseases(query: str, limit: int = 20) -> List[DiseaseHierarchy]:
     """
-    Search for diseases by name.
+    Search for diseases by name or synonym.
 
     Args:
-        query: Search query
+        query: Search query (case-insensitive)
         limit: Maximum results
 
     Returns:
@@ -453,26 +910,64 @@ def search_diseases(query: str, limit: int = 20) -> List[DiseaseHierarchy]:
     query_lower = query.lower()
     results = []
 
-    for tree_number, (ta, cat, name) in MESH_L3_DISEASES.items():
-        if query_lower in name.lower():
-            results.append(get_mesh_hierarchy(tree_number))
+    for entry in DISEASE_TAXONOMY.values():
+        # Check main name
+        if query_lower in entry.name.lower():
+            hierarchy = get_disease_by_mesh_uid(entry.mesh_descriptor_uid)
+            if hierarchy:
+                results.append((0, hierarchy))  # Priority 0 for name match
+            continue
 
-    # Sort by relevance (exact match first, then alphabetical)
-    results.sort(key=lambda h: (
-        0 if h.specific_disease.lower() == query_lower else 1,
-        h.specific_disease
-    ))
+        # Check synonyms
+        for synonym in entry.synonyms:
+            if query_lower in synonym.lower():
+                hierarchy = get_disease_by_mesh_uid(entry.mesh_descriptor_uid)
+                if hierarchy:
+                    results.append((1, hierarchy))  # Priority 1 for synonym match
+                break
 
-    return results[:limit]
+    # Sort by priority, then alphabetically
+    results.sort(key=lambda x: (x[0], x[1].disease_name))
+    return [r[1] for r in results[:limit]]
+
+
+def get_hierarchy_path(mesh_uid: str) -> str:
+    """
+    Get human-readable hierarchy path.
+
+    Args:
+        mesh_uid: MeSH Descriptor UID
+
+    Returns:
+        String like "Oncology > Solid Tumors > Lung Cancer"
+    """
+    hierarchy = get_disease_by_mesh_uid(mesh_uid)
+    if not hierarchy:
+        return f"Unknown ({mesh_uid})"
+    return " > ".join(hierarchy.hierarchy_path)
+
+
+def get_all_therapeutic_areas() -> List[str]:
+    """Get all therapeutic area names."""
+    return [ta.value for ta in TherapeuticArea]
+
+
+def get_segments_for_ta(ta: TherapeuticArea) -> List[str]:
+    """Get all segments for a therapeutic area."""
+    return [
+        segment.value
+        for segment, parent_ta in SEGMENT_TO_TA.items()
+        if parent_ta == ta
+    ]
 
 
 # ============================================================================
 # DATABASE INTEGRATION
 # ============================================================================
 
-def populate_hierarchy_mappings(cursor: Any) -> Dict[str, int]:
+def populate_taxonomy_mappings(cursor: Any) -> Dict[str, int]:
     """
-    Populate therapeutic_area_mapping table with full MeSH hierarchy.
+    Populate therapeutic_area_mapping table with taxonomy.
 
     Args:
         cursor: Database cursor
@@ -482,68 +977,63 @@ def populate_hierarchy_mappings(cursor: Any) -> Dict[str, int]:
     """
     stats = {}
 
-    # Insert L2 category mappings
-    for tree_prefix, (ta, category, name) in MESH_L2_CATEGORIES.items():
+    for mesh_uid, entry in DISEASE_TAXONOMY.items():
+        ta_code = _ta_to_code(entry.therapeutic_area)
         try:
             cursor.execute("""
                 INSERT INTO therapeutic_area_mapping (
                     ta_code, ontology_type, ontology_value, priority, notes
                 ) VALUES (%s, %s, %s, %s, %s)
                 ON CONFLICT (ontology_type, ontology_value) DO NOTHING
-            """, (ta, 'mesh_tree', f'{tree_prefix}%', 50, f'L2: {name}'))
-            stats[ta] = stats.get(ta, 0) + 1
+            """, (
+                ta_code,
+                'mesh_descriptor',
+                mesh_uid,
+                100,
+                f'{entry.segment.value}: {entry.name}'
+            ))
+            stats[ta_code] = stats.get(ta_code, 0) + 1
         except Exception as e:
-            logger.warning(f"Error inserting L2 mapping {tree_prefix}: {e}")
+            logger.warning(f"Error inserting mapping for {mesh_uid}: {e}")
 
-    # Insert L3 specific disease mappings
-    for tree_number, (ta, category, name) in MESH_L3_DISEASES.items():
-        try:
-            cursor.execute("""
-                INSERT INTO therapeutic_area_mapping (
-                    ta_code, ontology_type, ontology_value, priority, notes
-                ) VALUES (%s, %s, %s, %s, %s)
-                ON CONFLICT (ontology_type, ontology_value) DO NOTHING
-            """, (ta, 'mesh_tree', f'{tree_number}%', 100, f'L3: {name}'))
-            stats[ta] = stats.get(ta, 0) + 1
-        except Exception as e:
-            logger.warning(f"Error inserting L3 mapping {tree_number}: {e}")
-
-    logger.info(f"Populated hierarchy mappings: {stats}")
+    logger.info(f"Populated taxonomy mappings: {stats}")
     return stats
 
 
-def get_disease_hierarchy_from_db(
-    cursor: Any,
-    mesh_tree_number: str
-) -> Optional[DiseaseHierarchy]:
-    """
-    Get disease hierarchy using database lookups.
+def _ta_to_code(ta: TherapeuticArea) -> str:
+    """Convert TherapeuticArea enum to short code."""
+    mapping = {
+        TherapeuticArea.ONCOLOGY: "ONC",
+        TherapeuticArea.IMMUNOLOGY_INFLAMMATION: "IMM",
+        TherapeuticArea.CARDIOMETABOLIC_RENAL: "CMR",
+        TherapeuticArea.NEUROSCIENCE: "NEU",
+        TherapeuticArea.INFECTIOUS_DISEASES: "ID",
+        TherapeuticArea.RARE_GENETIC: "RARE",
+        TherapeuticArea.OPHTHALMOLOGY: "OPH",
+        TherapeuticArea.SPECIALTY_OTHER: "OTHER",
+    }
+    return mapping.get(ta, "OTHER")
 
-    Args:
-        cursor: Database cursor
-        mesh_tree_number: MeSH tree number
 
-    Returns:
-        DiseaseHierarchy from database or None
-    """
-    # First use in-memory mappings for classification
-    hierarchy = get_mesh_hierarchy(mesh_tree_number)
+# ============================================================================
+# TAXONOMY STATISTICS
+# ============================================================================
 
-    # Then enrich with database TA if available
-    try:
-        cursor.execute("""
-            SELECT ta_code, notes
-            FROM therapeutic_area_mapping
-            WHERE ontology_type = 'mesh_tree'
-            AND %s LIKE REPLACE(ontology_value, '%%', '')
-            ORDER BY priority DESC
-            LIMIT 1
-        """, (mesh_tree_number,))
+def get_taxonomy_stats() -> Dict[str, Any]:
+    """Get statistics about the taxonomy."""
+    ta_counts = {}
+    segment_counts = {}
 
-        row = cursor.fetchone()
-        if row:
-            hierarchy.therapeutic_area = row[0]
-    except Exception as e:
-        logger.warning(f"Error getting hierarchy from DB for {mesh_tree_number}: {e}")
+    for entry in DISEASE_TAXONOMY.values():
+        ta = entry.therapeutic_area.value
+        segment = entry.segment.value
+        ta_counts[ta] = ta_counts.get(ta, 0) + 1
+        segment_counts[segment] = segment_counts.get(segment, 0) + 1
 
-    return hierarchy
+    return {
+        "total_diseases": len(DISEASE_TAXONOMY),
+        "therapeutic_areas": len(TherapeuticArea),
+        "segments": len(Segment),
+        "diseases_by_ta": ta_counts,
+        "diseases_by_segment": segment_counts,
+    }
