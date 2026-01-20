@@ -1,0 +1,98 @@
+L1 Therapeutic Area,L2 Segment,L3 Market Driver Anchor,MeSH Descriptor UID,Synonyms
+Cardiometabolic & Renal,CV & Renal,Atherosclerosis,D050197,
+Cardiometabolic & Renal,CV & Renal,Atrial Fibrillation,D001281,AFib; AF
+Cardiometabolic & Renal,CV & Renal,Chronic Kidney Disease,D051436,"CKD; Renal Insufficiency, Chronic"
+Cardiometabolic & Renal,CV & Renal,Diabetic Nephropathy,D003928,Diabetic Kidney Disease; DKD
+Cardiometabolic & Renal,CV & Renal,Heart Failure,D006333,Cardiac Failure; Congestive Heart Failure; CHF
+Cardiometabolic & Renal,CV & Renal,Hypertension,D006973,High Blood Pressure
+Cardiometabolic & Renal,CV & Renal,Myocardial Infarction,D009203,MI; Heart Attack
+Cardiometabolic & Renal,Metabolic & Obesity,Metabolic Syndrome,D024821,Metabolic Syndrome X
+Cardiometabolic & Renal,Metabolic & Obesity,NAFLD,D065626,Non-alcoholic Fatty Liver Disease; Fatty Liver Disease
+Cardiometabolic & Renal,Metabolic & Obesity,NASH,D000071683,Non-alcoholic Steatohepatitis; MASH; Metabolic Steatohepatitis
+Cardiometabolic & Renal,Metabolic & Obesity,Obesity,D009765,
+Cardiometabolic & Renal,Metabolic & Obesity,Type 1 Diabetes,D003922,"T1D; Diabetes Mellitus, Type 1; Type 1 Diabetes Mellitus"
+Cardiometabolic & Renal,Metabolic & Obesity,Type 2 Diabetes,D003924,"T2D; Diabetes Mellitus, Type 2; Type 2 Diabetes Mellitus"
+Immunology & Inflammation,Barrier Inflammation,Atopic Dermatitis,D003876,"Dermatitis, Atopic; Eczema"
+Immunology & Inflammation,Barrier Inflammation,Crohn Disease,D003424,Crohn's Disease; Regional Enteritis
+Immunology & Inflammation,Barrier Inflammation,Hidradenitis Suppurativa,D000080909,HS
+Immunology & Inflammation,Barrier Inflammation,Inflammatory Bowel Disease,D015212,IBD; Inflammatory Bowel Diseases
+Immunology & Inflammation,Barrier Inflammation,Psoriasis,D011565,
+Immunology & Inflammation,Barrier Inflammation,Ulcerative Colitis,D003093,"Colitis, Ulcerative; UC"
+Immunology & Inflammation,Rheumatology,Ankylosing Spondylitis,D013167,"Spondylitis, Ankylosing; AS"
+Immunology & Inflammation,Rheumatology,Psoriatic Arthritis,D015535,"Arthritis, Psoriatic; PsA"
+Immunology & Inflammation,Rheumatology,Rheumatoid Arthritis,D001172,"RA; Arthritis, Rheumatoid"
+Immunology & Inflammation,Rheumatology,Sjogren Syndrome,D012859,Sjogren's Syndrome
+Immunology & Inflammation,Rheumatology,Systemic Lupus Erythematosus,D008180,SLE; Lupus
+Immunology & Inflammation,Rheumatology,Systemic Sclerosis,D013586,"Scleroderma, Systemic; SSc"
+Infectious Diseases,Bacterial & Fungal,Bacterial Infections,D001424,
+Infectious Diseases,Bacterial & Fungal,Fungal Infections,D009181,Mycoses
+Infectious Diseases,Bacterial & Fungal,Tuberculosis,D014376,TB
+Infectious Diseases,Viral & Vaccines,COVID-19,D000086382,SARS-CoV-2 Infection; Coronavirus Disease 2019
+Infectious Diseases,Viral & Vaccines,HIV/AIDS,D015658,HIV Infections; Acquired Immunodeficiency Syndrome
+Infectious Diseases,Viral & Vaccines,Hepatitis B,D006509,"HBV; Hepatitis B, Chronic"
+Infectious Diseases,Viral & Vaccines,Hepatitis C,D006526,"HCV; Hepatitis C, Chronic"
+Infectious Diseases,Viral & Vaccines,Herpes Zoster,D006562,Shingles
+Infectious Diseases,Viral & Vaccines,Influenza,D007251,"Flu; Influenza, Human"
+Infectious Diseases,Viral & Vaccines,RSV Infection,D018357,Respiratory Syncytial Virus Infections
+Neuroscience,Neurology,Alzheimer Disease,D000544,Alzheimer's Disease; AD
+Neuroscience,Neurology,Amyotrophic Lateral Sclerosis,D000690,ALS; Lou Gehrig Disease
+Neuroscience,Neurology,Epilepsy,D004827,Seizure Disorder
+Neuroscience,Neurology,Frontotemporal Dementia,D057180,FTD
+Neuroscience,Neurology,Huntington Disease,D006816,Huntington's Disease; HD
+Neuroscience,Neurology,Migraine,D008881,Migraine Disorders
+Neuroscience,Neurology,Multiple Sclerosis,D009103,MS
+Neuroscience,Neurology,Parkinson Disease,D010300,Parkinson's Disease; PD
+Neuroscience,Psychiatry,ADHD,D001289,Attention Deficit Hyperactivity Disorder
+Neuroscience,Psychiatry,Anxiety Disorders,D001008,Generalized Anxiety Disorder; GAD
+Neuroscience,Psychiatry,Autism Spectrum Disorder,D000067877,ASD; Autism
+Neuroscience,Psychiatry,Bipolar Disorder,D001714,Manic-Depressive Disorder
+Neuroscience,Psychiatry,Major Depressive Disorder,D003865,MDD; Depression; Clinical Depression
+Neuroscience,Psychiatry,PTSD,D013313,"Post-Traumatic Stress Disorder; Stress Disorders, Post-Traumatic"
+Neuroscience,Psychiatry,Schizophrenia,D012559,
+Oncology,Hematologic Malignancies,Acute Lymphoblastic Leukemia,D054198,ALL; Precursor Cell Lymphoblastic Leukemia-Lymphoma
+Oncology,Hematologic Malignancies,Acute Myeloid Leukemia,D015464,"AML; Leukemia, Myeloid, Acute"
+Oncology,Hematologic Malignancies,Chronic Lymphocytic Leukemia,D015451,"CLL; Leukemia, Lymphocytic, Chronic, B-Cell"
+Oncology,Hematologic Malignancies,Chronic Myeloid Leukemia,D015470,"CML; Leukemia, Myelogenous, Chronic, BCR-ABL Positive"
+Oncology,Hematologic Malignancies,Diffuse Large B-Cell Lymphoma,D016403,DLBCL
+Oncology,Hematologic Malignancies,Hodgkin Lymphoma,D006689,Hodgkin Disease
+Oncology,Hematologic Malignancies,Lymphoma,D008228,Lymphomas
+Oncology,Hematologic Malignancies,Multiple Myeloma,D009101,MM; Plasma Cell Myeloma
+Oncology,Hematologic Malignancies,Myelodysplastic Syndromes,D009190,MDS
+Oncology,Hematologic Malignancies,Non-Hodgkin Lymphoma,D008223,"NHL; Lymphoma, Non-Hodgkin"
+Oncology,Solid Tumors,Bladder Cancer,D001661,Urinary Bladder Neoplasms
+Oncology,Solid Tumors,Breast Cancer,D001943,Breast Neoplasms; Mammary Cancer
+Oncology,Solid Tumors,Colorectal Cancer,D015179,Colorectal Neoplasms; CRC
+Oncology,Solid Tumors,Esophageal Cancer,D004938,Esophageal Neoplasms
+Oncology,Solid Tumors,Gastric Cancer,D013274,Stomach Neoplasms; Stomach Cancer
+Oncology,Solid Tumors,Glioblastoma,D005909,GBM; Glioblastoma Multiforme
+Oncology,Solid Tumors,Head and Neck Cancer,D006258,Head and Neck Neoplasms; HNSCC
+Oncology,Solid Tumors,Hepatocellular Carcinoma,D006528,"HCC; Liver Cancer; Carcinoma, Hepatocellular"
+Oncology,Solid Tumors,Lung Cancer,D008175,Lung Neoplasms; Pulmonary Cancer
+Oncology,Solid Tumors,Melanoma,D008545,Malignant Melanoma
+Oncology,Solid Tumors,NSCLC,D002289,"Non-Small Cell Lung Cancer; Carcinoma, Non-Small-Cell Lung"
+Oncology,Solid Tumors,Ovarian Cancer,D010051,Ovarian Neoplasms
+Oncology,Solid Tumors,Pancreatic Cancer,D010190,Pancreatic Neoplasms; Pancreatic Ductal Adenocarcinoma; PDAC
+Oncology,Solid Tumors,Prostate Cancer,D011471,Prostatic Neoplasms
+Oncology,Solid Tumors,Renal Cell Carcinoma,D002292,"RCC; Kidney Cancer; Carcinoma, Renal Cell"
+Oncology,Solid Tumors,Small Cell Lung Cancer,D055752,"SCLC; Carcinoma, Small Cell Lung"
+Oncology,Solid Tumors,Triple-Negative Breast Cancer,D064726,TNBC
+Ophthalmology,Retinal Disease,Age-Related Macular Degeneration,D008268,AMD; Macular Degeneration
+Ophthalmology,Retinal Disease,Diabetic Macular Edema,D058499,DME
+Ophthalmology,Retinal Disease,Diabetic Retinopathy,D003930,DR
+Ophthalmology,Retinal Disease,Glaucoma,D005901,
+Ophthalmology,Retinal Disease,Retinitis Pigmentosa,D012173,RP
+Rare & Genetic Medicine,Monogenic Rare,Cystic Fibrosis,D003550,CF
+Rare & Genetic Medicine,Monogenic Rare,Duchenne Muscular Dystrophy,D020388,"DMD; Muscular Dystrophy, Duchenne"
+Rare & Genetic Medicine,Monogenic Rare,Fabry Disease,D016464,Alpha-Galactosidase A Deficiency
+Rare & Genetic Medicine,Monogenic Rare,Gaucher Disease,D005776,
+Rare & Genetic Medicine,Monogenic Rare,Hemophilia A,D006467,Factor VIII Deficiency
+Rare & Genetic Medicine,Monogenic Rare,Hemophilia B,D002836,Factor IX Deficiency; Christmas Disease
+Rare & Genetic Medicine,Monogenic Rare,Hereditary Hemochromatosis,D006432,Hemochromatosis
+Rare & Genetic Medicine,Monogenic Rare,Sickle Cell Disease,D000755,"Sickle Cell Anemia; Anemia, Sickle Cell"
+Rare & Genetic Medicine,Monogenic Rare,Spinal Muscular Atrophy,D013087,SMA
+Specialty & Other,Respiratory,Asthma,D001249,
+Specialty & Other,Respiratory,COPD,D029424,"Chronic Obstructive Pulmonary Disease; Pulmonary Disease, Chronic Obstructive"
+Specialty & Other,Respiratory,Idiopathic Pulmonary Fibrosis,D054990,IPF
+Specialty & Other,Women's Health,Endometriosis,D004715,
+Specialty & Other,Women's Health,Infertility,D007247,"Infertility, Female"
+Specialty & Other,Women's Health,Polycystic Ovary Syndrome,D011085,PCOS
