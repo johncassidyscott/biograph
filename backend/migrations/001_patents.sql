@@ -1,39 +1,20 @@
-CREATE TABLE patent (
-    id SERIAL PRIMARY KEY,
-    patent_number TEXT UNIQUE NOT NULL,
-    publication_date DATE,
-    title TEXT,
-    abstract TEXT,
-    cpc_codes TEXT[],
-    source TEXT,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
+-- Migration 001: Patent Extensions
+-- Note: patent, assignee, patent_assignee, patent_drug tables are defined in 000_core.sql
+-- This migration is now a placeholder for future patent-specific extensions
 
-CREATE TABLE assignee (
-    id SERIAL PRIMARY KEY,
-    name_raw TEXT NOT NULL,
-    name_norm TEXT,
-    country TEXT,
-    type TEXT,
-    lei TEXT,
-    cik TEXT,
-    wikidata_id TEXT,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
+-- If additional patent-related tables are needed, add them here
+-- Example:
+-- CREATE TABLE patent_citation (
+--     patent_id INT REFERENCES patent(id) ON DELETE CASCADE,
+--     cited_patent_id INT REFERENCES patent(id) ON DELETE CASCADE,
+--     citation_type TEXT,
+--     PRIMARY KEY (patent_id, cited_patent_id)
+-- );
 
-CREATE TABLE patent_assignee (
-    patent_id INT REFERENCES patent(id) ON DELETE CASCADE,
-    assignee_id INT REFERENCES assignee(id) ON DELETE CASCADE,
-    role TEXT,
-    sequence INT,
-    PRIMARY KEY (patent_id, assignee_id, sequence)
-);
+-- For now, this migration is intentionally empty to avoid duplicates with 000_core.sql
+-- All patent tables are created in 000_core.sql
 
-CREATE TABLE patent_drug (
-    patent_id INT REFERENCES patent(id) ON DELETE CASCADE,
-    chembl_id TEXT NOT NULL,
-    link_type TEXT,
-    PRIMARY KEY (patent_id, chembl_id)
-);
+DO $$
+BEGIN
+    RAISE NOTICE 'Migration 001: Patent extensions (currently empty, avoiding duplicates)';
+END $$;
